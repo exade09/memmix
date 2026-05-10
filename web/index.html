@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Axiom AI Scanner</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Live market scanner</p>
+          <h1>Axiom AI Scanner</h1>
+        </div>
+        <div class="status-panel">
+          <span class="pulse" aria-hidden="true"></span>
+          <span id="statusText">Готов к скану</span>
+        </div>
+      </header>
+
+      <section class="controls" aria-label="Панель управления">
+        <label class="control">
+          <span>Токенов</span>
+          <input id="limitInput" type="number" min="1" max="100" value="100" />
+        </label>
+        <label class="control">
+          <span>Автообновление</span>
+          <select id="refreshInput">
+            <option value="0">выкл</option>
+            <option value="30">30 сек</option>
+            <option value="60" selected>60 сек</option>
+            <option value="120">2 мин</option>
+          </select>
+        </label>
+        <button id="scanButton" class="primary-button" type="button">Обновить</button>
+      </section>
+
+      <section class="summary" aria-label="Сводка">
+        <div>
+          <span class="summary-label">Найдено</span>
+          <strong id="foundCount">0</strong>
+        </div>
+        <div>
+          <span class="summary-label">HOT</span>
+          <strong id="hotCount">0</strong>
+        </div>
+        <div>
+          <span class="summary-label">Последний скан</span>
+          <strong id="updatedAt">-</strong>
+        </div>
+      </section>
+
+      <section id="tokenGrid" class="token-grid" aria-live="polite"></section>
+
+      <section id="emptyState" class="empty-state" hidden>
+        <h2>Нет токенов под текущие фильтры</h2>
+        <p>Попробуй увеличить лимит или ослабить настройки в config.json.</p>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

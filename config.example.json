@@ -1,0 +1,23 @@
+{
+  "chains": ["solana"],
+  "min_liquidity_usd": 10000,
+  "max_token_age_hours": 72,
+  "request_timeout_seconds": 12,
+  "source": {
+    "name": "dexscreener",
+    "max_candidate_tokens": 180
+  },
+  "risk": {
+    "max_sell_pressure": 1.8,
+    "min_pair_age_minutes": 10,
+    "min_volume_to_liquidity": 0.05
+  },
+  "scoring": {
+    "volume_weight": 0.28,
+    "transaction_weight": 0.22,
+    "momentum_weight": 0.22,
+    "liquidity_weight": 0.14,
+    "social_weight": 0.07,
+    "freshness_weight": 0.07
+  }
+}
