@@ -152,11 +152,14 @@ h1 {
   font-size: 24px;
 }
 
+.results-stack {
+  margin-top: 18px;
+}
+
 .token-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
   gap: 14px;
-  margin-top: 18px;
 }
 
 .token-card {
@@ -255,6 +258,46 @@ h1 {
 .badge.weak {
   background: rgb(255 98 98 / 16%);
   color: var(--red);
+}
+
+.badge.potential {
+  background: rgb(95 180 255 / 16%);
+  color: var(--blue);
+}
+
+.badge.speculative {
+  background: rgb(255 98 98 / 16%);
+  color: var(--red);
+}
+
+.signal-section {
+  margin-top: 22px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.section-heading span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 800;
 }
 
 .metrics {

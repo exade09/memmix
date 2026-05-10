@@ -44,12 +44,12 @@ def _score_token(snapshot: TokenSnapshot, config: ScannerConfig) -> RankedToken:
 
     if score >= 75 and not risk_flags:
         signal = "HOT"
-    elif score >= 60:
+    elif score >= 55:
         signal = "WATCH"
-    elif score >= 42:
-        signal = "EARLY"
+    elif score >= 32:
+        signal = "POTENTIAL"
     else:
-        signal = "WEAK"
+        signal = "SPECULATIVE"
 
     return RankedToken(
         snapshot=snapshot,

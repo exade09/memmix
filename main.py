@@ -213,6 +213,7 @@ def _parse_int(value: str, fallback: int) -> int:
 
 
 def main() -> int:
+    _configure_stdout()
     parser = build_parser()
     args = parser.parse_args()
 
@@ -225,6 +226,13 @@ def main() -> int:
 
     parser.print_help()
     return 1
+
+
+def _configure_stdout() -> None:
+    # Meme token names can contain symbols outside the Windows console codepage.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
 
 
 if __name__ == "__main__":

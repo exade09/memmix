@@ -1,11 +1,13 @@
 {
-  "chains": ["solana"],
-  "min_liquidity_usd": 10000,
-  "max_token_age_hours": 72,
+  "chains": ["solana", "base", "bsc", "ethereum"],
+  "min_liquidity_usd": 500,
+  "max_token_age_hours": 2160,
   "request_timeout_seconds": 12,
   "source": {
     "name": "dexscreener",
-    "max_candidate_tokens": 180
+    "max_candidate_tokens": 500,
+    "max_search_pairs": 500,
+    "search_terms": ["pump", "meme", "ai", "agent", "dog", "cat", "pepe", "moon", "cto", "solana", "trump", "viral", "new", "bonk", "frog", "fart", "chill", "baby", "official", "coin"]
   },
   "risk": {
     "max_sell_pressure": 1.8,

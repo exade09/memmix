@@ -9,7 +9,32 @@ from typing import Any
 @dataclass
 class SourceConfig:
     name: str = "dexscreener"
-    max_candidate_tokens: int = 180
+    max_candidate_tokens: int = 500
+    max_search_pairs: int = 500
+    search_terms: list[str] = field(
+        default_factory=lambda: [
+            "pump",
+            "meme",
+            "ai",
+            "agent",
+            "dog",
+            "cat",
+            "pepe",
+            "moon",
+            "cto",
+            "solana",
+            "trump",
+            "viral",
+            "new",
+            "bonk",
+            "frog",
+            "fart",
+            "chill",
+            "baby",
+            "official",
+            "coin",
+        ]
+    )
 
 
 @dataclass
@@ -31,9 +56,9 @@ class ScoringConfig:
 
 @dataclass
 class ScannerConfig:
-    chains: list[str] = field(default_factory=lambda: ["solana"])
-    min_liquidity_usd: float = 10_000
-    max_token_age_hours: float = 72
+    chains: list[str] = field(default_factory=lambda: ["solana", "base", "bsc", "ethereum"])
+    min_liquidity_usd: float = 500
+    max_token_age_hours: float = 2160
     request_timeout_seconds: int = 12
     source: SourceConfig = field(default_factory=SourceConfig)
     risk: RiskConfig = field(default_factory=RiskConfig)

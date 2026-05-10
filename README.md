@@ -55,6 +55,12 @@ http://127.0.0.1:8080
 ```
 
 The dashboard shows token images when the market data provider returns them.
+Tokens are grouped by signal:
+
+- `HOT`: strongest current metrics with no active risk flags.
+- `WATCH`: good metrics, but not as clean or strong as HOT.
+- `POTENTIAL`: weaker but still interesting candidates for manual review.
+- `SPECULATIVE`: low-confidence ideas with higher risk or weaker data.
 
 Watch mode:
 
@@ -88,6 +94,7 @@ Useful fields:
 - `chains`: chain IDs to scan, for example `solana`, `bsc`, `ethereum`.
 - `min_liquidity_usd`: filters very thin pairs.
 - `max_token_age_hours`: focuses on fresh launches.
+- `source.search_terms`: extra DexScreener search terms used to find more potential tokens.
 - `risk.max_sell_pressure`: flags tokens where sells dominate buys.
 - `scoring`: weights for the ranking formula.
 

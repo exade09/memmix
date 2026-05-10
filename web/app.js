@@ -34,6 +34,16 @@ function signalClass(signal) {
   return String(signal || "weak").toLowerCase();
 }
 
+function signalTitle(signal) {
+  const titles = {
+    HOT: "HOT - самые сильные",
+    WATCH: "WATCH - хорошие кандидаты",
+    POTENTIAL: "POTENTIAL - потенциально интересные",
+    SPECULATIVE: "SPECULATIVE - высокий риск",
+  };
+  return titles[signal] || signal;
+}
+
 function changeClass(value) {
   return Number(value || 0) >= 0 ? "positive" : "negative";
 }
@@ -111,6 +121,27 @@ function tokenCard(token) {
   `;
 }
 
+function renderGroupedTokens(tokens) {
+  const signals = ["HOT", "WATCH", "POTENTIAL", "SPECULATIVE"];
+  return signals
+    .map((signal) => {
+      const group = tokens.filter((token) => token.signal === signal);
+      if (group.length === 0) return "";
+      return `
+        <section class="signal-section">
+          <div class="section-heading">
+            <h2>${escapeHtml(signalTitle(signal))}</h2>
+            <span>${group.length}</span>
+          </div>
+          <div class="token-grid">
+            ${group.map(tokenCard).join("")}
+          </div>
+        </section>
+      `;
+    })
+    .join("");
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -131,7 +162,7 @@ async function loadScan() {
 
     const payload = await response.json();
     const tokens = payload.tokens || [];
-    tokenGrid.innerHTML = tokens.map(tokenCard).join("");
+    tokenGrid.innerHTML = renderGroupedTokens(tokens);
     emptyState.hidden = tokens.length !== 0;
     foundCount.textContent = String(tokens.length);
     hotCount.textContent = String(tokens.filter((token) => token.signal === "HOT").length);

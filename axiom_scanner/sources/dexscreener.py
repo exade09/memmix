@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from collections import defaultdict
 from typing import Any
+from urllib.parse import quote_plus
 
 from axiom_scanner.config import ScannerConfig
 from axiom_scanner.http_client import HttpClient
@@ -20,6 +21,7 @@ class DexScreenerSource(TokenSource):
     def fetch_tokens(self) -> list[TokenSnapshot]:
         candidates = self._fetch_candidate_tokens()
         pairs = self._fetch_pairs_for_candidates(candidates)
+        pairs.extend(self._fetch_search_pairs())
         return self._normalize_pairs(pairs)
 
     def _fetch_candidate_tokens(self) -> list[dict[str, Any]]:
@@ -70,6 +72,31 @@ class DexScreenerSource(TokenSource):
                 payload = self.http.get_json(url)
                 if isinstance(payload, list):
                     pairs.extend(pair for pair in payload if isinstance(pair, dict))
+
+        return pairs
+
+    def _fetch_search_pairs(self) -> list[dict[str, Any]]:
+        allowed_chains = {chain.lower() for chain in self.config.chains}
+        pairs: list[dict[str, Any]] = []
+        seen_pairs: set[str] = set()
+
+        for term in self.config.source.search_terms:
+            url = f"{self.BASE_URL}/latest/dex/search?q={quote_plus(term)}"
+            payload = self.http.get_json(url)
+            for pair in payload.get("pairs", []) if isinstance(payload, dict) else []:
+                if not isinstance(pair, dict):
+                    continue
+                chain_id = str(pair.get("chainId", "")).lower()
+                pair_address = str(pair.get("pairAddress", "")).lower()
+                if allowed_chains and chain_id not in allowed_chains:
+                    continue
+                if not pair_address or pair_address in seen_pairs:
+                    continue
+
+                seen_pairs.add(pair_address)
+                pairs.append(pair)
+                if len(pairs) >= self.config.source.max_search_pairs:
+                    return pairs
 
         return pairs
 
