@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import mimetypes
+import os
 import sys
 import time
 from pathlib import Path
@@ -62,8 +63,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     web = subparsers.add_parser("web", help="Run the visual dashboard.")
-    web.add_argument("--host", default="127.0.0.1", help="Dashboard host.")
-    web.add_argument("--port", type=int, default=8080, help="Dashboard port.")
+    web.add_argument("--host", default=_default_host(), help="Dashboard host.")
+    web.add_argument("--port", type=int, default=_default_port(), help="Dashboard port.")
     web.add_argument("--limit", type=int, default=100, help="Default token count.")
     web.add_argument(
         "--chain",
@@ -210,6 +211,14 @@ def _parse_int(value: str, fallback: int) -> int:
         return max(int(value), 1)
     except ValueError:
         return fallback
+
+
+def _default_host() -> str:
+    return os.getenv("HOST", "127.0.0.1")
+
+
+def _default_port() -> int:
+    return _parse_int(os.getenv("PORT", "8080"), 8080)
 
 
 def main() -> int:

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: axiom-ai-scanner
+    runtime: python
+    plan: free
+    buildCommand: ""
+    startCommand: python main.py web --host 0.0.0.0 --limit 100
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7

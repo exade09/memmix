@@ -62,6 +62,24 @@ Tokens are grouped by signal:
 - `POTENTIAL`: weaker but still interesting candidates for manual review.
 - `SPECULATIVE`: low-confidence ideas with higher risk or weaker data.
 
+## Free hosting on Render
+
+This repository includes `render.yaml`, `requirements.txt`, and `Procfile`.
+
+Steps:
+
+1. Push this project to GitHub.
+2. Open `https://render.com`.
+3. Create a new Web Service or Blueprint from the GitHub repository.
+4. Choose the Free instance type.
+5. Use this start command if Render asks for it:
+
+```powershell
+python main.py web --host 0.0.0.0 --limit 100
+```
+
+Render provides the public HTTPS URL after the first deploy.
+
 Watch mode:
 
 ```powershell
