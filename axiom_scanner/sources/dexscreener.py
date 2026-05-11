@@ -102,6 +102,7 @@ class DexScreenerSource(TokenSource):
 
     def _normalize_pairs(self, pairs: list[dict[str, Any]]) -> list[TokenSnapshot]:
         snapshots_by_token: dict[tuple[str, str], TokenSnapshot] = {}
+        allowed_chains = {chain.lower() for chain in self.config.chains}
         now_ms = int(time.time() * 1000)
 
         for pair in pairs:
@@ -109,6 +110,8 @@ class DexScreenerSource(TokenSource):
             chain_id = str(pair.get("chainId", "")).lower()
             token_address = str(base_token.get("address", "")).strip()
             if not chain_id or not token_address:
+                continue
+            if allowed_chains and chain_id not in allowed_chains:
                 continue
 
             snapshot = _pair_to_snapshot(pair, now_ms=now_ms)
@@ -121,6 +124,36 @@ class DexScreenerSource(TokenSource):
                 snapshots_by_token[key] = snapshot
 
         return list(snapshots_by_token.values())
+
+
+def resolve_token_image(config: ScannerConfig, name: str, symbol: str) -> str:
+    http = HttpClient(timeout_seconds=config.request_timeout_seconds, retries=1)
+    allowed_chains = {chain.lower() for chain in config.chains}
+    queries = _dedupe([symbol.strip().lstrip("$"), name.strip()])
+
+    best_pair: dict[str, Any] | None = None
+    best_score = -1.0
+    for query in queries:
+        if not query:
+            continue
+        url = f"{DexScreenerSource.BASE_URL}/latest/dex/search?q={quote_plus(query)}"
+        payload = http.get_json(url)
+        pairs = payload.get("pairs", []) if isinstance(payload, dict) else []
+        for pair in pairs:
+            if not isinstance(pair, dict):
+                continue
+            chain_id = str(pair.get("chainId", "")).lower()
+            if allowed_chains and chain_id not in allowed_chains:
+                continue
+            image_url = _pair_image_url(pair)
+            if not image_url:
+                continue
+            score = _image_match_score(pair, name=name, symbol=symbol)
+            if score > best_score:
+                best_score = score
+                best_pair = pair
+
+    return _pair_image_url(best_pair or {})
 
 
 def _pair_to_snapshot(pair: dict[str, Any], now_ms: int) -> TokenSnapshot:
@@ -153,7 +186,7 @@ def _pair_to_snapshot(pair: dict[str, Any], now_ms: int) -> TokenSnapshot:
         name=str(base_token.get("name", ""))[:80],
         pair_address=str(pair.get("pairAddress", "")),
         pair_url=str(pair.get("url", "")),
-        image_url=str(info.get("imageUrl") or info.get("openGraph") or ""),
+        image_url=_pair_image_url(pair),
         price_usd=_to_float(pair.get("priceUsd")),
         market_cap=_to_float(pair.get("marketCap")),
         fdv=_to_float(pair.get("fdv")),
@@ -183,9 +216,38 @@ def _pair_to_snapshot(pair: dict[str, Any], now_ms: int) -> TokenSnapshot:
 def _passes_basic_filters(snapshot: TokenSnapshot, config: ScannerConfig) -> bool:
     if snapshot.liquidity_usd < config.min_liquidity_usd:
         return False
+    market_cap = snapshot.market_cap or snapshot.fdv
+    if market_cap < config.min_market_cap_usd:
+        return False
     if snapshot.age_minutes is None:
         return True
     return snapshot.age_minutes <= config.max_token_age_hours * 60
+
+
+def _pair_image_url(pair: dict[str, Any]) -> str:
+    info = pair.get("info") or {}
+    return str(info.get("imageUrl") or info.get("openGraph") or "")
+
+
+def _image_match_score(pair: dict[str, Any], name: str, symbol: str) -> float:
+    base = pair.get("baseToken") or {}
+    pair_symbol = str(base.get("symbol", "")).lower().lstrip("$")
+    pair_name = str(base.get("name", "")).lower()
+    target_symbol = symbol.strip().lower().lstrip("$")
+    target_name = name.strip().lower()
+    score = 0.0
+    if target_symbol and pair_symbol == target_symbol:
+        score += 100
+    elif target_symbol and target_symbol in pair_symbol:
+        score += 35
+    if target_name and pair_name == target_name:
+        score += 80
+    elif target_name and target_name in pair_name:
+        score += 25
+    liquidity = pair.get("liquidity") or {}
+    score += min(_to_float(liquidity.get("usd")) / 100_000, 10)
+    score += min(_to_float(pair.get("marketCap") or pair.get("fdv")) / 1_000_000, 10)
+    return score
 
 
 def _txn_count(value: dict[str, Any]) -> int:

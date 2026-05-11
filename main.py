@@ -11,14 +11,27 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from axiom_scanner.analysis.local_ai import explain_ranked_tokens
+from axiom_scanner.analysis.image_generation import ImageGenerationError, generate_meme_image
+from axiom_scanner.analysis.narratives import (
+    generate_narratives,
+    load_og_memecoins,
+    normalize_og_memecoins,
+)
+from axiom_scanner.analysis.wavespeed_hybrid import (
+    HybridImageError,
+    MAX_REQUEST_BYTES as MAX_HYBRID_REQUEST_BYTES,
+    generate_hybrid_image_request,
+)
 from axiom_scanner.analysis.scoring import rank_tokens
 from axiom_scanner.config import ScannerConfig, load_config
 from axiom_scanner.reporting import render_console_report
-from axiom_scanner.sources.dexscreener import DexScreenerSource
+from axiom_scanner.sources.dexscreener import DexScreenerSource, resolve_token_image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 WEB_ROOT = PROJECT_ROOT / "web"
+ALLOWED_CHAINS = ["solana"]
+OG_IMAGE_CACHE: dict[str, str] = {}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -79,10 +92,27 @@ def scan_once(config: ScannerConfig, limit: int) -> list[dict]:
     source = DexScreenerSource(config=config)
     snapshots = source.fetch_tokens()
     ranked = rank_tokens(snapshots, config=config)
-    explanations = explain_ranked_tokens(ranked[:limit])
+    visible_ranked = [
+        item
+        for item in ranked
+        if item.snapshot.chain_id.lower() == "solana"
+    ]
 
     rows: list[dict] = []
-    for item, explanation in zip(ranked[:limit], explanations):
+    selected_items = []
+    for item in visible_ranked:
+        if len(selected_items) >= limit:
+            break
+        image_url = item.snapshot.image_url or _resolve_token_image(
+            config,
+            name=item.snapshot.name,
+            symbol=item.snapshot.symbol,
+        )
+        item.snapshot.image_url = image_url
+        selected_items.append(item)
+
+    explanations = explain_ranked_tokens(selected_items)
+    for item, explanation in zip(selected_items, explanations):
         rows.append(
             {
                 "rank": len(rows) + 1,
@@ -94,6 +124,8 @@ def scan_once(config: ScannerConfig, limit: int) -> list[dict]:
                 "score": round(item.score, 2),
                 "signal": item.signal,
                 "price_usd": item.snapshot.price_usd,
+                "market_cap": item.snapshot.market_cap,
+                "fdv": item.snapshot.fdv,
                 "liquidity_usd": item.snapshot.liquidity_usd,
                 "volume_1h": item.snapshot.volume_1h,
                 "volume_24h": item.snapshot.volume_24h,
@@ -115,8 +147,7 @@ def scan_once(config: ScannerConfig, limit: int) -> list[dict]:
 
 
 def apply_cli_overrides(config: ScannerConfig, chains: list[str] | None) -> ScannerConfig:
-    if chains:
-        config.chains = [chain.strip().lower() for chain in chains if chain.strip()]
+    config.chains = ALLOWED_CHAINS.copy()
     return config
 
 
@@ -154,9 +185,28 @@ def run_web(args: argparse.Namespace) -> int:
             if parsed.path == "/api/scan":
                 self._send_scan(parsed.query)
                 return
+            if parsed.path == "/api/og":
+                self._send_og_memecoins()
+                return
+            if parsed.path == "/api/og-image":
+                self._send_og_image(parsed.query)
+                return
 
             path = "index.html" if parsed.path in ("", "/") else parsed.path.lstrip("/")
             self._send_static(path)
+
+        def do_POST(self) -> None:
+            parsed = urlparse(self.path)
+            if parsed.path == "/api/narratives":
+                self._send_narratives()
+                return
+            if parsed.path == "/api/generate-image":
+                self._send_generated_image()
+                return
+            if parsed.path == "/api/hybrid-image":
+                self._send_hybrid_image()
+                return
+            self.send_error(404)
 
         def log_message(self, format: str, *args: object) -> None:
             # Keep the terminal useful: scans are visible in the browser UI.
@@ -167,13 +217,102 @@ def run_web(args: argparse.Namespace) -> int:
             limit = _parse_int(params.get("limit", [str(args.limit)])[0], args.limit)
             config = apply_cli_overrides(load_config(config_path), chains)
             rows = scan_once(config, limit=limit)
+            og_memecoins = load_og_memecoins(PROJECT_ROOT, config.og_memecoins_path)
             payload = {
                 "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "count": len(rows),
+                "min_market_cap_usd": config.min_market_cap_usd,
                 "tokens": rows,
+                "og_memecoins": og_memecoins,
+                "narratives": generate_narratives(rows, og_memecoins, limit=12),
             }
+            self._send_json(payload)
+
+        def _send_og_memecoins(self) -> None:
+            config = apply_cli_overrides(load_config(config_path), chains)
+            self._send_json(
+                {
+                    "og_memecoins": load_og_memecoins(
+                        PROJECT_ROOT, config.og_memecoins_path
+                    )
+                }
+            )
+
+        def _send_og_image(self, query: str) -> None:
+            params = parse_qs(query)
+            name = params.get("name", [""])[0]
+            symbol = params.get("symbol", [""])[0]
+            config = apply_cli_overrides(load_config(config_path), chains)
+            image_url = _resolve_og_image(config, name=name, symbol=symbol)
+            self._send_json({"name": name, "symbol": symbol, "image_url": image_url})
+
+        def _send_narratives(self) -> None:
+            try:
+                content_length = _parse_int(self.headers.get("Content-Length", "0"), 0)
+                body = self.rfile.read(min(content_length, 256_000))
+                payload = json.loads(body.decode("utf-8") or "{}")
+                tokens = payload.get("tokens", [])
+                og_memecoins = normalize_og_memecoins(payload.get("og_memecoins", []))
+                limit = _parse_int(str(payload.get("limit", "12")), 12)
+                if not isinstance(tokens, list):
+                    raise ValueError("tokens must be a list")
+                self._send_json(
+                    {
+                        "narratives": generate_narratives(
+                            tokens,
+                            og_memecoins,
+                            limit=limit,
+                        )
+                    }
+                )
+            except (json.JSONDecodeError, ValueError) as exc:
+                self._send_json({"error": str(exc)}, status=400)
+
+        def _send_generated_image(self) -> None:
+            try:
+                content_length = _parse_int(self.headers.get("Content-Length", "0"), 0)
+                body = self.rfile.read(min(content_length, 512_000))
+                payload = json.loads(body.decode("utf-8") or "{}")
+                config = apply_cli_overrides(load_config(config_path), chains)
+                result = generate_meme_image(
+                    payload,
+                    resolve_og_image=lambda name, symbol: _resolve_og_image(
+                        config, name=name, symbol=symbol
+                    ),
+                )
+                self._send_json(result)
+            except ImageGenerationError as exc:
+                self._send_json({"error": str(exc), "code": exc.code}, status=exc.status)
+            except (json.JSONDecodeError, ValueError, TypeError) as exc:
+                self._send_json({"error": str(exc), "code": "bad_request"}, status=400)
+
+        def _send_hybrid_image(self) -> None:
+            try:
+                content_length = _parse_content_length(self.headers.get("Content-Length", "0"))
+                if content_length <= 0:
+                    raise HybridImageError("Request body is empty.", "empty_body")
+                if content_length > MAX_HYBRID_REQUEST_BYTES:
+                    raise HybridImageError(
+                        "Request is too large.",
+                        code="request_too_large",
+                        status=413,
+                    )
+
+                body = self.rfile.read(content_length)
+                result = generate_hybrid_image_request(
+                    self.headers.get("Content-Type", ""),
+                    body,
+                    WEB_ROOT,
+                )
+                self._send_json(result)
+            except HybridImageError as exc:
+                self._send_json({"error": str(exc), "code": exc.code}, status=exc.status)
+            except (ValueError, TypeError) as exc:
+                self._send_json({"error": str(exc), "code": "bad_request"}, status=400)
+
+        def _send_json(self, payload: dict, status: int = 200) -> None:
             body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-            self.send_response(200)
+            self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
@@ -190,6 +329,7 @@ def run_web(args: argparse.Namespace) -> int:
             content_type = mimetypes.guess_type(str(full_path))[0] or "application/octet-stream"
             self.send_response(200)
             self.send_header("Content-Type", content_type)
+            self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -213,6 +353,33 @@ def _parse_int(value: str, fallback: int) -> int:
         return fallback
 
 
+def _parse_content_length(value: str) -> int:
+    try:
+        return max(int(value), 0)
+    except ValueError:
+        return 0
+
+
+def _resolve_og_image(config: ScannerConfig, name: str, symbol: str) -> str:
+    return _resolve_token_image(config, name=name, symbol=symbol)
+
+
+def _resolve_token_image(config: ScannerConfig, name: str, symbol: str) -> str:
+    key = f"{name.strip().lower()}:{symbol.strip().lower()}"
+    if not key.strip(":"):
+        return ""
+    if key not in OG_IMAGE_CACHE:
+        try:
+            OG_IMAGE_CACHE[key] = resolve_token_image(
+                config=config,
+                name=name,
+                symbol=symbol,
+            )
+        except RuntimeError:
+            OG_IMAGE_CACHE[key] = ""
+    return OG_IMAGE_CACHE[key]
+
+
 def _default_host() -> str:
     return os.getenv("HOST", "127.0.0.1")
 
@@ -223,6 +390,7 @@ def _default_port() -> int:
 
 def main() -> int:
     _configure_stdout()
+    _load_env_file(PROJECT_ROOT / ".env")
     parser = build_parser()
     args = parser.parse_args()
 
@@ -242,6 +410,21 @@ def _configure_stdout() -> None:
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
+
+
+def _load_env_file(path: Path) -> None:
+    if not path.exists():
+        return
+
+    for raw_line in path.read_text(encoding="utf-8-sig").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and not os.environ.get(key):
+            os.environ[key] = value
 
 
 if __name__ == "__main__":

@@ -9,8 +9,8 @@ from typing import Any
 @dataclass
 class SourceConfig:
     name: str = "dexscreener"
-    max_candidate_tokens: int = 500
-    max_search_pairs: int = 500
+    max_candidate_tokens: int = 2000
+    max_search_pairs: int = 2000
     search_terms: list[str] = field(
         default_factory=lambda: [
             "pump",
@@ -39,9 +39,9 @@ class SourceConfig:
 
 @dataclass
 class RiskConfig:
-    max_sell_pressure: float = 1.8
-    min_pair_age_minutes: int = 10
-    min_volume_to_liquidity: float = 0.05
+    max_sell_pressure: float = 2.4
+    min_pair_age_minutes: int = 3
+    min_volume_to_liquidity: float = 0.015
 
 
 @dataclass
@@ -56,10 +56,12 @@ class ScoringConfig:
 
 @dataclass
 class ScannerConfig:
-    chains: list[str] = field(default_factory=lambda: ["solana", "base", "bsc", "ethereum"])
-    min_liquidity_usd: float = 500
+    chains: list[str] = field(default_factory=lambda: ["solana"])
+    min_liquidity_usd: float = 20
+    min_market_cap_usd: float = 10_000
     max_token_age_hours: float = 2160
     request_timeout_seconds: int = 12
+    og_memecoins_path: str = "data/og_memecoins.json"
     source: SourceConfig = field(default_factory=SourceConfig)
     risk: RiskConfig = field(default_factory=RiskConfig)
     scoring: ScoringConfig = field(default_factory=ScoringConfig)

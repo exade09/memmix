@@ -3,3 +3,15 @@ __pycache__/
 .env
 config.json
 logs/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.DS_Store
+Thumbs.db
+*.log
+build/
+dist/
+data/solana_live_tokens.json
+image_merge_app/

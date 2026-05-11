@@ -1,6 +1,7 @@
-# Axiom AI Scanner
+# Axiom Meme Lab
 
-CLI scanner for finding currently hyped on-chain tokens using public market data.
+CLI scanner and web dashboard for finding currently hyped on-chain tokens, then
+mixing those trends with OG meme coins into draft meme narratives.
 
 Important: this tool ranks tokens by liquidity, volume, transactions, price momentum,
 age, boosts, and risk flags. It does not guarantee profit and should not be treated
@@ -28,6 +29,9 @@ axiom_ai_scanner/
     analysis/
       scoring.py                  # Hype/opportunity/risk scoring
       local_ai.py                 # Local AI-like explanation layer
+      narratives.py               # Meme narrative and visual remix briefs
+      image_generation.py         # Optional OpenAI image generation bridge
+      wavespeed_hybrid.py         # WaveSpeed two-image hybrid generator
     sources/
       base.py                     # Source interface
       dexscreener.py              # DexScreener source adapter
@@ -36,6 +40,15 @@ axiom_ai_scanner/
 ```
 
 ## Quick start
+
+Install dependencies once:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+The same commands work on Windows, macOS, and Linux as long as Python 3.10+
+is installed.
 
 ```powershell
 cd axiom_ai_scanner
@@ -54,13 +67,88 @@ Then open:
 http://127.0.0.1:8080
 ```
 
-The dashboard shows token images when the market data provider returns them.
+The dashboard shows token images when the market data provider returns them. It
+also includes a Meme Lab panel that blends each trend token with an OG meme coin
+and produces:
+
+- a mixed meme name and ticker,
+- a short narrative draft,
+- a reference-based image remix brief,
+- a Hybrid Studio link for turning the two token images into one artwork,
+- a generated image when `OPENAI_API_KEY` is set.
+
 Tokens are grouped by signal:
 
 - `HOT`: strongest current metrics with no active risk flags.
 - `WATCH`: good metrics, but not as clean or strong as HOT.
 - `POTENTIAL`: weaker but still interesting candidates for manual review.
-- `SPECULATIVE`: low-confidence ideas with higher risk or weaker data.
+- `SPECULATIVE`: looser-filter finds that need extra caution.
+
+## Image generation
+
+Hybrid Studio uses WaveSpeed Seedream V4.5 Edit. Each narrative card has a
+`Hybrid studio` button that opens `/hybrid.html` with the trend token image, OG
+token image, and prompt already filled in. You can also open `/hybrid.html`
+directly and choose any two local images from your computer.
+
+Before upload, the backend normalizes images with Pillow into RGB PNG files.
+This avoids common provider rejections caused by alpha channels, unusual image
+metadata, tiny inputs, or unsupported local formats.
+
+If Seedream V4.5 Edit rejects a specific image or prompt, the backend retries
+with a safer prompt on Seedream V4.5 Edit and then falls back to Seedream V4 Edit.
+
+Set a WaveSpeed API key before starting the web server:
+
+```powershell
+Set-Content .env "WAVESPEED_API_KEY=your-key"
+python main.py web --port 8080 --limit 100
+```
+
+For fallback across multiple WaveSpeed accounts, use a comma-separated list:
+
+```powershell
+Set-Content .env "WAVESPEED_API_KEYS=first-key,second-key"
+python main.py web --port 8080 --limit 100
+```
+
+Optional settings:
+
+```powershell
+$env:WAVESPEED_IMAGE_SIZE="1024*1024"
+$env:WAVESPEED_TIMEOUT_SECONDS="120"
+$env:WAVESPEED_SYNC_MODE="true"
+$env:WAVESPEED_POLL_INTERVAL_SECONDS="1.0"
+```
+
+Hybrid generation events are written to `logs/hybrid.log` without API keys.
+
+Latency notes:
+
+- the backend normalizes both inputs in parallel,
+- both images upload to WaveSpeed in parallel,
+- sync mode is enabled by default so completed results can come back directly,
+- if polling is needed, the default interval is 1 second.
+
+The image button uses the trend token image as the primary reference and the OG
+meme image as a secondary remix reference. This is designed for cases like
+keeping an `Aliens` mascot recognizable while adding an antivirus mask, floating
+virus particles, or a changed background from another coin's theme.
+
+Set an API key before starting the web server:
+
+```powershell
+Set-Content .env "OPENAI_API_KEY=sk-..."
+python main.py web --port 8080 --limit 100
+```
+
+Optional settings:
+
+```powershell
+$env:OPENAI_RESPONSES_MODEL="gpt-5.5"
+$env:OPENAI_IMAGE_SIZE="1024x1024"
+$env:OPENAI_IMAGE_QUALITY="medium"
+```
 
 ## Free hosting on Render
 
@@ -79,6 +167,18 @@ python main.py web --host 0.0.0.0 --limit 100
 ```
 
 Render provides the public HTTPS URL after the first deploy.
+
+## GitHub checklist
+
+Before pushing:
+
+```powershell
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests
+git status --short
+```
+
+Keep secrets in `.env` only. Commit `.env.example`, not `.env`.
 
 Watch mode:
 
@@ -109,12 +209,24 @@ python main.py scan --config config.json
 
 Useful fields:
 
-- `chains`: chain IDs to scan, for example `solana`, `bsc`, `ethereum`.
-- `min_liquidity_usd`: filters very thin pairs.
+- `chains`: chain IDs to scan. The default setup keeps this to `solana`.
+- `min_liquidity_usd`: filters very thin pairs. Default is intentionally loose.
+- `min_market_cap_usd`: keeps the visible set at or above the target market cap.
 - `max_token_age_hours`: focuses on fresh launches.
+- `og_memecoins_path`: JSON file used by the narrative mixer.
 - `source.search_terms`: extra DexScreener search terms used to find more potential tokens.
 - `risk.max_sell_pressure`: flags tokens where sells dominate buys.
 - `scoring`: weights for the ranking formula.
+
+## OG meme list
+
+Edit `data/og_memecoins.json` or paste lines into the web panel:
+
+```text
+Dogecoin,DOGE,original dog money
+Pepe,PEPE,frog meta and internet lore
+Bonk,BONK,Solana dog energy
+```
 
 ## Notes
 

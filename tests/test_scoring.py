@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import unittest
 
+from axiom_scanner.analysis.narratives import generate_narratives, normalize_og_memecoins
 from axiom_scanner.analysis.scoring import rank_tokens
 from axiom_scanner.config import ScannerConfig
 from axiom_scanner.models import TokenSnapshot
+from axiom_scanner.sources.dexscreener import _passes_basic_filters
 
 
 class ScoringTests(unittest.TestCase):
@@ -65,6 +67,59 @@ class ScoringTests(unittest.TestCase):
         ranked = rank_tokens([token], config)
 
         self.assertIn("sell_pressure", ranked[0].risk_flags)
+
+    def test_market_cap_filter_rejects_small_tokens(self) -> None:
+        config = ScannerConfig(min_market_cap_usd=500_000)
+        token = TokenSnapshot(
+            source="test",
+            chain_id="solana",
+            token_address="small",
+            symbol="SMALL",
+            name="Small",
+            liquidity_usd=50_000,
+            market_cap=120_000,
+        )
+
+        self.assertFalse(_passes_basic_filters(token, config))
+
+    def test_narrative_generator_blends_trend_with_og_token(self) -> None:
+        trend = {
+            "token": "AXIOM",
+            "name": "Axiom Trend",
+            "signal": "HOT",
+            "score": 88.2,
+            "market_cap": 1_200_000,
+            "volume_1h": 240_000,
+            "price_change_1h": 31,
+        }
+        og_tokens = normalize_og_memecoins(["Pepe,PEPE,frog meta"])
+
+        narratives = generate_narratives([trend], og_tokens, limit=1)
+
+        self.assertEqual(len(narratives), 1)
+        self.assertEqual(narratives[0]["og_token"], "PEPE")
+        self.assertIn("image_prompt", narratives[0])
+        self.assertIn("visual_modifiers", narratives[0])
+
+    def test_duplicate_symbols_can_remain_when_names_differ(self) -> None:
+        og_tokens = normalize_og_memecoins(["Wen,WEN", "WenWenCoin,WEN"])
+
+        self.assertEqual(len(og_tokens), 2)
+
+    def test_speculative_tokens_can_still_feed_narratives(self) -> None:
+        trend = {
+            "token": "ALIENS",
+            "name": "Aliens are real",
+            "signal": "SPECULATIVE",
+            "score": 18,
+            "image_url": "https://example.com/aliens.png",
+        }
+        og_tokens = normalize_og_memecoins(["AIntivirus,AINTI,AI security pun"])
+
+        narratives = generate_narratives([trend], og_tokens, limit=1)
+
+        self.assertEqual(len(narratives), 1)
+        self.assertIn("trend_image_url", narratives[0])
 
 
 if __name__ == "__main__":

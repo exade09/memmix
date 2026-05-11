@@ -1,17 +1,27 @@
 const tokenGrid = document.querySelector("#tokenGrid");
 const emptyState = document.querySelector("#emptyState");
 const scanButton = document.querySelector("#scanButton");
+const narrativeButton = document.querySelector("#narrativeButton");
 const limitInput = document.querySelector("#limitInput");
 const refreshInput = document.querySelector("#refreshInput");
+const ogInput = document.querySelector("#ogInput");
+const ogPreview = document.querySelector("#ogPreview");
 const statusText = document.querySelector("#statusText");
 const foundCount = document.querySelector("#foundCount");
 const hotCount = document.querySelector("#hotCount");
 const updatedAt = document.querySelector("#updatedAt");
+const narrativeGrid = document.querySelector("#narrativeGrid");
+const narrativeCount = document.querySelector("#narrativeCount");
+const mcapLabel = document.querySelector("#mcapLabel");
 
 let refreshTimer = null;
+let currentTokens = [];
+let currentOgTokens = [];
+let currentNarratives = [];
 
 function money(value) {
   const number = Number(value || 0);
+  if (number >= 1_000_000_000) return `$${(number / 1_000_000_000).toFixed(2)}B`;
   if (number >= 1_000_000) return `$${(number / 1_000_000).toFixed(2)}M`;
   if (number >= 1_000) return `$${(number / 1_000).toFixed(1)}K`;
   return `$${number.toFixed(0)}`;
@@ -36,10 +46,10 @@ function signalClass(signal) {
 
 function signalTitle(signal) {
   const titles = {
-    HOT: "HOT - самые сильные",
-    WATCH: "WATCH - хорошие кандидаты",
-    POTENTIAL: "POTENTIAL - потенциально интересные",
-    SPECULATIVE: "SPECULATIVE - высокий риск",
+    HOT: "HOT - strongest now",
+    WATCH: "WATCH - solid candidates",
+    POTENTIAL: "POTENTIAL - needs manual review",
+    SPECULATIVE: "SPECULATIVE - loose filter finds",
   };
   return titles[signal] || signal;
 }
@@ -53,12 +63,28 @@ function shortAddress(address) {
   return `${address.slice(0, 6)}...${address.slice(-6)}`;
 }
 
-function imageMarkup(token) {
+function fallbackImageUrl(token) {
+  const label = String(token.token || token.symbol || token.name || "?")
+    .slice(0, 6)
+    .toUpperCase();
+  const hue = [...label].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 360;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+      <rect width="120" height="120" rx="16" fill="hsl(${hue} 72% 18%)"/>
+      <circle cx="92" cy="24" r="24" fill="hsl(${(hue + 82) % 360} 80% 48%)" opacity=".75"/>
+      <circle cx="24" cy="96" r="30" fill="hsl(${(hue + 170) % 360} 76% 54%)" opacity=".5"/>
+      <text x="60" y="69" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="800" fill="#f6f8f7">${escapeHtml(label)}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function imageMarkup(token, className = "token-image") {
+  const fallback = fallbackImageUrl(token);
   if (token.image_url) {
-    return `<img class="token-image" src="${escapeHtml(token.image_url)}" alt="${escapeHtml(token.token)} logo" loading="lazy" referrerpolicy="no-referrer" />`;
+    return `<img class="${className}" src="${escapeHtml(token.image_url)}" alt="${escapeHtml(token.token || token.symbol || token.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${escapeHtml(fallback)}';" />`;
   }
-  const letter = String(token.token || "?").slice(0, 1).toUpperCase();
-  return `<div class="fallback-image" aria-label="Нет картинки">${escapeHtml(letter)}</div>`;
+  return `<img class="${className}" src="${escapeHtml(fallback)}" alt="${escapeHtml(token.token || token.symbol || token.name)}" loading="lazy" />`;
 }
 
 function risksMarkup(risks) {
@@ -68,6 +94,7 @@ function risksMarkup(risks) {
 
 function tokenCard(token) {
   const signal = signalClass(token.signal);
+  const marketCap = Number(token.market_cap || token.fdv || 0);
   return `
     <article class="token-card">
       <div class="card-main">
@@ -85,6 +112,10 @@ function tokenCard(token) {
 
       <div class="metrics">
         <div class="metric">
+          <span>Market cap</span>
+          <strong>${money(marketCap)}</strong>
+        </div>
+        <div class="metric">
           <span>Liquidity</span>
           <strong>${money(token.liquidity_usd)}</strong>
         </div>
@@ -99,10 +130,6 @@ function tokenCard(token) {
         <div class="metric">
           <span>Txns 1h</span>
           <strong>${Number(token.txns_1h || 0).toLocaleString()}</strong>
-        </div>
-        <div class="metric">
-          <span>Buys / Sells</span>
-          <strong>${Number(token.buys_1h || 0)} / ${Number(token.sells_1h || 0)}</strong>
         </div>
         <div class="metric">
           <span>Age</span>
@@ -122,10 +149,11 @@ function tokenCard(token) {
 }
 
 function renderGroupedTokens(tokens) {
+  const visibleTokens = tokens.filter((token) => String(token.chain || "").toLowerCase() === "solana");
   const signals = ["HOT", "WATCH", "POTENTIAL", "SPECULATIVE"];
   return signals
     .map((signal) => {
-      const group = tokens.filter((token) => token.signal === signal);
+      const group = visibleTokens.filter((token) => token.signal === signal);
       if (group.length === 0) return "";
       return `
         <section class="signal-section">
@@ -142,6 +170,112 @@ function renderGroupedTokens(tokens) {
     .join("");
 }
 
+function narrativeCard(item, index) {
+  const trendToken = currentTokens.find((token) => token.token === item.trend_token) || {};
+  const ogToken = currentOgTokens.find(
+    (token) => token.symbol === item.og_token && token.name === item.og_name,
+  ) || { name: item.og_name, symbol: item.og_token, image_url: item.og_image_url };
+  const hybridUrl = hybridStudioUrl(item, trendToken, ogToken);
+  return `
+    <article class="narrative-card" data-index="${index}">
+      <div class="reference-strip">
+        ${imageMarkup(trendToken, "reference-image")}
+        <span class="mix-plus">+</span>
+        ${imageMarkup(ogToken, "reference-image")}
+      </div>
+      <div class="narrative-body">
+        <div class="narrative-topline">
+          <h3>${escapeHtml(item.name)}</h3>
+          <span>$${escapeHtml(item.ticker)}</span>
+        </div>
+        <p class="hook">${escapeHtml(item.hook)}</p>
+        <p>${escapeHtml(item.visual_brief || item.narrative)}</p>
+        <div class="narrative-stats">
+          <span>Base: ${escapeHtml(item.trend_token)}</span>
+          <span>Remix: ${escapeHtml(item.og_token)}</span>
+          <span>1h: ${percent(item.change_1h)}</span>
+        </div>
+        <div class="generated-slot" hidden></div>
+        <div class="narrative-actions">
+          <a class="hybrid-studio-button" href="${escapeHtml(hybridUrl)}">
+            Hybrid studio
+          </a>
+          <button class="generate-image-button" type="button" data-index="${index}">
+            Generate image
+          </button>
+          <details>
+            <summary>Generation brief</summary>
+            <p class="prompt-text">${escapeHtml(item.image_prompt)}</p>
+          </details>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function hybridStudioUrl(item, trendToken, ogToken) {
+  const params = new URLSearchParams();
+  const trendImageUrl = trendToken.image_url || item.trend_image_url || "";
+  const ogImageUrl = ogToken.image_url || item.og_image_url || "";
+  const trendLabel = [trendToken.token || item.trend_token, trendToken.name]
+    .filter(Boolean)
+    .join(" - ");
+  const ogLabel = [ogToken.symbol || item.og_token, ogToken.name || item.og_name]
+    .filter(Boolean)
+    .join(" - ");
+
+  params.set("image_a_url", trendImageUrl);
+  params.set("image_b_url", ogImageUrl);
+  params.set("image_a_label", trendLabel || "Trend token");
+  params.set("image_b_label", ogLabel || "OG token");
+  params.set("prompt", item.image_prompt || item.visual_brief || item.narrative || "");
+  params.set("title", item.name || "");
+  params.set("ticker", item.ticker ? `$${item.ticker}` : "");
+  return `/hybrid.html?${params.toString()}`;
+}
+
+function renderNarratives(narratives) {
+  currentNarratives = narratives;
+  narrativeGrid.innerHTML = narratives.map(narrativeCard).join("");
+  narrativeCount.textContent = String(narratives.length);
+}
+
+function renderOgPreview(tokens) {
+  ogPreview.innerHTML = tokens
+    .map(
+      (token, index) => `
+        <div class="og-chip" data-index="${index}">
+          ${imageMarkup(token, "og-chip-image")}
+          <span>${escapeHtml(token.symbol || token.name)}</span>
+        </div>
+      `,
+    )
+    .join("");
+}
+
+function formatOgList(tokens) {
+  return (tokens || [])
+    .map((token) =>
+      [token.name || token.symbol, token.symbol || "", token.archetype || ""].join(","),
+    )
+    .join("\n");
+}
+
+function parseOgList(value) {
+  return String(value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, symbol, archetype] = line.split(/[,|;]/).map((part) => part.trim());
+      return {
+        name,
+        symbol: symbol || name,
+        archetype: archetype || "classic meme energy",
+      };
+    });
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -152,30 +286,126 @@ function escapeHtml(value) {
 }
 
 async function loadScan() {
-  const limit = Math.min(Math.max(Number(limitInput.value || 100), 1), 100);
+  const limit = Math.max(Number(limitInput.value || 0), 0);
   scanButton.disabled = true;
-  statusText.textContent = "Сканирую рынок...";
+  statusText.textContent = "Scanning trends...";
 
   try {
-    const response = await fetch(`/api/scan?limit=${limit}`, { cache: "no-store" });
+    const query = limit > 0 ? `?limit=${encodeURIComponent(limit)}` : "";
+    const response = await fetch(`/api/scan${query}`, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const payload = await response.json();
-    const tokens = payload.tokens || [];
+    const tokens = (payload.tokens || []).filter(
+      (token) => String(token.chain || "").toLowerCase() === "solana",
+    );
+    currentTokens = tokens;
+    currentOgTokens = payload.og_memecoins || [];
     tokenGrid.innerHTML = renderGroupedTokens(tokens);
+    renderOgPreview(currentOgTokens);
+    renderNarratives(payload.narratives || []);
+    resolveOgImages(currentOgTokens);
+    if (!ogInput.value.trim()) ogInput.value = formatOgList(currentOgTokens);
     emptyState.hidden = tokens.length !== 0;
     foundCount.textContent = String(tokens.length);
     hotCount.textContent = String(tokens.filter((token) => token.signal === "HOT").length);
     updatedAt.textContent = payload.updated_at || "-";
-    statusText.textContent = "Данные обновлены";
+    mcapLabel.textContent = `Found above ${money(payload.min_market_cap_usd)} mcap`;
+    statusText.textContent = "Data updated";
   } catch (error) {
-    statusText.textContent = "Ошибка скана";
+    statusText.textContent = "Scan error";
     tokenGrid.innerHTML = "";
+    renderNarratives([]);
     emptyState.hidden = false;
-    emptyState.querySelector("h2").textContent = "Не удалось загрузить данные";
+    emptyState.querySelector("h2").textContent = "Could not load market data";
     emptyState.querySelector("p").textContent = String(error.message || error);
   } finally {
     scanButton.disabled = false;
+  }
+}
+
+async function resolveOgImages(tokens) {
+  const queue = tokens.filter((token) => !token.image_url).slice(0, 75);
+  for (const token of queue) {
+    try {
+      const url = `/api/og-image?name=${encodeURIComponent(token.name || "")}&symbol=${encodeURIComponent(token.symbol || "")}`;
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) continue;
+      const payload = await response.json();
+      if (!payload.image_url) continue;
+      token.image_url = payload.image_url;
+      currentNarratives = currentNarratives.map((item) =>
+        item.og_name === token.name && item.og_token === token.symbol
+          ? { ...item, og_image_url: token.image_url }
+          : item,
+      );
+      renderOgPreview(currentOgTokens);
+      renderNarratives(currentNarratives);
+    } catch (error) {
+      // Missing OG art should not interrupt the scanner.
+    }
+  }
+}
+
+async function generateNarrativesFromInput() {
+  narrativeButton.disabled = true;
+  statusText.textContent = "Blending narratives...";
+
+  try {
+    const response = await fetch("/api/narratives", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tokens: currentTokens,
+        og_memecoins: parseOgList(ogInput.value),
+        limit: 30,
+      }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    renderNarratives(payload.narratives || []);
+    statusText.textContent = "Narratives ready";
+  } catch (error) {
+    statusText.textContent = "Generation error";
+  } finally {
+    narrativeButton.disabled = false;
+  }
+}
+
+async function generateImage(index) {
+  const narrative = currentNarratives[index];
+  if (!narrative) return;
+  const card = narrativeGrid.querySelector(`[data-index="${index}"]`);
+  const button = card?.querySelector(".generate-image-button");
+  const slot = card?.querySelector(".generated-slot");
+  const token = currentTokens.find((item) => item.token === narrative.trend_token) || {};
+  const og = currentOgTokens.find(
+    (item) => item.name === narrative.og_name && item.symbol === narrative.og_token,
+  ) || { name: narrative.og_name, symbol: narrative.og_token, image_url: narrative.og_image_url };
+  if (!button || !slot) return;
+
+  button.disabled = true;
+  button.textContent = "Generating...";
+  slot.hidden = false;
+  slot.textContent = "Creating reference-based remix...";
+
+  try {
+    const response = await fetch("/api/generate-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ narrative, token, og }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+    slot.innerHTML = `<img class="generated-image" src="${escapeHtml(payload.image_data_url)}" alt="${escapeHtml(narrative.name)} generated meme" />`;
+    button.textContent = "Regenerate";
+    statusText.textContent = "Image ready";
+  } catch (error) {
+    slot.textContent = String(error.message || error);
+    button.textContent = "Generate image";
+    statusText.textContent = "Image generation needs attention";
+  } finally {
+    button.disabled = false;
   }
 }
 
@@ -198,7 +428,14 @@ tokenGrid.addEventListener("click", async (event) => {
   }, 900);
 });
 
+narrativeGrid.addEventListener("click", (event) => {
+  const button = event.target.closest(".generate-image-button");
+  if (!button) return;
+  generateImage(Number(button.dataset.index));
+});
+
 scanButton.addEventListener("click", loadScan);
+narrativeButton.addEventListener("click", generateNarrativesFromInput);
 refreshInput.addEventListener("change", scheduleRefresh);
 
 scheduleRefresh();

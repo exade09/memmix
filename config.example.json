@@ -1,18 +1,20 @@
 {
-  "chains": ["solana", "base", "bsc", "ethereum"],
-  "min_liquidity_usd": 500,
+  "chains": ["solana"],
+  "min_liquidity_usd": 20,
+  "min_market_cap_usd": 10000,
   "max_token_age_hours": 2160,
+  "og_memecoins_path": "data/og_memecoins.json",
   "request_timeout_seconds": 12,
   "source": {
     "name": "dexscreener",
-    "max_candidate_tokens": 500,
-    "max_search_pairs": 500,
+    "max_candidate_tokens": 2000,
+    "max_search_pairs": 2000,
     "search_terms": ["pump", "meme", "ai", "agent", "dog", "cat", "pepe", "moon", "cto", "solana", "trump", "viral", "new", "bonk", "frog", "fart", "chill", "baby", "official", "coin"]
   },
   "risk": {
-    "max_sell_pressure": 1.8,
-    "min_pair_age_minutes": 10,
-    "min_volume_to_liquidity": 0.05
+    "max_sell_pressure": 2.4,
+    "min_pair_age_minutes": 3,
+    "min_volume_to_liquidity": 0.015
   },
   "scoring": {
     "volume_weight": 0.28,
