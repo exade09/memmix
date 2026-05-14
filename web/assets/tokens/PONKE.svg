@@ -1,4 +1,4 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ponke token art">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ponke token art">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="hsl(21 78% 16%)"/>
@@ -12,9 +12,9 @@
   <rect width="512" height="512" rx="56" fill="url(#bg)"/>
   <circle cx="402" cy="96" r="92" fill="hsl(95 92% 58%)" opacity=".82"/>
   <circle cx="96" cy="404" r="118" fill="hsl(189 90% 62%)" opacity=".55"/>
-  <path d="M58 165 C135 94 202 226 278 154 C344 91 405 146 454 94" fill="none" stroke="#41e28b" stroke-width="18" stroke-linecap="round" opacity=".82"/>
+  <path d="M58 165 C135 94 202 226 278 154 C344 91 405 146 454 94" fill="none" stroke="#a855f7" stroke-width="18" stroke-linecap="round" opacity=".82"/>
   <rect x="72" y="134" width="368" height="244" rx="38" fill="#0f1412" opacity=".82" filter="url(#shadow)"/>
-  <text x="256" y="206" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="900" fill="#6ed7ff">SOL</text>
+  <text x="256" y="206" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="900" fill="#67e8f9">SOL</text>
   <text x="256" y="286" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900" fill="#f6f8f7">PONKE</text>
   <text x="256" y="336" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="800" fill="#e8c44f">ROUGH MASCOT</text>
   <text x="256" y="438" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="900" fill="#f6f8f7">SOLANA MEME</text>

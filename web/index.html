@@ -3,28 +3,35 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Axiom Meme Lab</title>
+    <title>DegenMixer</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <main class="shell">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">Axiom trends + OG meme mix</p>
-          <h1>Axiom Meme Lab</h1>
+        <div class="brand-lockup">
+          <img
+            class="antagonist-mark"
+            src="/assets/degen.png"
+            alt="DegenMixer antagonist"
+          />
+          <div class="brand-copy">
+            <p class="eyebrow">Solana trends + OG meme fusion</p>
+            <h1>DegenMixer</h1>
+          </div>
         </div>
         <div class="topbar-actions">
-          <a class="ghost-link" href="/hybrid.html">Hybrid Studio</a>
+          <a class="ghost-link" href="/hybrid.html">Mixer Studio</a>
           <div class="status-panel">
             <span class="pulse" aria-hidden="true"></span>
-            <span id="statusText">Ready to scan</span>
+            <span id="statusText">Ready to mix</span>
           </div>
         </div>
       </header>
 
       <section class="controls" aria-label="Control panel">
         <label class="control">
-          <span>Token limit</span>
+          <span>Mix limit</span>
           <input id="limitInput" type="number" min="1" placeholder="all" />
         </label>
         <label class="control">
@@ -36,12 +43,12 @@
             <option value="120">2 min</option>
           </select>
         </label>
-        <button id="scanButton" class="primary-button" type="button">Refresh</button>
+        <button id="scanButton" class="primary-button" type="button">Remix feed</button>
       </section>
 
-      <section class="summary" aria-label="Scan summary">
+      <section class="summary" aria-label="Mix summary">
         <div>
-          <span class="summary-label" id="mcapLabel">Found above configured mcap</span>
+          <span class="summary-label" id="mcapLabel">Pairs above configured mcap</span>
           <strong id="foundCount">0</strong>
         </div>
         <div>
@@ -49,7 +56,7 @@
           <strong id="hotCount">0</strong>
         </div>
         <div>
-          <span class="summary-label">Last scan</span>
+          <span class="summary-label">Last mix</span>
           <strong id="updatedAt">-</strong>
         </div>
       </section>
@@ -57,8 +64,8 @@
       <section class="lab-layout" aria-label="Meme narrative generator">
         <aside class="meme-panel">
           <div class="panel-heading">
-            <p class="eyebrow">OG list</p>
-            <h2>Meme coins to blend</h2>
+            <p class="eyebrow">OG vault</p>
+            <h2>Meme coins to mix</h2>
           </div>
           <textarea
             id="ogInput"
@@ -66,17 +73,17 @@
             placeholder="Pudgy Penguins,PENGU&#10;Bonk,BONK&#10;Official Trump,TRUMP"
           ></textarea>
           <button id="narrativeButton" class="secondary-button" type="button">
-            Generate narratives
+            Mix narratives
           </button>
           <div id="ogPreview" class="og-preview" aria-label="OG meme coin image list"></div>
           <p class="panel-note">
-            Image generation uses the trend token image as the base reference and the OG token image as the remix reference.
+            DegenMixer uses the trend token image as the base reference and the OG token image as the remix reference.
           </p>
         </aside>
 
         <section class="narrative-panel">
           <div class="section-heading">
-            <h2>AI narrative drafts</h2>
+            <h2>Degen narrative drafts</h2>
             <span id="narrativeCount">0</span>
           </div>
           <div id="narrativeGrid" class="narrative-grid"></div>
@@ -86,7 +93,7 @@
       <section id="tokenGrid" class="results-stack" aria-live="polite"></section>
 
       <section id="emptyState" class="empty-state" hidden>
-        <h2>No tokens match the current filters</h2>
+        <h2>No tokens match the current mix</h2>
         <p>Try raising the limit or loosening the settings in config.json.</p>
       </section>
     </main>

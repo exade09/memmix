@@ -46,10 +46,10 @@ function signalClass(signal) {
 
 function signalTitle(signal) {
   const titles = {
-    HOT: "HOT - strongest now",
-    WATCH: "WATCH - solid candidates",
-    POTENTIAL: "POTENTIAL - needs manual review",
-    SPECULATIVE: "SPECULATIVE - loose filter finds",
+    HOT: "HOT - strongest mix",
+    WATCH: "WATCH - solid setups",
+    POTENTIAL: "POTENTIAL - manual review",
+    SPECULATIVE: "SPECULATIVE - loose finds",
   };
   return titles[signal] || signal;
 }
@@ -102,7 +102,7 @@ function tokenCard(token) {
         <div class="token-title">
           <h2>${escapeHtml(token.token)}</h2>
           <p>${escapeHtml(token.name || token.address)}</p>
-          <p>${escapeHtml(token.chain)} · ${escapeHtml(shortAddress(token.address))}</p>
+          <p>${escapeHtml(token.chain)} &middot; ${escapeHtml(shortAddress(token.address))}</p>
         </div>
         <div class="score">
           <span class="badge ${signal}">${escapeHtml(token.signal)}</span>
@@ -198,7 +198,7 @@ function narrativeCard(item, index) {
         <div class="generated-slot" hidden></div>
         <div class="narrative-actions">
           <a class="hybrid-studio-button" href="${escapeHtml(hybridUrl)}">
-            Hybrid studio
+            Mixer studio
           </a>
           <button class="generate-image-button" type="button" data-index="${index}">
             Generate image
@@ -288,7 +288,7 @@ function escapeHtml(value) {
 async function loadScan() {
   const limit = Math.max(Number(limitInput.value || 0), 0);
   scanButton.disabled = true;
-  statusText.textContent = "Scanning trends...";
+  statusText.textContent = "Mixing trends...";
 
   try {
     const query = limit > 0 ? `?limit=${encodeURIComponent(limit)}` : "";
@@ -310,10 +310,10 @@ async function loadScan() {
     foundCount.textContent = String(tokens.length);
     hotCount.textContent = String(tokens.filter((token) => token.signal === "HOT").length);
     updatedAt.textContent = payload.updated_at || "-";
-    mcapLabel.textContent = `Found above ${money(payload.min_market_cap_usd)} mcap`;
-    statusText.textContent = "Data updated";
+    mcapLabel.textContent = `Pairs above ${money(payload.min_market_cap_usd)} mcap`;
+    statusText.textContent = "Mix updated";
   } catch (error) {
-    statusText.textContent = "Scan error";
+    statusText.textContent = "Mix error";
     tokenGrid.innerHTML = "";
     renderNarratives([]);
     emptyState.hidden = false;
@@ -342,14 +342,14 @@ async function resolveOgImages(tokens) {
       renderOgPreview(currentOgTokens);
       renderNarratives(currentNarratives);
     } catch (error) {
-      // Missing OG art should not interrupt the scanner.
+      // Missing OG art should not interrupt the mixer.
     }
   }
 }
 
 async function generateNarrativesFromInput() {
   narrativeButton.disabled = true;
-  statusText.textContent = "Blending narratives...";
+  statusText.textContent = "Mixing narratives...";
 
   try {
     const response = await fetch("/api/narratives", {
@@ -387,7 +387,7 @@ async function generateImage(index) {
   button.disabled = true;
   button.textContent = "Generating...";
   slot.hidden = false;
-  slot.textContent = "Creating reference-based remix...";
+  slot.textContent = "Creating reference-based mix...";
 
   try {
     const response = await fetch("/api/generate-image", {

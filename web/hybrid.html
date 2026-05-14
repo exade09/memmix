@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Axiom Hybrid Studio</title>
+    <title>DegenMixer Studio</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -11,10 +11,10 @@
       <header class="topbar">
         <div>
           <p class="eyebrow">WaveSpeed Seedream V4.5</p>
-          <h1>Hybrid Studio</h1>
+          <h1>DegenMixer Studio</h1>
         </div>
         <div class="topbar-actions">
-          <a class="ghost-link" href="/">Back to tokens</a>
+          <a class="ghost-link" href="/">Back to mixer</a>
           <div class="status-panel">
             <span class="pulse" aria-hidden="true"></span>
             <span id="hybridStatus">Ready</span>
@@ -22,7 +22,7 @@
         </div>
       </header>
 
-      <section class="hybrid-layout" aria-label="Hybrid token image generator">
+      <section class="hybrid-layout" aria-label="DegenMixer token image generator">
         <form id="hybridForm" class="hybrid-panel">
           <input id="imageAUrl" name="image_a_url" type="hidden" />
           <input id="imageBUrl" name="image_b_url" type="hidden" />
@@ -58,20 +58,20 @@
             </label>
 
             <button id="hybridButton" class="primary-button" type="submit">
-              Generate hybrid
+              Mix image
             </button>
           </div>
         </form>
 
         <section class="hybrid-result-panel" aria-live="polite">
           <div class="section-heading">
-            <h2>Result</h2>
+            <h2>Mix result</h2>
             <a id="hybridResultLink" class="ghost-link" href="#" target="_blank" rel="noreferrer" hidden>
               Open
             </a>
           </div>
           <div id="hybridResultSlot" class="hybrid-result-slot">
-            <span>Waiting for generation</span>
+            <span>Waiting for mix</span>
           </div>
         </section>
       </section>

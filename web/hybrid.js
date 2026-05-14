@@ -24,7 +24,7 @@ const uploadableImageTypes = new Set([
   "image/webp",
 ]);
 const defaultPrompt =
-  "Create a coherent hybrid sticker-style character or emblem from these two reference images. Preserve recognizable traits, colors, and shapes from both inputs. Keep the composition clean, high contrast, polished, and centered.";
+  "Create a coherent DegenMixer sticker-style character or emblem from these two reference images. Preserve recognizable traits, colors, and shapes from both inputs. Keep the composition clean, high contrast, polished, and centered.";
 
 function setStatus(text) {
   statusText.textContent = text;
@@ -42,7 +42,7 @@ function setResultImage(url) {
   resultSlot.innerHTML = "";
   const image = document.createElement("img");
   image.src = url;
-  image.alt = "Generated token hybrid";
+  image.alt = "Generated DegenMixer token image";
   resultSlot.append(image);
   resultLink.href = url;
   resultLink.hidden = false;
@@ -96,8 +96,8 @@ async function submitHybrid(event) {
   if (button.disabled) return;
 
   button.disabled = true;
-  setStatus("Generating...");
-  setResultMessage("Creating hybrid...");
+  setStatus("Mixing...");
+  setResultMessage("Creating mix...");
 
   try {
     const formData = await buildHybridFormData();
@@ -111,10 +111,10 @@ async function submitHybrid(event) {
     }
 
     setResultImage(payload.output_url);
-    setStatus("Image ready");
+    setStatus("Mix ready");
   } catch (error) {
-    setResultMessage(error.message || "Failed to generate hybrid.");
-    setStatus("Generation failed");
+    setResultMessage(error.message || "Failed to create mix.");
+    setStatus("Mix failed");
   } finally {
     updateButton();
   }
@@ -227,7 +227,7 @@ function buildProviderFriendlyPrompt(prompt, title, ticker) {
     .trim();
   const narrative = [title, ticker].filter(Boolean).join(" ").trim();
   return [
-    "Create one polished hybrid sticker-style character or emblem from the two reference images.",
+    "Create one polished DegenMixer sticker-style character or emblem from the two reference images.",
     "Preserve recognizable colors, shapes, and visual identity from both references.",
     "Use a clean centered composition, natural lighting, crisp edges, no UI, no tiny text.",
     base,
