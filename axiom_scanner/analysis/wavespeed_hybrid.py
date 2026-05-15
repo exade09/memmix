@@ -270,7 +270,7 @@ def get_wavespeed_api_keys() -> list[str]:
 
 
 def should_try_next_key(exc: HybridImageError) -> bool:
-    if exc.code not in {"wavespeed_error"}:
+    if exc.code not in {"wavespeed_error", "provider_rejected"}:
         return False
 
     message = str(exc).lower()

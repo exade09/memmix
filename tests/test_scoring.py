@@ -4,6 +4,7 @@ import unittest
 
 from axiom_scanner.analysis.narratives import generate_narratives, normalize_og_memecoins
 from axiom_scanner.analysis.scoring import rank_tokens
+from axiom_scanner.analysis.wavespeed_hybrid import HybridImageError, should_try_next_key
 from axiom_scanner.config import ScannerConfig
 from axiom_scanner.models import TokenSnapshot
 from axiom_scanner.sources.dexscreener import _passes_basic_filters
@@ -120,6 +121,15 @@ class ScoringTests(unittest.TestCase):
 
         self.assertEqual(len(narratives), 1)
         self.assertIn("trend_image_url", narratives[0])
+
+    def test_wavespeed_fallback_handles_quota_rejections(self) -> None:
+        error = HybridImageError(
+            "WaveSpeed did not return an output image: insufficient balance",
+            code="provider_rejected",
+            status=502,
+        )
+
+        self.assertTrue(should_try_next_key(error))
 
 
 if __name__ == "__main__":
