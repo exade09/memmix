@@ -37,6 +37,11 @@ axiom_ai_scanner/
       dexscreener.py              # DexScreener source adapter
   tests/
     test_scoring.py               # Basic scoring tests
+  web/
+    index.html                    # Full dashboard and mixer studio page
+    styles.css                    # All dashboard styles
+    app.js                        # All dashboard browser logic
+    assets/                       # Images and token icons
 ```
 
 ## Quick start
@@ -74,7 +79,7 @@ and produces:
 - a mixed meme name and ticker,
 - a short narrative draft,
 - a reference-based image remix brief,
-- a Hybrid Studio link for turning the two token images into one artwork,
+- a Mixer Studio link for turning the two token images into one artwork,
 - a generated image when `OPENAI_API_KEY` is set.
 
 Tokens are grouped by signal:
@@ -86,10 +91,11 @@ Tokens are grouped by signal:
 
 ## Image generation
 
-Hybrid Studio uses WaveSpeed Seedream V4.5 Edit. Each narrative card has a
-`Hybrid studio` button that opens `/hybrid.html` with the trend token image, OG
-token image, and prompt already filled in. You can also open `/hybrid.html`
-directly and choose any two local images from your computer.
+Mixer Studio uses WaveSpeed Seedream V4.5 Edit. Each narrative card has a
+`Mixer studio` button that jumps to the studio section on the same `index.html`
+page with the trend token image, OG token image, and prompt already filled in.
+You can also scroll to the studio section and choose any two local images from
+your computer.
 
 Before upload, the backend normalizes images with Pillow into RGB PNG files.
 This avoids common provider rejections caused by alpha channels, unusual image
