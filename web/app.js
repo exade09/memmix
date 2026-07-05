@@ -67,12 +67,11 @@ function fallbackImageUrl(token) {
   const label = String(token.token || token.symbol || token.name || "?")
     .slice(0, 6)
     .toUpperCase();
-  const hue = [...label].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 360;
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-      <rect width="120" height="120" rx="16" fill="hsl(${hue} 72% 18%)"/>
-      <circle cx="92" cy="24" r="24" fill="hsl(${(hue + 82) % 360} 80% 48%)" opacity=".75"/>
-      <circle cx="24" cy="96" r="30" fill="hsl(${(hue + 170) % 360} 76% 54%)" opacity=".5"/>
+      <rect width="120" height="120" rx="16" fill="#0d1f12"/>
+      <circle cx="92" cy="24" r="24" fill="#39d353" opacity=".75"/>
+      <circle cx="24" cy="96" r="30" fill="#8dff75" opacity=".5"/>
       <text x="60" y="69" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="800" fill="#f6f8f7">${escapeHtml(label)}</text>
     </svg>
   `;
@@ -463,7 +462,7 @@ const uploadableImageTypes = new Set([
   "image/webp",
 ]);
 const defaultPrompt =
-  "Create a coherent DegenMixer sticker-style character or emblem from these two reference images. Preserve recognizable traits, colors, and shapes from both inputs. Keep the composition clean, high contrast, polished, and centered.";
+  "Create a coherent Meme Mixer sticker-style character or emblem from these two reference images. Preserve recognizable traits, colors, and shapes from both inputs. Keep the composition clean, high contrast, polished, and centered.";
 
 function setHybridStatus(text) {
   hybridStatusText.textContent = text;
@@ -481,7 +480,7 @@ function setHybridResultImage(url) {
   hybridResultSlot.innerHTML = "";
   const image = document.createElement("img");
   image.src = url;
-  image.alt = "Generated DegenMixer token image";
+  image.alt = "Generated Meme Mixer token image";
   hybridResultSlot.append(image);
   hybridResultLink.href = url;
   hybridResultLink.hidden = false;
@@ -673,7 +672,7 @@ function buildProviderFriendlyPrompt(prompt, title, ticker) {
     .trim();
   const narrative = [title, ticker].filter(Boolean).join(" ").trim();
   return [
-    "Create one polished DegenMixer sticker-style character or emblem from the two reference images.",
+    "Create one polished Meme Mixer sticker-style character or emblem from the two reference images.",
     "Preserve recognizable colors, shapes, and visual identity from both references.",
     "Use a clean centered composition, natural lighting, crisp edges, no UI, no tiny text.",
     narrative,
