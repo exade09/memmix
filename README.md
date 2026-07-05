@@ -85,6 +85,9 @@ Recommended Vercel settings:
 - Output Directory: leave empty
 - Install Command: leave default so `requirements.txt` is installed
 
+Python runtime is pinned for Vercel with `.python-version` and
+`pyproject.toml` to avoid implicit runtime selection during builds.
+
 Optional environment variables:
 
 - `OPENAI_API_KEY`: enables narrative card image generation.
