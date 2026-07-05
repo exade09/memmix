@@ -1,0 +1,60 @@
+{
+  "functions": {
+    "api/*.py": {
+      "maxDuration": 60
+    }
+  },
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/og-image",
+      "destination": "/api/og_image.py"
+    },
+    {
+      "source": "/api/generate-image",
+      "destination": "/api/generate_image.py"
+    },
+    {
+      "source": "/api/hybrid-image",
+      "destination": "/api/hybrid_image.py"
+    },
+    {
+      "source": "/api/scan",
+      "destination": "/api/scan.py"
+    },
+    {
+      "source": "/api/og",
+      "destination": "/api/og.py"
+    },
+    {
+      "source": "/api/narratives",
+      "destination": "/api/narratives.py"
+    },
+    {
+      "source": "/assets/:path*",
+      "destination": "/web/assets/:path*"
+    },
+    {
+      "source": "/styles.css",
+      "destination": "/web/styles.css"
+    },
+    {
+      "source": "/app.js",
+      "destination": "/web/app.js"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/web/index.html"
+    }
+  ]
+}

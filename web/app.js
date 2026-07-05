@@ -461,6 +461,8 @@ const uploadableImageTypes = new Set([
   "image/tiff",
   "image/webp",
 ]);
+const maxVercelUploadBytes = 3_500_000;
+const maxUploadImageSide = 1400;
 const defaultPrompt =
   "Create a coherent Meme Mixer sticker-style character or emblem from these two reference images. Preserve recognizable traits, colors, and shapes from both inputs. Keep the composition clean, high contrast, polished, and centered.";
 
@@ -568,7 +570,8 @@ async function buildHybridFormData() {
 async function setImageField(formData, fieldName, fileInput, urlInput) {
   const file = fileInput.files?.[0];
   if (file) {
-    formData.set(fieldName, file, file.name || `${fieldName}.png`);
+    const upload = await uploadableBlobFromFile(file, fieldName);
+    formData.set(fieldName, upload.blob, upload.filename);
     return;
   }
 
@@ -579,6 +582,35 @@ async function setImageField(formData, fieldName, fileInput, urlInput) {
   if (blob) {
     formData.set(fieldName, blob, `${fieldName}.png`);
   }
+}
+
+async function uploadableBlobFromFile(file, fieldName) {
+  if (file.size <= maxVercelUploadBytes && uploadableImageTypes.has(file.type)) {
+    return { blob: file, filename: file.name || `${fieldName}.png` };
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await loadImage(objectUrl);
+    const scale = Math.min(1, maxUploadImageSide / Math.max(image.naturalWidth, image.naturalHeight, 1));
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.drawImage(image, 0, 0, width, height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.86));
+    if (blob && blob.size < file.size) {
+      return { blob, filename: `${fieldName}.jpg` };
+    }
+  } catch (error) {
+    // If the browser cannot decode it, let the backend validate the original file.
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+
+  return { blob: file, filename: file.name || `${fieldName}.png` };
 }
 
 async function uploadableBlobFromUrl(url) {

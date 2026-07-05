@@ -72,6 +72,27 @@ Then open:
 http://127.0.0.1:8080
 ```
 
+## Deploy to Vercel
+
+The repository is ready to deploy as a Vercel project from the repo root. Vercel
+serves the dashboard from `web/` and the Python serverless API from `api/`.
+
+Recommended Vercel settings:
+
+- Framework Preset: Other
+- Build Command: leave empty
+- Output Directory: leave empty
+- Install Command: leave default so `requirements.txt` is installed
+
+Optional environment variables:
+
+- `OPENAI_API_KEY`: enables narrative card image generation.
+- `WAVESPEED_API_KEY` or `WAVESPEED_API_KEYS`: enables Mixer Studio hybrid images.
+- `WAVESPEED_TIMEOUT_SECONDS`: optional, defaults to `120`.
+
+If live DexScreener requests fail in a serverless function, `/api/scan` falls back
+to bundled Solana meme data so the dashboard still renders.
+
 The dashboard shows token images when the market data provider returns them. It
 also includes a Meme Lab panel that blends each trend token with an OG meme coin
 and produces:
