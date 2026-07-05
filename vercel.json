@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/*.py": {
+    "api/index.py": {
       "maxDuration": 60
     }
   },
@@ -17,28 +17,8 @@
   ],
   "rewrites": [
     {
-      "source": "/api/og-image",
-      "destination": "/api/og_image.py"
-    },
-    {
-      "source": "/api/generate-image",
-      "destination": "/api/generate_image.py"
-    },
-    {
-      "source": "/api/hybrid-image",
-      "destination": "/api/hybrid_image.py"
-    },
-    {
-      "source": "/api/scan",
-      "destination": "/api/scan.py"
-    },
-    {
-      "source": "/api/og",
-      "destination": "/api/og.py"
-    },
-    {
-      "source": "/api/narratives",
-      "destination": "/api/narratives.py"
+      "source": "/api/:path*",
+      "destination": "/api/index.py"
     },
     {
       "source": "/assets/:path*",

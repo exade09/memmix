@@ -75,7 +75,8 @@ http://127.0.0.1:8080
 ## Deploy to Vercel
 
 The repository is ready to deploy as a Vercel project from the repo root. Vercel
-serves the dashboard from `web/` and the Python serverless API from `api/`.
+serves the dashboard from `web/` and routes the Python serverless API through
+`api/index.py`.
 
 Recommended Vercel settings:
 
@@ -94,7 +95,7 @@ If live DexScreener requests fail in a serverless function, `/api/scan` falls ba
 to bundled Solana meme data so the dashboard still renders.
 
 Vercel ignores the local CLI entrypoint `main.py`; production routes use the
-serverless handlers in `api/`.
+single explicit Python entrypoint configured in `pyproject.toml`.
 
 The dashboard shows token images when the market data provider returns them. It
 also includes a Meme Lab panel that blends each trend token with an OG meme coin
