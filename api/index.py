@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import mimetypes
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
@@ -47,7 +48,7 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, {"name": name, "symbol": symbol, "image_url": image_url})
             return
 
-        send_json(self, {"error": "Not found"}, status=404)
+        self._send_static(parsed.path)
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
@@ -110,6 +111,37 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, {"error": str(exc), "code": exc.code}, status=exc.status)
         except (ValueError, TypeError) as exc:
             send_json(self, {"error": str(exc), "code": "bad_request"}, status=400)
+
+    def _send_static(self, request_path: str) -> None:
+        static_path = self._static_path_for_request(request_path)
+        full_path = static_path.resolve()
+        web_root = WEB_ROOT.resolve()
+        if not str(full_path).startswith(str(web_root)) or not full_path.is_file():
+            send_json(self, {"error": "Not found"}, status=404)
+            return
+
+        body = full_path.read_bytes()
+        content_type = mimetypes.guess_type(str(full_path))[0] or "application/octet-stream"
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        if request_path.startswith("/assets/"):
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+        else:
+            self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _static_path_for_request(self, request_path: str):
+        if request_path in {"", "/"}:
+            return WEB_ROOT / "index.html"
+        if request_path == "/styles.css":
+            return WEB_ROOT / "styles.css"
+        if request_path == "/app.js":
+            return WEB_ROOT / "app.js"
+        if request_path.startswith("/assets/"):
+            return WEB_ROOT / request_path.lstrip("/")
+        return WEB_ROOT / "index.html"
 
     def log_message(self, format: str, *args: object) -> None:
         return
