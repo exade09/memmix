@@ -93,6 +93,9 @@ Optional environment variables:
 If live DexScreener requests fail in a serverless function, `/api/scan` falls back
 to bundled Solana meme data so the dashboard still renders.
 
+Vercel ignores the local CLI entrypoint `main.py`; production routes use the
+serverless handlers in `api/`.
+
 The dashboard shows token images when the market data provider returns them. It
 also includes a Meme Lab panel that blends each trend token with an OG meme coin
 and produces:

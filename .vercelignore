@@ -9,3 +9,8 @@ __pycache__
 .mypy_cache
 logs
 data/solana_live_tokens.json
+main.py
+Procfile
+render.yaml
+scripts
+tests
