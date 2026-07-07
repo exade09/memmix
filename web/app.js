@@ -488,6 +488,24 @@ function setHybridResultImage(url) {
   hybridResultLink.hidden = false;
 }
 
+function setHybridResultLoading() {
+  hybridResultSlot.innerHTML = "";
+  const loader = document.createElement("div");
+  loader.className = "hybrid-loader";
+  loader.setAttribute("role", "status");
+
+  const spinner = document.createElement("span");
+  spinner.className = "hybrid-loader-spinner";
+  spinner.setAttribute("aria-hidden", "true");
+
+  const text = document.createElement("span");
+  text.textContent = "Creating mix...";
+
+  loader.append(spinner, text);
+  hybridResultSlot.append(loader);
+  hybridResultLink.hidden = true;
+}
+
 function setPreviewFromUrl(img, input, url, label, labelText) {
   input.value = url || "";
   label.textContent = labelText || label.textContent;
@@ -537,27 +555,7 @@ async function submitHybrid(event) {
 
   hybridButton.disabled = true;
   setHybridStatus("Mixing...");
-  setHybridResultMessage("Creating mix...");
-
-  try {
-    const formData = await buildHybridFormData();
-    const response = await fetch("/api/hybrid-image", {
-      method: "POST",
-      body: formData,
-    });
-    const payload = await readResponsePayload(response);
-    if (!response.ok) {
-      throw new Error(payload.error || `HTTP ${response.status}`);
-    }
-
-    setHybridResultImage(payload.output_url);
-    setHybridStatus("Mix ready");
-  } catch (error) {
-    setHybridResultMessage(error.message || "Failed to create mix.");
-    setHybridStatus("Mix failed");
-  } finally {
-    updateHybridButton();
-  }
+  setHybridResultLoading();
 }
 
 async function buildHybridFormData() {

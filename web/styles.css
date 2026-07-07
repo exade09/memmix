@@ -975,13 +975,42 @@ summary {
   background-size: 20px 20px;
 }
 
-.hybrid-result-slot span {
+.hybrid-result-slot > span {
   padding: 10px 12px;
   border: 1px solid rgb(57 211 83 / 36%);
   border-radius: 8px;
   background: var(--panel);
   color: var(--muted);
   font-weight: 850;
+}
+
+.hybrid-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgb(57 211 83 / 36%);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.hybrid-loader-spinner {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 3px solid rgb(141 255 117 / 20%);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  background: transparent;
+  animation: hybrid-spin 0.8s linear infinite;
+}
+
+@keyframes hybrid-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .hybrid-result-slot img {
