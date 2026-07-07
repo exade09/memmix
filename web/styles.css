@@ -741,8 +741,64 @@ summary {
   color: var(--yellow);
 }
 
-.pump-link svg {
+.icon-link .pump-logo-icon,
+.icon-link .dex-logo-icon {
+  width: 24px;
+  height: 24px;
   filter: drop-shadow(0 0 8px rgb(141 255 117 / 35%));
+}
+
+.pump-capsule-shell {
+  fill: #f6fff2;
+  stroke: #16483a;
+  stroke-width: 2.5px;
+}
+
+.pump-capsule-fill {
+  fill: #55df94;
+}
+
+.pump-capsule-shade {
+  fill: #2fbf70;
+  opacity: 0.84;
+}
+
+.pump-capsule-seam {
+  fill: none;
+  stroke: #16483a;
+  stroke-linecap: round;
+  stroke-width: 2.6px;
+}
+
+.pump-capsule-glint {
+  fill: none;
+  stroke: #f4fff0;
+  stroke-linecap: round;
+  stroke-width: 1.9px;
+}
+
+.dex-link {
+  border-color: rgb(141 255 117 / 44%);
+  background:
+    radial-gradient(circle at 50% 35%, rgb(57 211 83 / 20%), transparent 42%),
+    rgb(2 8 4 / 94%);
+  color: #f4fff0;
+}
+
+.dex-hood {
+  fill: #f4fff0;
+}
+
+.dex-eye,
+.dex-beak,
+.dex-cheek {
+  fill: #031006;
+}
+
+.dex-beak {
+  stroke: #031006;
+  stroke-linejoin: round;
+  stroke-width: 0.7px;
 }
 
 .nav-link:hover,
