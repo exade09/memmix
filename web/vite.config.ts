@@ -42,8 +42,14 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // motion is safe to split: nothing in it runs before the entry body.
           if (id.includes("node_modules/motion")) return "motion";
-          if (id.includes("node_modules/@solana") || id.includes("node_modules/@pump-fun")) return "solana";
+          // @solana and @pump-fun must NOT be split. Rollup hoists cross-chunk
+          // imports to the top of the entry file, so a separate solana chunk
+          // evaluates before `import "./polyfills"` in main.tsx and blows up
+          // with `Buffer is not defined`. CSP forbids an inline bootstrap
+          // script, so keeping them in the entry chunk is what guarantees the
+          // polyfill runs first.
         },
       },
     },
