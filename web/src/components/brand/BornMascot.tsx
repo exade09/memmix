@@ -372,7 +372,11 @@ export function BornMascot({
           src={RASTER[variant]}
           alt={raster ? ALT[state] : ""}
           aria-hidden={raster ? undefined : true}
-          loading="lazy"
+          /*
+            Deliberately not lazy. There are at most two of these per page and
+            the hero figure is the main image above the fold, so deferring it
+            only delays the thing the page is about.
+          */
           decoding="async"
           onLoad={(event) => {
             if (event.currentTarget.naturalWidth > 8) setRaster(true);
