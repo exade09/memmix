@@ -34,6 +34,11 @@ const RASTER: Record<BornVariant, string> = {
   full: "/assets/brand/born-full.png",
 };
 
+type RasterStatus = "loading" | "ok" | "failed";
+
+/** Load outcome per file, so the swap is decided once per session. */
+const rasterStatus: Record<string, RasterStatus> = {};
+
 const ALT: Record<BornState, string> = {
   idle: "BORN, the MIXBORN operator: a hooded figure with a black void for a face, waiting.",
   searching: "BORN scanning for a parent token.",
@@ -341,7 +346,10 @@ export function BornMascot({
   const [pageVisible, setPageVisible] = useState(
     () => typeof document === "undefined" || !document.hidden,
   );
-  const [raster, setRaster] = useState(false);
+  const src = RASTER[variant];
+  // Remembered across mounts so a second BornMascot on the page, or a route
+  // change, never replays the swap.
+  const [status, setStatus] = useState<RasterStatus>(() => rasterStatus[src] ?? "loading");
 
   useEffect(() => {
     const sync = () => setPageVisible(!document.hidden);
@@ -362,16 +370,19 @@ export function BornMascot({
       data-reduced={reduceMotion ? "true" : "false"}
     >
       <div className="born-plate">
-        <Figure id={id} state={state} animate={animate} parentA={parentA} parentB={parentB} />
         {/*
-          Final art dropped into web/public/assets/brand/ takes over from here.
-          A missing file simply never fades in.
+          The drawn art is the real BORN; the SVG is the fallback for when it
+          cannot be fetched. Rendering the SVG while the PNG is still in flight
+          would show the wrong character for a beat, so it only appears once
+          the image has actually failed. Until then the bone plate stands in.
         */}
+        {status === "failed" ? (
+          <Figure id={id} state={state} animate={animate} parentA={parentA} parentB={parentB} />
+        ) : null}
         <img
-          className={`born-raster${raster ? " is-on" : ""}`}
-          src={RASTER[variant]}
-          alt={raster ? ALT[state] : ""}
-          aria-hidden={raster ? undefined : true}
+          className={`born-raster${status === "ok" ? " is-on" : ""}`}
+          src={src}
+          alt={ALT[state]}
           /*
             Deliberately not lazy. There are at most two of these per page and
             the hero figure is the main image above the fold, so deferring it
@@ -379,10 +390,13 @@ export function BornMascot({
           */
           decoding="async"
           onLoad={(event) => {
-            if (event.currentTarget.naturalWidth > 8) setRaster(true);
+            const ok = event.currentTarget.naturalWidth > 8;
+            rasterStatus[src] = ok ? "ok" : "failed";
+            setStatus(ok ? "ok" : "failed");
           }}
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
+          onError={() => {
+            rasterStatus[src] = "failed";
+            setStatus("failed");
           }}
         />
         <span className="born-grain" aria-hidden="true" />
