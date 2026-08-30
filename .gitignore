@@ -13,8 +13,5 @@ Thumbs.db
 *.log
 build/
 dist/
-node_modules/
-web/dist/
-web/node_modules/
 data/solana_live_tokens.json
 image_merge_app/

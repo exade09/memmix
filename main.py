@@ -10,6 +10,7 @@ from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+from axiom_scanner.analysis.local_ai import explain_ranked_tokens
 from axiom_scanner.analysis.image_generation import ImageGenerationError, generate_meme_image
 from axiom_scanner.analysis.narratives import (
     generate_narratives,
@@ -20,15 +21,11 @@ from axiom_scanner.analysis.wavespeed_hybrid import (
     HybridImageError,
     MAX_REQUEST_BYTES as MAX_HYBRID_REQUEST_BYTES,
     generate_hybrid_image_request,
-    parse_multipart,
 )
+from axiom_scanner.analysis.scoring import rank_tokens
 from axiom_scanner.config import ScannerConfig, load_config
-from axiom_scanner.pipeline import scan_once
 from axiom_scanner.reporting import render_console_report
-from axiom_scanner.sources.dexscreener import resolve_token_image
-from vercel_api.dispatch import handle_api_get, handle_api_post
-from vercel_api.security_headers import apply_security_headers
-from vercel_api.shared import read_json_body, client_ip, send_json
+from axiom_scanner.sources.dexscreener import DexScreenerSource, resolve_token_image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -91,6 +88,64 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def scan_once(config: ScannerConfig, limit: int) -> list[dict]:
+    source = DexScreenerSource(config=config)
+    snapshots = source.fetch_tokens()
+    ranked = rank_tokens(snapshots, config=config)
+    visible_ranked = [
+        item
+        for item in ranked
+        if item.snapshot.chain_id.lower() == "solana"
+    ]
+
+    rows: list[dict] = []
+    selected_items = []
+    for item in visible_ranked:
+        if len(selected_items) >= limit:
+            break
+        image_url = item.snapshot.image_url or _resolve_token_image(
+            config,
+            name=item.snapshot.name,
+            symbol=item.snapshot.symbol,
+        )
+        item.snapshot.image_url = image_url
+        selected_items.append(item)
+
+    explanations = explain_ranked_tokens(selected_items)
+    for item, explanation in zip(selected_items, explanations):
+        rows.append(
+            {
+                "rank": len(rows) + 1,
+                "token": item.snapshot.symbol,
+                "name": item.snapshot.name,
+                "chain": item.snapshot.chain_id,
+                "address": item.snapshot.token_address,
+                "image_url": item.snapshot.image_url,
+                "score": round(item.score, 2),
+                "signal": item.signal,
+                "price_usd": item.snapshot.price_usd,
+                "market_cap": item.snapshot.market_cap,
+                "fdv": item.snapshot.fdv,
+                "liquidity_usd": item.snapshot.liquidity_usd,
+                "volume_1h": item.snapshot.volume_1h,
+                "volume_24h": item.snapshot.volume_24h,
+                "txns_1h": item.snapshot.txns_1h,
+                "buys_1h": item.snapshot.buys_1h,
+                "sells_1h": item.snapshot.sells_1h,
+                "price_change_5m": item.snapshot.price_change_5m,
+                "price_change_1h": item.snapshot.price_change_1h,
+                "price_change_6h": item.snapshot.price_change_6h,
+                "price_change_24h": item.snapshot.price_change_24h,
+                "age_minutes": item.snapshot.age_minutes,
+                "risk_flags": item.risk_flags,
+                "why": explanation,
+                "url": item.snapshot.pair_url,
+            }
+        )
+
+    return rows
+
+
 def apply_cli_overrides(config: ScannerConfig, chains: list[str] | None) -> ScannerConfig:
     config.chains = ALLOWED_CHAINS.copy()
     return config
@@ -127,11 +182,6 @@ def run_web(args: argparse.Namespace) -> int:
     class DashboardHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
             parsed = urlparse(self.path)
-            routed = handle_api_get(parsed.path, parsed.query)
-            if routed is not None:
-                status, payload = routed
-                self._send_json(payload, status)
-                return
             if parsed.path == "/api/scan":
                 self._send_scan(parsed.query)
                 return
@@ -147,29 +197,6 @@ def run_web(args: argparse.Namespace) -> int:
 
         def do_POST(self) -> None:
             parsed = urlparse(self.path)
-
-            def _read_multipart(max_bytes: int):
-                content_type = self.headers.get("Content-Type", "")
-                content_length = _parse_content_length(self.headers.get("Content-Length", "0"))
-                if content_length <= 0:
-                    raise ValueError("empty multipart")
-                if content_length > max_bytes:
-                    raise ValueError("multipart too large")
-                body = self.rfile.read(content_length)
-                return parse_multipart(content_type, body)
-
-            routed = handle_api_post(
-                parsed.path,
-                read_body=lambda max_bytes: read_json_body(self, max_bytes=max_bytes),
-                read_multipart=_read_multipart,
-                client_ip=client_ip(self),
-                origin=self.headers.get("Origin", ""),
-                host=self.headers.get("Host", ""),
-            )
-            if routed is not None:
-                status, payload = routed
-                self._send_json(payload, status)
-                return
             if parsed.path == "/api/narratives":
                 self._send_narratives()
                 return
@@ -283,8 +310,14 @@ def run_web(args: argparse.Namespace) -> int:
             except (ValueError, TypeError) as exc:
                 self._send_json({"error": str(exc), "code": "bad_request"}, status=400)
 
-        def _send_json(self, payload: dict | list, status: int = 200) -> None:
-            send_json(self, payload, status=status)
+        def _send_json(self, payload: dict, status: int = 200) -> None:
+            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
 
         def _send_static(self, path: str) -> None:
             full_path = (WEB_ROOT / path).resolve()
@@ -296,7 +329,6 @@ def run_web(args: argparse.Namespace) -> int:
             content_type = mimetypes.guess_type(str(full_path))[0] or "application/octet-stream"
             self.send_response(200)
             self.send_header("Content-Type", content_type)
-            apply_security_headers(self)
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()

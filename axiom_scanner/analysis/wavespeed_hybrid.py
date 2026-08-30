@@ -478,27 +478,27 @@ def load_data_url(url: str, field_name: str) -> HybridImage:
 
 
 def load_remote_url(url: str, field_name: str) -> HybridImage:
-    from axiom_scanner.security.fetch import FetchError, fetch_public_bytes
-
+    request = Request(url, headers={"User-Agent": "axiom-ai-scanner/0.1"})
     try:
-        data, final_url, header_type = fetch_public_bytes(url)
-    except FetchError as exc:
+        with urlopen(request, timeout=20) as response:
+            data = response.read(MAX_IMAGE_BYTES + 1)
+            content_type = response.headers.get_content_type()
+    except (HTTPError, URLError, TimeoutError) as exc:
         raise HybridImageError(
             f"Could not load {field_name}_url before uploading it to WaveSpeed.",
-            code=exc.code.lower() if exc.code else "image_url_unavailable",
+            code="image_url_unavailable",
             status=422,
         ) from exc
 
-    content_type = header_type if header_type and header_type != "application/octet-stream" else ""
-    if not content_type:
-        content_type = mimetypes.guess_type(urlparse(final_url).path)[0] or "application/octet-stream"
+    if not content_type or content_type == "application/octet-stream":
+        content_type = mimetypes.guess_type(urlparse(url).path)[0] or "application/octet-stream"
 
     return HybridImage(
         field_name=field_name,
         filename=f"{field_name}{extension_for_type(content_type)}",
         content_type=content_type,
         data=data,
-        source_url=final_url,
+        source_url=url,
     )
 
 
@@ -559,16 +559,12 @@ def submit_seedream_edit(
     size: str,
     api_key: str,
     model: str,
-    *,
-    sync_mode: bool | None = None,
-    timeout_seconds: int | None = None,
 ) -> dict[str, Any]:
-    enabled_sync = wavespeed_sync_mode_enabled() if sync_mode is None else sync_mode
     payload = {
         "images": image_urls,
         "prompt": prompt,
         "size": size,
-        "enable_sync_mode": enabled_sync,
+        "enable_sync_mode": wavespeed_sync_mode_enabled(),
         "enable_base64_output": False,
     }
     return request_json(
@@ -576,13 +572,8 @@ def submit_seedream_edit(
         method="POST",
         json_payload=payload,
         api_key=api_key,
-        timeout_seconds=timeout_seconds or submit_timeout_seconds(),
+        timeout_seconds=submit_timeout_seconds(),
     )
-
-
-def fetch_prediction_once(request_id: str, api_key: str) -> dict[str, Any]:
-    url = f"{WAVESPEED_BASE_URL}/predictions/{request_id}/result"
-    return request_json(url, method="GET", api_key=api_key, timeout_seconds=20)
 
 
 def poll_prediction(request_id: str, api_key: str) -> dict[str, Any]:

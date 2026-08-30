@@ -1,44 +1,4 @@
-# MIXBORN
-
-> Previously Axiom Meme Lab. The source of truth for the MIXBORN product, AI mixer and native Solana launch flow is [docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md](docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md). Coding agents should read [AGENTS.md](AGENTS.md) first.
-
-The MIXBORN web app lives in `web/` as a Vite + React + TypeScript client. The existing Python scanner API still serves `/api/*`.
-
-Local MIXBORN UI:
-
-```powershell
-python main.py web --port 8080 --limit 100
-```
-
-In a second terminal:
-
-```powershell
-cd web
-npm install
-npm run dev
-```
-
-Then open `http://127.0.0.1:5173`. Vite proxies `/api` to the Python server on port 8080.
-
-### BORN, the mascot
-
-BORN is drawn in code: `web/src/components/brand/BornMascot.tsx` renders him as SVG in a
-`portrait` and a `full` variant, so he scales anywhere and reacts to real product state.
-The black void where his face should be *is* the merge core — Parent A arrives as a copper
-orb, Parent B as an ash orb, they collide, and the born mark appears.
-
-To swap in the final hand-drawn art, drop two square-ish images here:
-
-```text
-web/public/assets/brand/born-portrait.png   # head and shoulders
-web/public/assets/brand/born-full.png       # full body, roughly 340 x 546
-```
-
-They fade in over the SVG automatically everywhere he appears — hero, mixer, sidebar,
-review and success. A missing file simply never loads and the SVG stays. Keep the light
-paper background of the originals; the surrounding plate is designed for it.
-
-The earlier mascot source is still at `web/src/assets/brand/mascot-source.png`.
+# Axiom Meme Lab
 
 CLI scanner and web dashboard for finding currently hyped on-chain tokens, then
 mixing those trends with OG meme coins into draft meme narratives.
@@ -78,10 +38,9 @@ axiom_ai_scanner/
   tests/
     test_scoring.py               # Basic scoring tests
   web/
-    index.html                    # Vite SPA entry
-    src/                          # MIXBORN React/TypeScript UI
-    public/                       # Brand assets served as static files
-    dist/                         # Production build output
+    index.html                    # Full dashboard and mixer studio page
+    styles.css                    # All dashboard styles
+    app.js                        # All dashboard browser logic
     assets/                       # Images and token icons
 ```
 
@@ -134,10 +93,6 @@ Optional environment variables:
 - `OPENAI_API_KEY`: enables narrative card image generation.
 - `WAVESPEED_API_KEY` or `WAVESPEED_API_KEYS`: enables Mixer Studio hybrid images.
 - `WAVESPEED_TIMEOUT_SECONDS`: optional, defaults to `120`.
-- `PINATA_JWT`: server-only Pinata JWT for metadata pinning. Never expose it to the browser.
-- `PUBLIC_IPFS_GATEWAY` or `PINATA_GATEWAY_HOST`: HTTPS IPFS gateway used to render CIDs.
-- `CANONICAL_SITE_URL`: `createdOn` value written into token metadata.
-- `INITIAL_BUY_MAX_SOL`: optional launch form cap, defaults to `5`.
 
 If live DexScreener requests fail in a serverless function, `/api/scan` falls back
 to bundled Solana meme data so the dashboard still renders.
