@@ -1,0 +1,185 @@
+/* ---------------------------------------------------------------
+   BORN — the operator.
+
+   The figure is drawn in black ink, so on a black page he lives on a
+   bone "specimen plate": a print pinned to a dark wall. The plate also
+   matches the light background of the final raster art, so dropping the
+   real files in does not change the composition.
+--------------------------------------------------------------- */
+
+.born {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.born-plate {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(242, 239, 232, 0.14);
+  border-radius: var(--radius-panel);
+  background: linear-gradient(168deg, #e6e1d5 0%, #d6d0c2 62%, #c6bfae 100%);
+  box-shadow: 0 40px 90px -50px rgba(0, 0, 0, 0.95);
+  transition: box-shadow var(--t-slow), border-color var(--t-base);
+}
+
+.born.portrait .born-plate {
+  aspect-ratio: 1;
+}
+
+.born.full .born-plate {
+  aspect-ratio: 340 / 546;
+}
+
+.born-svg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+}
+
+/* raster override: silent until the real art exists */
+.born-raster {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity var(--t-slow);
+}
+
+.born-raster.is-on {
+  opacity: 1;
+}
+
+/* paper tooth over the plate */
+.born-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23p)'/%3E%3C/svg%3E");
+}
+
+.born-plate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 90px -20px rgba(58, 40, 23, 0.4);
+}
+
+/* state aura, behind the plate */
+.born-aura {
+  position: absolute;
+  inset: -18%;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  opacity: 0;
+  filter: blur(48px);
+  transition: opacity var(--t-slow), background var(--t-slow);
+}
+
+.born[data-state="searching"] .born-plate,
+.born[data-state="ready"] .born-plate,
+.born[data-state="mixing"] .born-plate,
+.born[data-state="generating"] .born-plate {
+  box-shadow: var(--glow-copper), 0 40px 90px -50px rgba(0, 0, 0, 0.95);
+}
+
+.born[data-state="success"] .born-plate,
+.born[data-state="launched"] .born-plate {
+  box-shadow: var(--glow-born), 0 40px 90px -50px rgba(0, 0, 0, 0.95);
+}
+
+.born[data-state="warning"] .born-plate {
+  border-color: rgba(224, 169, 63, 0.5);
+}
+
+/* halo painted outside the plate for the hero figure */
+.born::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -14% -10%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(208, 138, 69, 0.3), transparent 68%);
+  filter: blur(28px);
+  opacity: 0;
+  transition: opacity var(--t-slow);
+  pointer-events: none;
+}
+
+.born.is-lit::before {
+  opacity: 1;
+}
+
+.born.is-lit[data-state="ready"]::before,
+.born.is-lit[data-state="mixing"]::before,
+.born.is-lit[data-state="generating"]::before {
+  background: radial-gradient(circle, rgba(208, 138, 69, 0.34), rgba(127, 151, 181, 0.18) 45%, transparent 70%);
+  opacity: 1;
+}
+
+.born.is-lit[data-state="success"]::before,
+.born.is-lit[data-state="launched"]::before {
+  background: radial-gradient(circle, rgba(242, 239, 232, 0.24), transparent 68%);
+}
+
+.born-caption {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream-faint);
+  text-align: center;
+}
+
+/* sizes */
+.born.sz-xs {
+  max-width: 96px;
+}
+
+.born.sz-sm {
+  max-width: 150px;
+}
+
+.born.sz-md {
+  max-width: 220px;
+}
+
+.born.sz-lg {
+  max-width: 320px;
+}
+
+.born.sz-hero {
+  max-width: 440px;
+}
+
+/* a slim frame variant used inside dense app panels */
+.born.bare .born-plate {
+  border-radius: var(--radius-card);
+  box-shadow: none;
+}
+
+.born.bare .born-plate::after {
+  box-shadow: inset 0 0 60px -18px rgba(58, 40, 23, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .born-aura,
+  .born::before {
+    transition: none;
+  }
+}

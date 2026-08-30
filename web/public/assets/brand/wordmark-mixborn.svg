@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 48" fill="none" role="img" aria-label="MIXBORN">
+  <title>MIXBORN</title>
+  <text
+    x="0"
+    y="34"
+    fill="#f4f2ea"
+    font-family="Geist, ui-sans-serif, system-ui, sans-serif"
+    font-size="28"
+    font-weight="700"
+    letter-spacing="2"
+  >MIXB</text>
+  <circle cx="178" cy="24" r="13" stroke="#7c4dff" stroke-width="2.25"/>
+  <circle cx="192" cy="24" r="13" stroke="#9dff4a" stroke-width="2.25"/>
+  <circle cx="185" cy="24" r="3.5" fill="#f4f2ea"/>
+  <text
+    x="214"
+    y="34"
+    fill="#f4f2ea"
+    font-family="Geist, ui-sans-serif, system-ui, sans-serif"
+    font-size="28"
+    font-weight="700"
+    letter-spacing="2"
+  >RN</text>
+</svg>

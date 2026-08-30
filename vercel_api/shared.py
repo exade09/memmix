@@ -21,15 +21,16 @@ from axiom_scanner.analysis.wavespeed_hybrid import (
     HybridImageError,
     MAX_REQUEST_BYTES as MAX_HYBRID_REQUEST_BYTES,
     generate_hybrid_image_request,
+    parse_multipart,
 )
 from axiom_scanner.config import ScannerConfig, load_config
-from axiom_scanner.analysis.local_ai import explain_ranked_tokens
-from axiom_scanner.analysis.scoring import rank_tokens
-from axiom_scanner.sources.dexscreener import DexScreenerSource, resolve_token_image
+from axiom_scanner.pipeline import scan_once, resolve_cached_token_image
+
+
+from vercel_api.security_headers import apply_security_headers
 
 
 ALLOWED_CHAINS = ["solana"]
-OG_IMAGE_CACHE: dict[str, str] = {}
 
 
 def configure_runtime() -> None:
@@ -46,25 +47,35 @@ def apply_cli_overrides(config: ScannerConfig, chains: list[str] | None) -> Scan
     return config
 
 
-def send_json(handler: BaseHTTPRequestHandler, payload: dict[str, Any], status: int = 200) -> None:
+def send_json(handler: BaseHTTPRequestHandler, payload: dict[str, Any] | list[Any], status: int = 200) -> None:
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Cache-Control", "no-store")
+    apply_security_headers(handler)
     handler.send_header("Content-Length", str(len(body)))
     handler.end_headers()
     handler.wfile.write(body)
 
 
-def read_json_body(handler: BaseHTTPRequestHandler, max_bytes: int = 512_000) -> dict[str, Any]:
+def client_ip(handler: BaseHTTPRequestHandler) -> str:
+    forwarded = handler.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",", 1)[0].strip()
+    return handler.client_address[0] if handler.client_address else "unknown"
+
+
+def read_json_body(handler: BaseHTTPRequestHandler, max_bytes: int = 512_000) -> dict[str, Any] | list[Any]:
     try:
         content_length = max(int(handler.headers.get("Content-Length", "0")), 0)
     except ValueError:
         content_length = 0
-    body = handler.rfile.read(min(content_length, max_bytes))
+    if content_length > max_bytes:
+        raise ValueError("payload too large")
+    body = handler.rfile.read(content_length)
     payload = json.loads(body.decode("utf-8") or "{}")
-    if not isinstance(payload, dict):
-        raise ValueError("Request body must be a JSON object.")
+    if not isinstance(payload, (dict, list)):
+        raise ValueError("Request body must be JSON.")
     return payload
 
 
@@ -93,98 +104,40 @@ def scan_payload(limit: int) -> dict[str, Any]:
     }
 
 
-def scan_once(config: ScannerConfig, limit: int) -> list[dict[str, Any]]:
-    source = DexScreenerSource(config=config)
-    snapshots = source.fetch_tokens()
-    ranked = rank_tokens(snapshots, config=config)
-    visible_ranked = [
-        item
-        for item in ranked
-        if item.snapshot.chain_id.lower() == "solana"
-    ]
-
-    selected_items = []
-    for item in visible_ranked:
-        if len(selected_items) >= limit:
-            break
-        image_url = item.snapshot.image_url or _resolve_token_image(
-            config,
-            name=item.snapshot.name,
-            symbol=item.snapshot.symbol,
-        )
-        item.snapshot.image_url = image_url
-        selected_items.append(item)
-
-    rows: list[dict[str, Any]] = []
-    explanations = explain_ranked_tokens(selected_items)
-    for item, explanation in zip(selected_items, explanations):
-        rows.append(
-            {
-                "rank": len(rows) + 1,
-                "token": item.snapshot.symbol,
-                "name": item.snapshot.name,
-                "chain": item.snapshot.chain_id,
-                "address": item.snapshot.token_address,
-                "image_url": item.snapshot.image_url,
-                "score": round(item.score, 2),
-                "signal": item.signal,
-                "price_usd": item.snapshot.price_usd,
-                "market_cap": item.snapshot.market_cap,
-                "fdv": item.snapshot.fdv,
-                "liquidity_usd": item.snapshot.liquidity_usd,
-                "volume_1h": item.snapshot.volume_1h,
-                "volume_24h": item.snapshot.volume_24h,
-                "txns_1h": item.snapshot.txns_1h,
-                "buys_1h": item.snapshot.buys_1h,
-                "sells_1h": item.snapshot.sells_1h,
-                "price_change_5m": item.snapshot.price_change_5m,
-                "price_change_1h": item.snapshot.price_change_1h,
-                "price_change_6h": item.snapshot.price_change_6h,
-                "price_change_24h": item.snapshot.price_change_24h,
-                "age_minutes": item.snapshot.age_minutes,
-                "risk_flags": item.risk_flags,
-                "why": explanation,
-                "url": item.snapshot.pair_url,
-            }
-        )
-
-    return rows
-
-
 def fallback_scan_rows(limit: int) -> list[dict[str, Any]]:
-    path = PROJECT_ROOT / "data" / "solana_memecoins.json"
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    og_memecoins = load_og_memecoins(PROJECT_ROOT, "data/og_memecoins.json")
     rows = []
-    for index, item in enumerate(payload.get("tokens", [])[:limit], start=1):
+    for index, item in enumerate(og_memecoins[:limit], start=1):
         symbol = str(item.get("symbol") or "").strip()
-        theme = str(item.get("theme") or "meme").strip()
+        image_path = PROJECT_ROOT / "web" / "assets" / "tokens" / f"{symbol}.svg"
+        public_image = f"/assets/tokens/{symbol}.svg" if image_path.is_file() else ""
         rows.append(
             {
                 "rank": index,
                 "token": symbol,
                 "name": item.get("name") or symbol,
                 "chain": "solana",
-                "address": f"So111111111111111111111111111111111111{index:04d}",
-                "image_url": f"/assets/tokens/{symbol}.svg",
-                "score": float(item.get("score") or 0),
-                "signal": item.get("signal") or "SPECULATIVE",
-                "price_usd": 0,
-                "market_cap": item.get("market_cap") or 0,
-                "fdv": item.get("market_cap") or 0,
-                "liquidity_usd": item.get("liquidity") or 0,
-                "volume_1h": item.get("volume") or 0,
-                "volume_24h": float(item.get("volume") or 0) * 7.4,
-                "txns_1h": item.get("txns") or 0,
-                "buys_1h": round(float(item.get("txns") or 0) * 0.58),
-                "sells_1h": round(float(item.get("txns") or 0) * 0.42),
-                "price_change_5m": round(float(item.get("change") or 0) / 4, 2),
-                "price_change_1h": item.get("change") or 0,
-                "price_change_6h": round(float(item.get("change") or 0) * 1.9, 2),
-                "price_change_24h": round(float(item.get("change") or 0) * 3.1, 2),
-                "age_minutes": item.get("age") or 0,
-                "risk_flags": ["local fallback data", "verify contract before trading"],
-                "why": f"{theme} momentum on Solana meme watchlist. Vercel fallback entry with bundled image asset.",
-                "url": f"https://dexscreener.com/solana/{symbol}",
+                "address": "",
+                "image_url": public_image,
+                "score": None,
+                "signal": None,
+                "price_usd": None,
+                "market_cap": None,
+                "fdv": None,
+                "liquidity_usd": None,
+                "volume_1h": None,
+                "volume_24h": None,
+                "txns_1h": None,
+                "buys_1h": None,
+                "sells_1h": None,
+                "price_change_5m": None,
+                "price_change_1h": None,
+                "price_change_6h": None,
+                "price_change_24h": None,
+                "age_minutes": None,
+                "risk_flags": ["cached_example"],
+                "why": "Cached example. Not live market data.",
+                "url": "",
             }
         )
     return rows
@@ -209,16 +162,4 @@ def _resolve_og_image(config: ScannerConfig, name: str, symbol: str) -> str:
 
 
 def _resolve_token_image(config: ScannerConfig, name: str, symbol: str) -> str:
-    key = f"{name.strip().lower()}:{symbol.strip().lower()}"
-    if not key.strip(":"):
-        return ""
-    if key not in OG_IMAGE_CACHE:
-        try:
-            OG_IMAGE_CACHE[key] = resolve_token_image(
-                config=config,
-                name=name,
-                symbol=symbol,
-            )
-        except RuntimeError:
-            OG_IMAGE_CACHE[key] = ""
-    return OG_IMAGE_CACHE[key]
+    return resolve_cached_token_image(config, name=name, symbol=symbol)

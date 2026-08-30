@@ -40,7 +40,7 @@ def _score_token(snapshot: TokenSnapshot, config: ScannerConfig) -> RankedToken:
 
     risk_flags = _risk_flags(snapshot, config)
     score -= 7 * len(risk_flags)
-    score = max(score, 0)
+    score = max(0.0, min(100.0, score))
 
     if score >= 75 and not risk_flags:
         signal = "HOT"
@@ -92,6 +92,11 @@ def _risk_flags(snapshot: TokenSnapshot, config: ScannerConfig) -> list[str]:
 
     if snapshot.price_change_5m < -15 and snapshot.price_change_1h < 0:
         flags.append("dumping")
+    elif abs(snapshot.price_change_1h) >= 80:
+        flags.append("dumping")
+
+    if not snapshot.image_url:
+        flags.append("missing_image")
 
     return flags
 
