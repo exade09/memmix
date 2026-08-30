@@ -1,10 +1,26 @@
 {
+  "installCommand": "pip install -r requirements.txt && npm --prefix web install",
+  "buildCommand": "npm --prefix web run build",
+  "outputDirectory": "web/dist",
   "functions": {
     "api/index.py": {
       "maxDuration": 60
     }
   },
-  "headers": [
+    "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'self' blob:"
+        }
+      ]
+    },
     {
       "source": "/assets/(.*)",
       "headers": [
@@ -21,20 +37,8 @@
       "destination": "/api/index.py"
     },
     {
-      "source": "/assets/:path*",
-      "destination": "/web/assets/:path*"
-    },
-    {
-      "source": "/styles.css",
-      "destination": "/web/styles.css"
-    },
-    {
-      "source": "/app.js",
-      "destination": "/web/app.js"
-    },
-    {
-      "source": "/:path*",
-      "destination": "/web/index.html"
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ]
 }

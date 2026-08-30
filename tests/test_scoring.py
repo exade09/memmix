@@ -68,6 +68,32 @@ class ScoringTests(unittest.TestCase):
         ranked = rank_tokens([token], config)
 
         self.assertIn("sell_pressure", ranked[0].risk_flags)
+        self.assertLessEqual(ranked[0].score, 100)
+        self.assertGreaterEqual(ranked[0].score, 0)
+
+    def test_score_is_clamped_to_one_hundred(self) -> None:
+        config = ScannerConfig()
+        token = TokenSnapshot(
+            source="test",
+            chain_id="solana",
+            token_address="hot",
+            symbol="HOT",
+            name="Hot",
+            liquidity_usd=9_000_000,
+            volume_1h=12_000_000,
+            txns_1h=9000,
+            buys_1h=8000,
+            sells_1h=1000,
+            price_change_5m=40,
+            price_change_1h=90,
+            price_change_6h=180,
+            age_minutes=40,
+            socials_count=8,
+            boosts_active=50,
+            image_url="https://example.com/hot.png",
+        )
+        ranked = rank_tokens([token], config)
+        self.assertLessEqual(ranked[0].score, 100)
 
     def test_market_cap_filter_rejects_small_tokens(self) -> None:
         config = ScannerConfig(min_market_cap_usd=500_000)

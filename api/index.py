@@ -5,6 +5,8 @@ import mimetypes
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
+from vercel_api.dispatch import handle_api_get, handle_api_post
+from vercel_api.security_headers import apply_security_headers
 from vercel_api.shared import (
     MAX_HYBRID_REQUEST_BYTES,
     PROJECT_ROOT,
@@ -19,16 +21,25 @@ from vercel_api.shared import (
     generate_narratives,
     load_og_memecoins,
     normalize_og_memecoins,
+    parse_multipart,
     read_json_body,
     runtime_config,
     scan_payload,
     send_json,
+    client_ip,
 )
 
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path.startswith("/api/"):
+            routed = handle_api_get(parsed.path, parsed.query)
+            if routed is not None:
+                status, payload = routed
+                send_json(self, payload, status=status)
+                return
+
         if parsed.path == "/api/scan":
             params = parse_qs(parsed.query)
             limit = _parse_int(params.get("limit", ["100"])[0], 100)
@@ -52,6 +63,29 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+
+        def _read_multipart(max_bytes: int):
+            content_type = self.headers.get("Content-Type", "")
+            content_length = _parse_content_length(self.headers.get("Content-Length", "0"))
+            if content_length <= 0:
+                raise ValueError("empty multipart")
+            if content_length > max_bytes:
+                raise ValueError("multipart too large")
+            body = self.rfile.read(content_length)
+            return parse_multipart(content_type, body)
+
+        routed = handle_api_post(
+            parsed.path,
+            read_body=lambda max_bytes: read_json_body(self, max_bytes=max_bytes),
+            read_multipart=_read_multipart,
+            client_ip=client_ip(self),
+            origin=self.headers.get("Origin", ""),
+            host=self.headers.get("Host", ""),
+        )
+        if routed is not None:
+            status, payload = routed
+            send_json(self, payload, status=status)
+            return
         if parsed.path == "/api/narratives":
             self._send_narratives()
             return
@@ -113,6 +147,9 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, {"error": str(exc), "code": "bad_request"}, status=400)
 
     def _send_static(self, request_path: str) -> None:
+        if request_path in {"/app.js", "/styles.css"}:
+            send_json(self, {"error": "Not found"}, status=404)
+            return
         static_path = self._static_path_for_request(request_path)
         full_path = static_path.resolve()
         web_root = WEB_ROOT.resolve()
@@ -124,6 +161,7 @@ class handler(BaseHTTPRequestHandler):
         content_type = mimetypes.guess_type(str(full_path))[0] or "application/octet-stream"
         self.send_response(200)
         self.send_header("Content-Type", content_type)
+        apply_security_headers(self)
         if request_path.startswith("/assets/"):
             self.send_header("Cache-Control", "public, max-age=31536000, immutable")
         else:
@@ -133,14 +171,21 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _static_path_for_request(self, request_path: str):
+        dist_root = WEB_ROOT / "dist"
         if request_path in {"", "/"}:
+            if (dist_root / "index.html").is_file():
+                return dist_root / "index.html"
             return WEB_ROOT / "index.html"
-        if request_path == "/styles.css":
-            return WEB_ROOT / "styles.css"
-        if request_path == "/app.js":
-            return WEB_ROOT / "app.js"
-        if request_path.startswith("/assets/"):
+        if request_path.startswith("/assets/") or request_path == "/favicon.svg":
+            dist_file = dist_root / request_path.lstrip("/")
+            if dist_file.is_file():
+                return dist_file
+            public_file = WEB_ROOT / "public" / request_path.lstrip("/")
+            if public_file.is_file():
+                return public_file
             return WEB_ROOT / request_path.lstrip("/")
+        if (dist_root / "index.html").is_file():
+            return dist_root / "index.html"
         return WEB_ROOT / "index.html"
 
     def log_message(self, format: str, *args: object) -> None:
