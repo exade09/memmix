@@ -406,12 +406,11 @@ export function LaunchReview(props: LaunchReviewProps) {
           <p className="eyebrow">Review launch</p>
           <h1>
             {boundary.signEnabled
-              ? "Review the debit, then approve in your wallet."
-              : "Nothing is signed until the Pump path is ready."}
+              ? "Review the debit, then approve in your wallet"
+              : "Nothing is signed until the Pump path is ready"}
           </h1>
         </div>
         <BornMascot
-          variant="portrait"
           state={phase === "WALLET_OPEN" ? "wallet" : error ? "warning" : "idle"}
           quiet
           className="bare sz-sm"
@@ -449,9 +448,7 @@ export function LaunchReview(props: LaunchReviewProps) {
         <div className="panel stack">
           <p className="eyebrow">Cost</p>
           <CostSummary initialBuy={props.initialBuy} estimate={estimate} />
-          <p className="metric-label">
-            Slippage 1% conservative default. Applied at sign time. Costs come from simulation, not marketing constants.
-          </p>
+<p className="metric-label">Costs come from simulation, not marketing constants</p>
         </div>
 
         <div className="panel stack">

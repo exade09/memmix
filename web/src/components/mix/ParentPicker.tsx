@@ -157,7 +157,7 @@ export function ParentPicker({
           spellCheck={false}
         />
       </label>
-      <p className="metric-label">Search any live Solana token, or paste a mint.</p>
+      <p className="metric-label">Search any live Solana token, or paste a mint</p>
       {error ? <p className="metric-label">{error}</p> : null}
       {results.length > 0 ? (
         <div className="slot-results" role="listbox" aria-label={label}>

@@ -23,18 +23,16 @@
 }
 
 .hero-inner {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-  align-items: center;
-  gap: clamp(28px, 5vw, 72px);
-  min-height: min(72vh, 620px);
-  padding-bottom: clamp(36px, 5vw, 64px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(28px, 4vw, 48px);
+  padding-bottom: clamp(32px, 4vw, 56px);
 }
 
 .hero-copy {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 16px;
 }
 
 .hero-copy h1 {
@@ -47,17 +45,52 @@
   color: var(--copper-soft);
 }
 
-.hero-actions {
-  gap: 12px;
+.hero-copy .lede {
+  max-width: 40ch;
 }
 
-.hero-fineprint {
-  max-width: 52ch;
+/* ---------- bench: the launcher, sitting in the hero ---------- */
+
+.bench-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: clamp(18px, 2.4vw, 26px);
 }
 
-.hero-figure {
+.bench-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto 132px;
+  align-items: center;
+  gap: clamp(12px, 1.6vw, 20px);
+}
+
+.bench-op {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--cream-faint);
+  padding-top: 18px;
+}
+
+.bench-out {
   display: flex;
   justify-content: center;
+  padding-top: 18px;
+}
+
+.bench-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line-soft);
+  margin-top: 2px;
+  padding-block-start: 18px;
+}
+
+.bench-note {
+  margin-left: auto;
 }
 
 /* ---------- fact strip ---------- */
@@ -109,32 +142,6 @@
 }
 
 /* ---------- bench ---------- */
-
-.bench-intro {
-  max-width: 42ch;
-  font-size: 14px;
-}
-
-.bench-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 22px;
-}
-
-.bench-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 14px;
-}
-
-.bench-op {
-  font-family: var(--font-mono);
-  font-size: 18px;
-  color: var(--cream-faint);
-  padding-top: 18px;
-}
 
 /* ---------- paths ---------- */
 
@@ -262,19 +269,6 @@
 }
 
 @media (max-width: 960px) {
-  .hero-inner {
-    grid-template-columns: minmax(0, 1fr);
-    min-height: 0;
-  }
-
-  .hero-figure {
-    order: -1;
-  }
-
-  .hero-figure .born {
-    max-width: 260px;
-  }
-
   .born-section-inner,
   .faq-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -286,14 +280,25 @@
 
   .bench-row {
     grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
   }
 
   .bench-op {
     display: none;
   }
 
-  .merge-core {
-    min-height: 96px;
+  .bench-out {
+    order: -1;
+    padding-top: 0;
+  }
+
+  .bench-out .born {
+    max-width: 120px;
+  }
+
+  .bench-note {
+    margin-left: 0;
+    flex-basis: 100%;
   }
 }
 

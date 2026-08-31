@@ -1,5 +1,4 @@
 import { NavLink } from "react-router-dom";
-import { BornMascot } from "../brand/BornMascot";
 
 const links = [
   { to: "/app/mix", label: "Mix", index: "01" },
@@ -23,8 +22,7 @@ export function AppSidebar() {
         </NavLink>
       ))}
       <div className="rail-foot">
-        <BornMascot variant="portrait" state="idle" quiet className="bare rail-figure" />
-        <p className="metric-label">BORN is on shift. He does not hold your keys.</p>
+        <p className="metric-label">Keys stay in your wallet</p>
       </div>
     </aside>
   );

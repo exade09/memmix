@@ -124,7 +124,7 @@ export function AvatarCropper({ file, onConfirm, onCancel }: AvatarCropperProps)
     <div className="overlay center" role="dialog" aria-modal="true" aria-labelledby="cropper-title">
       <div className="dialog cropper-card">
         <p className="eyebrow">Crop avatar</p>
-        <h2 id="cropper-title">Square crop, zoom only.</h2>
+        <h2 id="cropper-title">Square crop, zoom only</h2>
         <div
           className="cropper-viewport"
           onPointerDown={onPointerDown}
@@ -169,7 +169,7 @@ export function AvatarCropper({ file, onConfirm, onCancel }: AvatarCropperProps)
             Confirm crop
           </Button>
         </div>
-        <p className="metric-label">Output is 1024×1024 PNG. The original file is discarded after confirm.</p>
+        <p className="metric-label">Output is 1024×1024 PNG. The original is discarded after confirm</p>
       </div>
     </div>
   );

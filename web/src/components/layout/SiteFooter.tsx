@@ -10,9 +10,9 @@ export function SiteFooter() {
         <div className="footer-top">
           <div className="footer-brand stack sm">
             <Wordmark />
-            <p>Two tokens in. One born.</p>
+            <p>Two tokens in. One born</p>
             <p className="metric-label">
-              ${appConfig.tokenSymbol} is the project&apos;s own ticker. It is not a promise about any token you launch.
+              ${appConfig.tokenSymbol} is the project&apos;s own ticker, not a promise about any token you launch
             </p>
           </div>
           <div className="footer-col">
@@ -28,12 +28,12 @@ export function SiteFooter() {
             <Link to="/terms">Terms</Link>
             <Link to="/privacy">Privacy</Link>
             <Link to="/legal">Legal</Link>
-            <span title="Social links are not published yet">X — not published yet</span>
-            <span title="Docs are not published yet">Docs — not published yet</span>
+            <span title="Social links are not published yet">X, not published yet</span>
+            <span title="Docs are not published yet">Docs, not published yet</span>
           </div>
         </div>
         <div className="footer-legal">
-          <p>Built on Solana. Launch mechanics powered by the Pump protocol.</p>
+          <p>Built on Solana. Launch mechanics powered by the Pump protocol</p>
           <p>{FOOTER_DISCLAIMER}</p>
         </div>
       </div>

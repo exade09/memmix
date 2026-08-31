@@ -148,7 +148,7 @@ export function TokenPage() {
         <header className="page-head">
           <div className="stack sm">
             <p className="eyebrow">Public token</p>
-            <h1>Token not found.</h1>
+            <h1>Token not found</h1>
           </div>
         </header>
         <p className="empty-state">That mint was not found on-chain.</p>
@@ -171,7 +171,7 @@ export function TokenPage() {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">Public token</p>
-          {loading ? <h1>Reading token data…</h1> : null}
+          {loading ? <h1>Reading token data</h1> : null}
         </div>
       </header>
 

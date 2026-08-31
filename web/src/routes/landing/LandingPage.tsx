@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { appConfig, clusterLabel } from "../../app/config";
 import { BornMascot, type BornState } from "../../components/brand/BornMascot";
-import { MergeCore } from "../../components/brand/MergeCore";
 import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { SiteFooter } from "../../components/layout/SiteFooter";
 import { SectionReveal } from "../../components/motion/SectionReveal";
@@ -14,10 +13,10 @@ import { track } from "../../services/analytics";
 import { fetchFeedResult, searchTokensResult, type TokenSummary } from "../../services/api";
 
 const HOW = [
-  ["01", "Pick", "Search any two Solana tokens. Name, ticker, mint or a Pump link all work."],
-  ["02", "Mutate", "AI finds a logical connection between them, not a lazy word splice."],
-  ["03", "Edit", "Keep only the name, ticker, description and avatar you actually want."],
-  ["04", "Launch", "Review the exact wallet debit, then sign it yourself."],
+  ["01", "Pick", "Any two Solana tokens"],
+  ["02", "Mutate", "AI finds the logic, not a word splice"],
+  ["03", "Edit", "Every field stays yours"],
+  ["04", "Launch", "See the debit, then sign it"],
 ] as const;
 
 /*
@@ -25,10 +24,10 @@ const HOW = [
   actually stand behind.
 */
 const FACTS = [
-  ["Parents in", "2", "Two existing tokens, never one"],
-  ["AI outputs", "4", "Name, ticker, description, one avatar"],
-  ["Platform launch fee", "0 SOL", "Network fees and rent still cost SOL"],
-  ["Custody", "None", "Your keys never leave your wallet"],
+  ["Parents in", "2", "Never one"],
+  ["AI outputs", "4", "Name, ticker, description, avatar"],
+  ["Platform fee", "0 SOL", "Network fees and rent still cost SOL"],
+  ["Custody", "None", "Keys stay in your wallet"],
 ] as const;
 
 const SAFETY_INDEXED = SAFETY_PILLARS.map(([title, copy], index) => [
@@ -177,48 +176,45 @@ export function LandingPage() {
     <LayoutGroup>
       <div className="landing">
         {/* ---------------------------------------------------------- hero */}
+        {/*
+          The launcher is the hero. Two parent slots and the operator are the
+          first thing on the page, so a visitor can start a mutation without
+          scrolling or reading anything first.
+        */}
         <section className="hero">
           <div className="wrap hero-inner">
             <div className="hero-copy">
-              <p className="eyebrow">AI token lab · {clusterLabel()}</p>
+              <p className="eyebrow">Solana launchpad · {clusterLabel()}</p>
               <h1>
                 Two tokens in.
                 <br />
-                <span className="hero-born">One born.</span>
+                <span className="hero-born">One born</span>
               </h1>
-              <p className="lede">
-                Mix the logic behind two Solana tokens. Get one new character with a name, a ticker and an avatar — then
-                launch it on Pump without leaving the app.
-              </p>
-              <div className="btn-row hero-actions">
-                <ButtonLink to="/app/mix" variant="primary" size="lg" arrow onClick={() => track("landing_primary_cta")}>
-                  Start mixing
-                </ButtonLink>
-                <ButtonLink
-                  to="/app/launch"
-                  variant="outline"
-                  size="lg"
-                  onClick={() => track("landing_direct_launch_cta")}
-                >
-                  Launch without AI
-                </ButtonLink>
-              </div>
-              <p className="metric-label hero-fineprint">
-                No wallet prompt until you choose to sign. AI writes four fields and draws one avatar — nothing else.
-              </p>
+              <p className="lede">Pick two tokens. Get one new character. Launch it on Pump</p>
             </div>
 
-            <div className="hero-figure">
-              <BornMascot
-                variant="full"
-                state={mascotState}
-                parentA={Boolean(parentA)}
-                parentB={Boolean(parentB)}
-                lit
-                className="sz-hero"
-                caption="BORN · operator"
-              />
-            </div>
+            <MixBench
+              parentA={parentA}
+              parentB={parentB}
+              queryA={queryA}
+              queryB={queryB}
+              resultsA={resultsA}
+              resultsB={resultsB}
+              searchError={searchError}
+              duplicateError={duplicateError}
+              mascotState={mascotState}
+              reduceMotion={Boolean(reduceMotion)}
+              onQueryA={(value) => {
+                setQueryA(value);
+                scheduleSearch("a", value);
+              }}
+              onQueryB={(value) => {
+                setQueryB(value);
+                scheduleSearch("b", value);
+              }}
+              onSelect={selectParent}
+              onClear={clearParent}
+            />
           </div>
 
           {/* fact strip */}
@@ -235,51 +231,15 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ------------------------------------------------------ the bench */}
-        <SectionReveal className="section tight" ariaLabel="Mix bench">
-          <div className="wrap">
-            <div className="panel-head">
-              <div>
-                <p className="eyebrow">No wallet required</p>
-                <h2>Start on the bench.</h2>
-              </div>
-              <p className="body-copy bench-intro">
-                Drop two parents into the slots. The result opens in the full mixer — nothing is signed, nothing is spent.
-              </p>
-            </div>
-            <MixBench
-              parentA={parentA}
-              parentB={parentB}
-              queryA={queryA}
-              queryB={queryB}
-              resultsA={resultsA}
-              resultsB={resultsB}
-              searchError={searchError}
-              duplicateError={duplicateError}
-              reduceMotion={Boolean(reduceMotion)}
-              onQueryA={(value) => {
-                setQueryA(value);
-                scheduleSearch("a", value);
-              }}
-              onQueryB={(value) => {
-                setQueryB(value);
-                scheduleSearch("b", value);
-              }}
-              onSelect={selectParent}
-              onClear={clearParent}
-            />
-          </div>
-        </SectionReveal>
-
         {/* --------------------------------------------------------- how it works */}
         <SectionReveal className="section raised" ariaLabel="Process">
           <div className="wrap">
             <div className="panel-head">
               <div>
                 <p className="eyebrow">Process</p>
-                <h2>From two memes to one mint.</h2>
+                <h2>From two memes to one mint</h2>
               </div>
-              <p className="body-copy">The lab does not predict the market. It makes new things for it.</p>
+              <p className="body-copy">The lab does not predict the market. It makes new things for it</p>
             </div>
             <ol className="step-grid">
               {HOW.map(([index, title, copy]) => (
@@ -299,20 +259,16 @@ export function LandingPage() {
             <div className="path-grid">
               <article className="path-card is-a">
                 <p className="eyebrow">AI Mix</p>
-                <h2>I have two tokens. Make the third.</h2>
-                <p className="body-copy">
-                  Two parents in, one editable character out. The wallet stays out of it until you want it in.
-                </p>
+                <h2>I have two tokens. Make the third</h2>
+<p className="body-copy">Two parents in, one editable character out</p>
                 <ButtonLink to="/app/mix" variant="primary" arrow onClick={() => track("landing_primary_cta")}>
                   Open the mixer
                 </ButtonLink>
               </article>
               <article className="path-card is-b">
                 <p className="eyebrow">Direct Launch</p>
-                <h2>I already know what I am launching.</h2>
-                <p className="body-copy">
-                  Skip the mixer entirely. Name, ticker, image, links — then review and sign. Works with AI offline.
-                </p>
+                <h2>I already know what I am launching</h2>
+<p className="body-copy">Name, ticker, image, links. Works with AI offline</p>
                 <ButtonLink to="/app/launch" variant="outline" arrow onClick={() => track("landing_direct_launch_cta")}>
                   Open the launchpad
                 </ButtonLink>
@@ -327,7 +283,7 @@ export function LandingPage() {
             <div className="panel-head">
               <div>
                 <p className="eyebrow">Live scan</p>
-                <h2>Pick something alive.</h2>
+                <h2>Pick something alive</h2>
               </div>
               <div className="btn-row">
                 <div className="segmented" role="group" aria-label="Feed filter">
@@ -344,7 +300,7 @@ export function LandingPage() {
             </div>
             <div className="feed-meta">
               {feedUpdatedAt ? <span className="metric-label">Last updated {feedUpdatedAt}</span> : null}
-              {feedCached ? <span className="chip warn">Cached examples · not live market data</span> : null}
+              {feedCached ? <span className="chip warn">Cached examples, not live market data</span> : null}
             </div>
             {feedError ? (
               <p className="note error" role="status">
@@ -373,19 +329,16 @@ export function LandingPage() {
         <SectionReveal id="mascot" className="section born-section" ariaLabel="Meet BORN">
           <div className="wrap born-section-inner">
             <div className="born-section-figure">
-              <BornMascot variant="portrait" state="idle" quiet lit className="sz-lg" />
+              <BornMascot state="idle" quiet lit className="sz-md" />
             </div>
             <div className="stack">
               <p className="eyebrow">Meet the operator</p>
-              <h2>He does not predict the market. He makes new things for it.</h2>
+              <h2>He has no face, just the space where one should be</h2>
               <p className="body-copy">
-                BORN has no face — just the space where one should be. Feed him two tokens and that space does the work:
-                one parent arrives warm, one arrives cold, they collide, and what comes out is a character that should not
-                exist but somehow makes sense.
+                Feed BORN two tokens and that space does the work. One parent arrives warm, one arrives cold, they
+                collide, and out comes something that should not exist but somehow makes sense
               </p>
-              <p className="body-copy">
-                He is a mascot, not an oracle. He will not tell you what to buy, and he will never ask for your keys.
-              </p>
+              <p className="body-copy">A mascot, not an oracle. He will never ask for your keys</p>
               <div className="btn-row">
                 <ButtonLink to="/app/mix" variant="primary" arrow>
                   Enter the lab
@@ -401,7 +354,7 @@ export function LandingPage() {
             <div className="panel-head">
               <div>
                 <p className="eyebrow">Safety</p>
-                <h2>Safe to sign. Never safe to assume.</h2>
+                <h2>Safe to sign. Never safe to assume</h2>
               </div>
             </div>
             <div className="safety-layout">
@@ -424,10 +377,8 @@ export function LandingPage() {
           <div className="wrap faq-layout">
             <div className="stack sm faq-head">
               <p className="eyebrow">FAQ</p>
-              <h2>Before you sign.</h2>
-              <p className="body-copy">
-                {appConfig.productName} is an interface. Everything below describes what it can and cannot do.
-              </p>
+              <h2>Before you sign</h2>
+<p className="body-copy">What {appConfig.productName} can and cannot do</p>
             </div>
             <div className="faq-list">
               {FAQ_ITEMS.map(([question, answer], index) => (
@@ -462,6 +413,7 @@ function MixBench({
   resultsB,
   searchError,
   duplicateError,
+  mascotState,
   reduceMotion,
   onQueryA,
   onQueryB,
@@ -476,12 +428,14 @@ function MixBench({
   resultsB: TokenSummary[];
   searchError: string;
   duplicateError: string;
+  mascotState: BornState;
   reduceMotion: boolean;
   onQueryA: (value: string) => void;
   onQueryB: (value: string) => void;
   onSelect: (side: "a" | "b", token: TokenSummary) => void;
   onClear: (side: "a" | "b") => void;
 }) {
+  const ready = Boolean(parentA && parentB);
   return (
     <div className="panel flush bench" aria-label="Mix bench">
       <div className="chrome-bar">
@@ -519,7 +473,19 @@ function MixBench({
           <span className="bench-op" aria-hidden="true">
             →
           </span>
-          <MergeCore parentA={parentA} parentB={parentB} />
+          {/*
+            The operator is the output slot. His face already renders the
+            merge, so he does the job a separate result box used to do and
+            takes up less of the page doing it.
+          */}
+          <div className="bench-out">
+            <BornMascot
+              state={mascotState}
+              parentA={Boolean(parentA)}
+              parentB={Boolean(parentB)}
+              className="bare sz-sm"
+            />
+          </div>
         </div>
 
         {duplicateError ? (
@@ -532,18 +498,33 @@ function MixBench({
             {searchError}
           </p>
         ) : null}
-        {parentA && parentB ? (
-          <motion.div
-            className="btn-row"
-            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0.12 : 0.22 }}
-          >
-            <ButtonLink to="/app/mix" variant="primary" arrow>
-              Start mutation
+
+        <div className="bench-actions">
+          {ready ? (
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduceMotion ? 0.12 : 0.22 }}
+            >
+              <ButtonLink to="/app/mix" variant="primary" size="lg" arrow>
+                Start mutation
+              </ButtonLink>
+            </motion.div>
+          ) : (
+            <ButtonLink to="/app/mix" variant="primary" size="lg" arrow onClick={() => track("landing_primary_cta")}>
+              Open the mixer
             </ButtonLink>
-          </motion.div>
-        ) : null}
+          )}
+          <ButtonLink
+            to="/app/launch"
+            variant="outline"
+            size="lg"
+            onClick={() => track("landing_direct_launch_cta")}
+          >
+            Launch without AI
+          </ButtonLink>
+          <span className="metric-label bench-note">No wallet opens until you sign</span>
+        </div>
       </div>
     </div>
   );

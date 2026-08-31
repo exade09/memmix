@@ -326,7 +326,7 @@ export function LaunchPage() {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">Launch a token</p>
-          <h1>{fromMix ? "Review the mutation before anything is signed." : "Direct launch does not wait for AI."}</h1>
+          <h1>{fromMix ? "Review before anything is signed" : "Direct launch does not wait for AI"}</h1>
         </div>
       </header>
 
@@ -342,9 +342,9 @@ export function LaunchPage() {
             {appConfig.cluster !== "mainnet-beta" ? <p className="note warn">{DEVNET_LAUNCH_NOTICE}</p> : null}
             <p className="note warn">{boundary.reason}</p>
             <SafetyBanner showFee />
-            {fromMix ? <p className="metric-label">Fields came from Mix. Edit anything before review.</p> : null}
+            {fromMix ? <p className="metric-label">Fields came from Mix. Edit anything before review</p> : null}
             {!appConfig.enableAiText || !appConfig.enableAiImage ? (
-              <p className="metric-label">AI tools can be offline. Direct Launch still works.</p>
+              <p className="metric-label">AI tools can be offline. Direct Launch still works</p>
             ) : null}
           </div>
 
@@ -392,7 +392,7 @@ export function LaunchPage() {
               <FileButton variant="outline" onFile={onPickAvatar}>
                 {avatarSrc ? "Replace avatar" : "Upload avatar"}
               </FileButton>
-              <span className="metric-label">Square crop, 1024 × 1024 PNG. No SVG, max 5 MB.</span>
+              <span className="metric-label">Square crop, 1024 × 1024 PNG. No SVG, max 5 MB</span>
             </div>
           </div>
 

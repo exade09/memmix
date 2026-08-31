@@ -12,13 +12,12 @@
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <!--
-      The hero figure is the first thing the landing page is about, but the
-      <img> only exists once a 1.4 MB bundle has parsed. Preloading starts the
-      116 KB fetch during HTML parse instead, so the art is already cached when
-      React mounts. App routes pay one unused request for it; the landing is
-      where first impressions happen.
+      BORN sits in the hero bench, but the <img> only exists once a 1.4 MB
+      bundle has parsed. Preloading starts the fetch during HTML parse instead,
+      so the art is cached before React mounts and the SVG fallback never has
+      to stand in. The same file is used on every route.
     -->
-    <link rel="preload" as="image" href="/assets/brand/born-full.png" fetchpriority="high" />
+    <link rel="preload" as="image" href="/assets/brand/born-portrait.png" fetchpriority="high" />
   </head>
   <body>
     <div id="root"></div>

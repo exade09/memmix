@@ -67,7 +67,7 @@ export function LegalHubPage() {
 
 export function SafetyPage() {
   return (
-    <LegalShell title="Safe to sign. Never safe to assume.">
+    <LegalShell title="Safe to sign. Never safe to assume">
       <SafetyBanner />
       <p className="note">{ZERO_PLATFORM_FEE}</p>
       <ol className="pillar-grid">
@@ -154,8 +154,8 @@ export function NotFoundPage() {
     <div className="section">
       <div className="wrap stack lg not-found">
         <p className="eyebrow">404</p>
-        <h1>This mutation did not survive.</h1>
-        <p className="body-copy">The page you asked for does not exist. Everything else is still on the bench.</p>
+        <h1>This mutation did not survive</h1>
+        <p className="body-copy">Everything else is still on the bench</p>
         <div className="btn-row">
           <ButtonLink to="/" variant="primary" arrow>
             Back to the lab

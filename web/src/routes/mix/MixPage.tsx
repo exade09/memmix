@@ -240,7 +240,7 @@ export function MixPage() {
     try {
       const result = await mixConcepts(parentA, parentB, "", controller.signal);
       setConcepts(result.concepts);
-      setFallbackNotice(result.fallback ? result.fallback_notice || "Basic mix mode — AI logic is temporarily unavailable." : "");
+      setFallbackNotice(result.fallback ? result.fallback_notice || "Basic mix mode. AI logic is temporarily unavailable" : "");
       const recommended = result.concepts.find((item) => item.recommended) || result.concepts[0];
       if (recommended) applyConcept(recommended);
       track("mix_concepts_ready", { fallback: result.fallback });
@@ -420,7 +420,7 @@ export function MixPage() {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">Create a mutation</p>
-          <h1>Pick two existing tokens. We mix their logic, not their charts.</h1>
+          <h1>Two tokens in. One born</h1>
         </div>
         <ol className="step-rail" aria-label="Progress">
           {["Parents", "Concept", "Avatar"].map((label, index) => (
@@ -469,7 +469,6 @@ export function MixPage() {
           />
           <div className="mix-core">
             <BornMascot
-              variant="portrait"
               state={mascot}
               parentA={Boolean(parentA)}
               parentB={Boolean(parentB)}
@@ -489,10 +488,10 @@ export function MixPage() {
         </div>
         <div className="mix-console-foot">
           {state === "EMPTY" ? (
-            <p className="metric-label">Two empty slots. That is usually how trouble starts.</p>
+            <p className="metric-label">Two empty slots</p>
           ) : (
             <p className="metric-label">
-              {analyzing ? analyzeLabel : "One mutation reads both parents and returns three concepts."}
+              {analyzing ? analyzeLabel : "One mutation reads both parents and returns three concepts"}
             </p>
           )}
           <div className="btn-row">
@@ -512,7 +511,7 @@ export function MixPage() {
           <aside className="concept-column">
             <p className="eyebrow">Three concepts</p>
             <p className="metric-label">
-              {inheritance || "Inheritance appears after a concept is chosen."}
+              {inheritance || "Inheritance appears after a concept is chosen"}
             </p>
             <div className="concept-list">
               {concepts.map((concept) => (
@@ -564,7 +563,7 @@ export function MixPage() {
                 </p>
               ) : null}
               {!appConfig.enableAiImage ? (
-                <p className="metric-label">Avatar generation is offline. Upload your own or use Direct Launch.</p>
+                <p className="metric-label">Avatar generation is offline. Upload your own or use Direct Launch</p>
               ) : null}
               {selected && (!usableReference(parentA, refA) || !usableReference(parentB, refB)) ? (
                 <p className="note warn">This token has no usable image. Upload one to continue.</p>
@@ -598,7 +597,7 @@ export function MixPage() {
                 ) : null}
               </div>
               {previewSrc && !replaced ? (
-                <p className="metric-label">Regenerate avatar starts one new billable drawing.</p>
+                <p className="metric-label">Regenerate starts one new billable drawing</p>
               ) : null}
             </div>
 
@@ -631,9 +630,7 @@ export function MixPage() {
             <Button type="button" variant="primary" size="lg" arrow disabled={!fieldsValid} onClick={useInLaunch}>
               Use in Launch
             </Button>
-            <p className="metric-label">
-              This hands the draft to the launch form. No wallet opens, nothing is signed.
-            </p>
+            <p className="metric-label">No wallet opens, nothing is signed</p>
           </form>
         </div>
       ) : null}

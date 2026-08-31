@@ -10,10 +10,9 @@ import { motion, useInView, useReducedMotion } from "motion/react";
   collide, and what is born appears as a cream point inside the hood.
 
   He is authored as SVG so he can react to real product state and scale to any
-  size. Final raster art dropped into web/public/assets/brand/ as
-  `born-portrait.png` / `born-full.png` is loaded over the top automatically,
-  and the SVG becomes the fallback. Both sit on the same bone plate, so the
-  composition does not change when the art arrives.
+  size, with `web/public/assets/brand/born-portrait.png` loaded over the top as
+  the real drawing. The SVG is only the fallback for when that file cannot be
+  fetched.
 */
 
 export type BornState =
@@ -27,11 +26,10 @@ export type BornState =
   | "wallet"
   | "launched";
 
-export type BornVariant = "portrait" | "full";
+export type BornVariant = "portrait";
 
 const RASTER: Record<BornVariant, string> = {
   portrait: "/assets/brand/born-portrait.png",
-  full: "/assets/brand/born-full.png",
 };
 
 type RasterStatus = "loading" | "ok" | "failed";
@@ -249,67 +247,6 @@ function PortraitFigure({ id, state, animate, parentA, parentB }: FigureProps) {
   );
 }
 
-const F_ROBE =
-  "M94 218 C95 192 102 168 124 154 L216 154 C238 168 245 192 246 218 C250 302 250 392 248 470 C206 480 134 480 92 470 C90 392 90 302 94 218 Z";
-const F_HOOD =
-  "M124 158 C106 128 104 74 120 44 C132 22 154 10 178 14 C204 18 222 44 227 78 C231 110 225 138 217 160 C190 168 150 166 124 158 Z";
-
-function FullFigure({ id, state, animate, parentA, parentB }: FigureProps) {
-  return (
-    <svg viewBox="0 -12 340 546" className="born-svg" role="img" aria-label={ALT[state]}>
-      <InkDefs id={id} />
-      <g filter={`url(#${id}-ink)`}>
-        {/* shoes peek out from under the hem */}
-        <ellipse cx="134" cy="484" rx="32" ry="16" fill="#2f2f34" />
-        <ellipse cx="206" cy="484" rx="32" ry="16" fill="#2f2f34" />
-        <g fill="none" stroke="#0a0a0a" strokeWidth="4.5">
-          <ellipse cx="134" cy="484" rx="32" ry="16" />
-          <ellipse cx="206" cy="484" rx="32" ry="16" />
-        </g>
-
-        <path d={F_ROBE} fill={`url(#${id}-robe)`} />
-        <path
-          d="M176 156 C188 246 194 364 192 476 C214 476 236 473 248 470 C250 392 250 302 246 218 C245 192 238 168 216 154 Z"
-          fill="var(--robe-shadow)"
-          opacity="0.38"
-        />
-        <path d="M122 186 C116 264 116 372 120 464" fill="none" stroke="var(--robe-shadow)" strokeWidth="3" opacity="0.5" />
-        <path d="M218 186 C224 264 224 372 220 464" fill="none" stroke="var(--robe-shadow)" strokeWidth="3" opacity="0.5" />
-
-        <path d={F_HOOD} fill={`url(#${id}-robe)`} />
-        <path
-          d="M188 66 C184 42 182 26 178 14 C204 18 222 44 227 78 C231 110 225 138 217 160 C207 163 197 165 188 166 Z"
-          fill="var(--robe-deep)"
-          opacity="0.5"
-        />
-        <ellipse cx="168" cy="88" rx="38" ry="56" transform="rotate(-6 168 88)" fill="var(--robe-deep)" />
-        <ellipse cx="179" cy="93" rx="29" ry="47" transform="rotate(-6 179 93)" fill="var(--void-face)" />
-        <path
-          d="M169 96 C157 110 157 130 169 140 C182 150 197 142 199 128 C202 111 190 92 178 90 Z"
-          fill="var(--void-face-lit)"
-          opacity="0.3"
-        />
-
-        <g transform="translate(152 65) scale(0.55)">
-          <FaceSignal state={state} animate={animate} parentA={parentA} parentB={parentB} />
-        </g>
-
-        <g fill="none" stroke="#e8e3d7" strokeWidth="3" strokeLinecap="round" opacity="0.85">
-          <path d="M130 150 C114 122 113 76 126 50" />
-          <path d="M100 236 C97 312 96 388 97 454" strokeWidth="2.5" />
-        </g>
-
-        <g fill="none" stroke="#0a0a0a" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d={F_ROBE} />
-          <path d={F_HOOD} />
-          <ellipse cx="179" cy="93" rx="29" ry="47" transform="rotate(-6 179 93)" strokeWidth="4.5" />
-          <path d="M181 42 C179 52 179 60 180 68" strokeWidth="3" />
-        </g>
-      </g>
-    </svg>
-  );
-}
-
 type FigureProps = {
   id: string;
   state: BornState;
@@ -359,7 +296,6 @@ export function BornMascot({
 
   // Looping motion stops off-viewport, in a hidden tab and under reduced motion.
   const animate = Boolean(!reduceMotion && inView && pageVisible && !quiet);
-  const Figure = variant === "full" ? FullFigure : PortraitFigure;
 
   return (
     <div
@@ -377,7 +313,7 @@ export function BornMascot({
           the image has actually failed. Until then the bone plate stands in.
         */}
         {status === "failed" ? (
-          <Figure id={id} state={state} animate={animate} parentA={parentA} parentB={parentB} />
+          <PortraitFigure id={id} state={state} animate={animate} parentA={parentA} parentB={parentB} />
         ) : null}
         <img
           className={`born-raster${status === "ok" ? " is-on" : ""}`}

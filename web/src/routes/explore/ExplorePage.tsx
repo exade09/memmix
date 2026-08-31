@@ -104,7 +104,7 @@ export function ExplorePage() {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">Discovery</p>
-          <h1>Explore what is already alive.</h1>
+          <h1>Explore what is already alive</h1>
         </div>
         <div className="segmented" role="group" aria-label="Feed filter">
           {(["trending", "new", "mixable"] as const).map((item) => (
@@ -167,7 +167,7 @@ export function ExplorePage() {
 
       <div className="feed-meta">
         {updatedAt ? <span className="metric-label">Last updated {updatedAt}</span> : null}
-        {cached ? <span className="chip warn">Cached examples · not live market data</span> : null}
+        {cached ? <span className="chip warn">Cached examples, not live market data</span> : null}
       </div>
 
       {warning ? <p className="note warn">{warning}</p> : null}

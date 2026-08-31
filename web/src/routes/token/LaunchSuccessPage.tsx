@@ -64,9 +64,9 @@ export function LaunchSuccessPage() {
         <header className="page-head">
           <div className="stack sm">
             <p className="eyebrow">Launch</p>
-            <h1>Waiting for a confirmed mint.</h1>
+            <h1>Waiting for a confirmed mint</h1>
           </div>
-          <BornMascot variant="portrait" state="warning" quiet className="bare sz-sm" />
+          <BornMascot state="warning" quiet className="bare sz-sm" />
         </header>
         <p className="empty-state">A launch is not confirmed until the mint exists on-chain.</p>
         <div className="btn-row">
@@ -88,10 +88,10 @@ export function LaunchSuccessPage() {
         <div className="stack sm">
           <p className="eyebrow">{locallyConfirmed ? "Launch confirmed" : "Mint in URL"}</p>
           <h1>
-            {locallyConfirmed ? "It is alive." : "Verify this mint on-chain before you treat it as launched."}
+            {locallyConfirmed ? "It is alive" : "Verify this mint on-chain before you treat it as launched"}
           </h1>
         </div>
-        <BornMascot variant="portrait" state="launched" parentA parentB lit className="sz-md" />
+        <BornMascot state="launched" parentA parentB lit className="sz-sm" />
       </header>
 
       <div className="panel token-hero">

@@ -27,12 +27,8 @@
   transition: box-shadow var(--t-slow), border-color var(--t-base);
 }
 
-.born.portrait .born-plate {
+.born .born-plate {
   aspect-ratio: 1;
-}
-
-.born.full .born-plate {
-  aspect-ratio: 2 / 3;
 }
 
 .born-svg {
@@ -161,10 +157,6 @@
 
 .born.sz-lg {
   max-width: 320px;
-}
-
-.born.sz-hero {
-  max-width: 440px;
 }
 
 /* a slim frame variant used inside dense app panels */
