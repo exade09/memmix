@@ -32,7 +32,9 @@
 .hero-copy {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 16px;
+  text-align: center;
 }
 
 .hero-copy h1 {
@@ -46,7 +48,9 @@
 }
 
 .hero-copy .lede {
-  max-width: 40ch;
+  /* wide enough for one line on desktop; balanced rather than orphaned below */
+  max-width: 58ch;
+  text-wrap: balance;
 }
 
 /* ---------- bench: the launcher, sitting in the hero ---------- */

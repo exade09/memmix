@@ -84,7 +84,13 @@ body[data-page-hidden="true"] .grain {
   top: 0;
   z-index: 70;
   height: var(--header-h);
-  display: flex;
+  /*
+    Equal side tracks, so the nav sits at the true centre of the header
+    rather than in the middle of whatever space the wordmark and the tools
+    happen to leave over.
+  */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 20px;
   padding-inline: clamp(14px, 3vw, 28px);
@@ -96,8 +102,8 @@ body[data-page-hidden="true"] .grain {
 .header-nav {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  margin-inline: auto;
 }
 
 .nav-link {
@@ -128,8 +134,8 @@ body[data-page-hidden="true"] .grain {
 .header-tools {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
-  margin-left: auto;
 }
 
 .search-chip {

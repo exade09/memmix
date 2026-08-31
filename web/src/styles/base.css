@@ -152,6 +152,11 @@ hr {
   display: none;
 }
 
+/* centred layouts need the dot and label to travel together */
+.hero-copy .eyebrow {
+  justify-content: center;
+}
+
 .mono {
   font-family: var(--font-mono);
   font-size: var(--step--1);
