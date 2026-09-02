@@ -471,7 +471,7 @@ export function LaunchPage() {
             <summary>Advanced · optional initial buy</summary>
             <div className="disclosure-body">
               <p className="metric-label">
-                Default is 0 SOL: create without buy. Initial buy is never turned on automatically.
+                Default is 0 ETH: create without buy. The opening buy is never turned on automatically, and it is a second signature after the token exists.
               </p>
               <div className="btn-row tight">
                 {INITIAL_BUY_PRESETS.map((preset) => (
@@ -483,12 +483,12 @@ export function LaunchPage() {
                     className={normalizeInitialBuy(initialBuy) === preset ? "is-on" : ""}
                     onClick={() => setInitialBuy(preset)}
                   >
-                    {preset} SOL
+                    {preset} ETH
                   </Button>
                 ))}
               </div>
               <label className="field">
-                <span>Custom SOL</span>
+                <span>Custom ETH</span>
                 <input value={initialBuy} onChange={(event) => setInitialBuy(event.target.value)} inputMode="decimal" />
                 {buyError ? <span className="note error">{buyError}</span> : null}
               </label>

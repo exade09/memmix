@@ -88,8 +88,10 @@ MIXBORN system is preserved at tag `design-mixborn-dark` and branch
 **Renamed in copy only.** These are contracts and were deliberately left alone:
 `localStorage` keys (`mixborn.draftMix`, `mixborn.pendingLaunch`, `mixborn.analytics.*`, …),
 the avatar style id `mixborn_lofi_v1` (validated server-side in `avatar_job.py`),
-and the env var `MIXBORN_JOB_HMAC`. Renaming any of them is a migration, not a
-restyle — `mixborn.pendingLaunch` in particular is the launch reconciliation record.
+the env var `MIXBORN_JOB_HMAC`, and the multipart field `initial_buy_sol`
+(client, `avatar_job.py` and `storage/metadata.py` all agree on that name;
+the units are ETH regardless of what it is called). Renaming any of them is a
+migration, not a restyle — `mixborn.pendingLaunch` in particular is the launch reconciliation record.
 
 ---
 
