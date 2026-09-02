@@ -30,6 +30,9 @@ class HealthEndpointTests(unittest.TestCase):
         self.assertNotIn("super-secret-pinata-jwt", dumped)
         self.assertNotIn("sk-test-openai", dumped)
         self.assertNotIn("PINATA_JWT", dumped)
+        # Readiness is reported, the secret itself never is.
+        self.assertIn(payload["data"]["image_jobs"], {"ready", "no_secret"})
+        self.assertIn(payload["data"]["images"], {"ok", "unavailable"})
 
 
 class RpcProxyTests(unittest.TestCase):

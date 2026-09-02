@@ -32,6 +32,10 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
         # install only showed up as MISSING_PILLOW on a real upload, after the
         # user had filled in the whole form. Surfaced here instead.
         "images": _probe_pillow(),
+        # A WaveSpeed key alone is not enough: avatar jobs are signed, and
+        # without the secret they fail with a message that says nothing about
+        # the cause. Reported separately so the missing half is obvious.
+        "image_jobs": _probe_job_secret(),
         "rpc": rpc_status,
         "chain": "robinhood",
         "chain_id": chain_id(),
@@ -52,6 +56,7 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
                 "image_ai": "disabled",
                 "metadata": "disabled",
                 "images": _probe_pillow(),
+                "image_jobs": "unavailable",
                 "rpc": "degraded",
                 "chain": "robinhood",
                 "chain_id": chain_id(),
@@ -60,6 +65,16 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
                 "mainnet_launch": False,
             }
     return payload
+
+
+def _probe_job_secret() -> str:
+    """
+    Whether avatar jobs can be signed. Reports the state only, never the
+    secret and never which of the accepted names supplied it.
+    """
+    from axiom_scanner.analysis.avatar_job import _hmac_secret
+
+    return "ready" if _hmac_secret() else "no_secret"
 
 
 def _probe_pillow() -> str:
