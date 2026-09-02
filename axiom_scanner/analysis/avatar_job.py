@@ -418,8 +418,16 @@ def _clean_trait(value: str, max_len: int) -> str:
 
 
 def _hmac_secret() -> bytes:
-    raw = os.getenv("MIXBORN_JOB_HMAC", "").strip() or os.getenv("JOB_TOKEN_HMAC_SECRET", "").strip()
-    return raw.encode("utf-8") if raw else b""
+    """
+    FONS_JOB_HMAC is the current name; the other two are kept so an existing
+    deployment does not lose its avatar jobs on a rename. Env var names are
+    case sensitive, so this looks for the exact spellings only.
+    """
+    for name in ("FONS_JOB_HMAC", "MIXBORN_JOB_HMAC", "JOB_TOKEN_HMAC_SECRET"):
+        raw = os.getenv(name, "").strip()
+        if raw:
+            return raw.encode("utf-8")
+    return b""
 
 
 def _token_body(payload: dict[str, Any]) -> bytes:

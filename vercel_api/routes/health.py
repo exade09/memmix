@@ -28,6 +28,10 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
             else "disabled"
         ),
         "metadata": "configured" if os.getenv("PINATA_JWT", "").strip() else "disabled",
+        # Pillow is imported lazily deep inside avatar handling, so a missing
+        # install only showed up as MISSING_PILLOW on a real upload, after the
+        # user had filled in the whole form. Surfaced here instead.
+        "images": _probe_pillow(),
         "rpc": rpc_status,
         "chain": "robinhood",
         "chain_id": chain_id(),
@@ -47,6 +51,7 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
                 "text_ai": "disabled",
                 "image_ai": "disabled",
                 "metadata": "disabled",
+                "images": _probe_pillow(),
                 "rpc": "degraded",
                 "chain": "robinhood",
                 "chain_id": chain_id(),
@@ -55,6 +60,15 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
                 "mainnet_launch": False,
             }
     return payload
+
+
+def _probe_pillow() -> str:
+    """Whether avatars can be processed at all on this deployment."""
+    try:
+        from PIL import Image  # noqa: F401
+    except ImportError:
+        return "unavailable"
+    return "ok"
 
 
 def _probe_rpc() -> str:

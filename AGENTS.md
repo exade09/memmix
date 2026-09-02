@@ -88,7 +88,8 @@ MIXBORN system is preserved at tag `design-mixborn-dark` and branch
 **Renamed in copy only.** These are contracts and were deliberately left alone:
 `localStorage` keys (`mixborn.draftMix`, `mixborn.pendingLaunch`, `mixborn.analytics.*`, …),
 the avatar style id `mixborn_lofi_v1` (validated server-side in `avatar_job.py`),
-the env var `MIXBORN_JOB_HMAC`, and the multipart field `initial_buy_sol`
+the env var name `MIXBORN_JOB_HMAC` (still read, though `FONS_JOB_HMAC` is now the
+current name and the one actually set in production), and the multipart field `initial_buy_sol`
 (client, `avatar_job.py` and `storage/metadata.py` all agree on that name;
 the units are ETH regardless of what it is called). Renaming any of them is a
 migration, not a restyle — `mixborn.pendingLaunch` in particular is the launch reconciliation record.
@@ -172,7 +173,7 @@ Git: large uncommitted FONS rewrite may sit on `main` on top of the old Axiom Me
 - Two different parent addresses required.
 - `POST /api/mix/concepts` → OpenAI Structured Outputs, else a **labeled** deterministic fallback (“Basic mix mode”). Never silent fake AI.
 - Three concepts, one `recommended`. User selects a concept **before** avatar generation.
-- One generate action → one avatar job. Start + status polling. Survives >60s. HMAC job token (`MIXBORN_JOB_HMAC` or alias `JOB_TOKEN_HMAC_SECRET`).
+- One generate action → one avatar job. Start + status polling. Survives >60s. HMAC job token (`FONS_JOB_HMAC`, with `MIXBORN_JOB_HMAC` and `JOB_TOKEN_HMAC_SECRET` still accepted).
 - Prompt injection stripped from parent text. Duplicate in-flight job rejected.
 - **Use in Launch** writes draft to `localStorage` without opening the wallet. Avatar bytes live in memory (`web/src/domain/avatarMemory.ts`). After reload, a blob URL is gone — say so, do not pretend the image is still there.
 
@@ -260,7 +261,7 @@ ENABLE_MAINNET_LAUNCH=true
 
 Frontend flags live in `web/src/app/config.ts`. Server flags live in `vercel_api/launch_config.py`. A public Vite flag is **not** a security boundary; the server must enforce the same kill switches.
 
-Server-only secrets (never `VITE_`): `OPENAI_API_KEY`, `WAVESPEED_API_KEY`, `PINATA_JWT`, `MIXBORN_JOB_HMAC` / `JOB_TOKEN_HMAC_SECRET`.
+Server-only secrets (never `VITE_`): `OPENAI_API_KEY`, `WAVESPEED_API_KEY`, `PINATA_JWT`, `FONS_JOB_HMAC`.
 
 Without secrets: mix uses labeled fallback, avatar/metadata report unavailable, Direct Launch still works. That is correct.
 

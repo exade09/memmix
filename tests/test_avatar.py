@@ -405,5 +405,41 @@ class DispatchAvatarTests(AvatarTestCase):
         self.assertNotIn("openai.com/v1/images", source)
 
 
+
+class HmacSecretNameTests(unittest.TestCase):
+    """
+    The owner set this in production as FONS_JOB_HMAC, not MIXBORN_JOB_HMAC.
+    Env var names are case sensitive, so the accepted spellings are pinned.
+    """
+
+    def setUp(self) -> None:
+        for name in ("FONS_JOB_HMAC", "MIXBORN_JOB_HMAC", "JOB_TOKEN_HMAC_SECRET"):
+            os.environ.pop(name, None)
+
+    tearDown = setUp
+
+    def test_each_accepted_name_supplies_the_secret(self) -> None:
+        from axiom_scanner.analysis.avatar_job import _hmac_secret
+
+        for name in ("FONS_JOB_HMAC", "MIXBORN_JOB_HMAC", "JOB_TOKEN_HMAC_SECRET"):
+            with self.subTest(name=name):
+                os.environ[name] = "a-secret"
+                try:
+                    self.assertEqual(_hmac_secret(), b"a-secret")
+                finally:
+                    os.environ.pop(name, None)
+
+    def test_current_name_wins_over_the_legacy_ones(self) -> None:
+        from axiom_scanner.analysis.avatar_job import _hmac_secret
+
+        os.environ["MIXBORN_JOB_HMAC"] = "old"
+        os.environ["FONS_JOB_HMAC"] = "new"
+        self.assertEqual(_hmac_secret(), b"new")
+
+    def test_no_secret_means_no_secret(self) -> None:
+        from axiom_scanner.analysis.avatar_job import _hmac_secret
+
+        self.assertEqual(_hmac_secret(), b"")
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,5 @@
 {
-  "installCommand": "npm --prefix web install",
-  "buildCommand": "npm --prefix web run build",
+  "buildCommand": "npm --prefix web install && npm --prefix web run build",
   "outputDirectory": "web/dist",
   "functions": {
     "api/index.py": {
