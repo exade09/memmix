@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { appConfig, clusterLabel } from "../../app/config";
-import { BornMascot, type BornState } from "../../components/brand/BornMascot";
+import { GlassMark, type GlassState } from "../../components/brand/GlassMark";
 import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { SiteFooter } from "../../components/layout/SiteFooter";
 import { SectionReveal } from "../../components/motion/SectionReveal";
@@ -65,7 +65,7 @@ export function LandingPage() {
     setParentB(draft.parent_b);
   }, []);
 
-  const mascotState = useMemo<BornState>(() => {
+  const mascotState = useMemo<GlassState>(() => {
     if (duplicateError) return "warning";
     if (parentA && parentB) return "ready";
     if (parentA || parentB || queryA || queryB) return "searching";
@@ -325,20 +325,20 @@ export function LandingPage() {
           </div>
         </SectionReveal>
 
-        {/* --------------------------------------------------------- BORN */}
-        <SectionReveal id="mascot" className="section born-section" ariaLabel="Meet BORN">
+        {/* --------------------------------------------------------- the mark */}
+        <SectionReveal id="mascot" className="section born-section" ariaLabel="What is born">
           <div className="wrap born-section-inner">
             <div className="born-section-figure">
-              <BornMascot state="idle" quiet lit className="sz-md" />
+              <GlassMark state="idle" className="sz-lg" />
             </div>
             <div className="stack">
-              <p className="eyebrow">Meet the operator</p>
-              <h2>He has no face, just the space where one should be</h2>
+              <p className="eyebrow">What is born</p>
+              <h2>Two rings of glass, and the bead between them</h2>
               <p className="body-copy">
-                Feed BORN two tokens and that space does the work. One parent arrives warm, one arrives cold, they
-                collide, and out comes something that should not exist but somehow makes sense
+                One parent arrives warm, one arrives cold. Where they overlap, something clear forms that was in
+                neither of them. That is the whole product, and it is the whole mark
               </p>
-              <p className="body-copy">A mascot, not an oracle. He will never ask for your keys</p>
+              <p className="body-copy">The rings hold. They never hold your keys</p>
               <div className="btn-row">
                 <ButtonLink to="/app/mix" variant="primary" arrow>
                   Enter the lab
@@ -428,7 +428,7 @@ function MixBench({
   resultsB: TokenSummary[];
   searchError: string;
   duplicateError: string;
-  mascotState: BornState;
+  mascotState: GlassState;
   reduceMotion: boolean;
   onQueryA: (value: string) => void;
   onQueryB: (value: string) => void;
@@ -440,10 +440,18 @@ function MixBench({
     <div className="panel flush bench" aria-label="Mix bench">
       <div className="chrome-bar">
         <span>
-          <i className="dot" aria-hidden="true" />
-          MIX_BENCH
+          <span className="chrome-lights" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          FONS · MIX
         </span>
-        <span>NO WALLET REQUIRED</span>
+        <span className="chrome-glyphs" aria-hidden="true">
+          <i>&minus;</i>
+          <i>&#9723;</i>
+          <i>&times;</i>
+        </span>
       </div>
       <div className="bench-body">
         <div className="bench-row">
@@ -479,12 +487,7 @@ function MixBench({
             takes up less of the page doing it.
           */}
           <div className="bench-out">
-            <BornMascot
-              state={mascotState}
-              parentA={Boolean(parentA)}
-              parentB={Boolean(parentB)}
-              className="bare sz-sm"
-            />
+<GlassMark state={mascotState} className="sz-sm" />
           </div>
         </div>
 

@@ -61,20 +61,28 @@ Two flows must always work independently:
 
 ## 2. Brand (do not reinvent)
 
-Redesigned 2026-08-30 by owner instruction. The visual system below supersedes the
-palette/typography in section 4 of the product specification; everything else in the
-specification still applies.
+Restyled 2026-09-02 by owner instruction: the product was renamed **FONS** and the
+visual language was rebuilt to match the LONS family of sites. The previous dark
+MIXBORN system is preserved at tag `design-mixborn-dark` and branch
+`design/mixborn-dark` — restore with `git checkout design-mixborn-dark`.
 
-- **MIXBORN** = site, app, brand name. **`$MIXBRN`** = only the project’s own token ticker.
-- Wordmark story: `MIXB[ ]RN` — the **O** is born when parent A (left) and parent B (right) merge (`Wordmark`).
-- Palette: pure black ground, cream `#f2efe8` type, **copper `#d08a45` = Parent A / warm / primary accent**, **ash `#7f97b5` = Parent B / cool**, cream-white = what is BORN, green only for on-chain confirmed, red only for errors. The copper is taken from BORN's robe. Never two loud accent fields at once. Tokens in `web/src/styles/tokens.css`.
-- Type: Instrument Serif (display), Geist (UI), IBM Plex Mono (data/labels), Space Grotesk (wordmark + big stat numbers). Headlines are sentence case, not uppercase.
-- Shapes: pill actions, 24px panels, 18px cards, 16px avatars. One solid cream primary button per view.
-- Mascot **BORN**: hooded handmade line-art with a black void for a face. `web/src/components/brand/BornMascot.tsx` draws him as SVG (portrait only; the full-body variant was removed at the owner's request to reduce how much of the page he occupies). On the landing page he is the output slot of the hero bench. The void **is** the merge core: Parent A enters as a copper orb, Parent B as an ash orb, they merge, and the born mark appears. States: `idle`, `searching`, `ready`, `mixing`, `generating`, `success`, `warning`, `wallet`, `launched`.
-- He sits on a bone "specimen plate" because black ink does not read on a black page. `web/public/assets/brand/born-portrait.png` is the real drawing and is preloaded from `index.html`; the SVG renders only if that file fails. Do not fake a final art pass — replace the file.
+- **FONS** = site, app, brand name. **`$FONS`** = only the project's own token ticker.
+- Wordmark story: `F[O]NS` — the **O** is born where parent A (warm) and parent B (cool) overlap (`Wordmark.tsx`).
+- Palette: **daylight, no black anywhere.** Paper `#f2f5ee`, ink `#22331f` deep forest, glass whites, **sun `#d8a85e` = Parent A**, **sky `#8fb3c4` = Parent B**, moss `#5c7d50` for what is born, green only for confirmed on-chain, red only for errors. Tokens in `web/src/styles/tokens.css`.
+- Type: Geist 700 for display and UI, IBM Plex Mono for wide-tracked micro labels (`--track-wide`). Headings are sentence case, never uppercase; **micro labels** carry the uppercase.
+- Surfaces: frosted glass with a hairline edge and an inner highlight (`--inner-glass`). Panels 26px, cards 20px, pills for every action. One solid forest-green primary per view.
+- Window chrome (`.chrome-bar` with `.chrome-lights` and `.chrome-glyphs`) frames the working parts, the way the reference frames its app.
+- **The mark**: `web/src/components/brand/GlassMark.tsx` — two glass rings and the bead born between them, driven by real state (`idle`, `searching`, `ready`, `mixing`, `generating`, `success`, `warning`, `wallet`, `launched`).
+- The hooded **BORN** mascot is **parked, not deleted**: `BornMascot.tsx` and `web/public/assets/brand/born-portrait.png` are still in the repo and unused. He returns only with glass art — see `docs/FONS_VISUAL_ASSETS.md`.
+- Backgrounds are CSS gradients. `.scene` is where a photographic plate lands if one is added; the page must stay complete without it.
 - Looping decorative motion **must stop** off-viewport and in a background tab (`data-page-hidden`, `data-offscreen`). Reduced-motion must keep the same information.
 - Only animation runtime: **`motion`**. Simple effects stay CSS.
-- No old “Meme Mixer” / “MemMix” branding in UI. Legacy CLI copy in README is historical.
+
+**Renamed in copy only.** These are contracts and were deliberately left alone:
+`localStorage` keys (`mixborn.draftMix`, `mixborn.pendingLaunch`, `mixborn.analytics.*`, …),
+the avatar style id `mixborn_lofi_v1` (validated server-side in `avatar_job.py`),
+and the env var `MIXBORN_JOB_HMAC`. Renaming any of them is a migration, not a
+restyle — `mixborn.pendingLaunch` in particular is the launch reconciliation record.
 
 ---
 
@@ -98,7 +106,7 @@ axiom_ai_scanner/
     src/domain/                      validation, draft, handoff, pendingLaunch
     src/services/                    api client, pumpBoundary, analytics
     src/solana/                      Pump SDK launch, allowlists, mint memory
-    src/styles/                      tokens, base, layout, ui, parts, mascot, landing, app (no Tailwind)
+    src/styles/                      tokens, base, layout, ui, parts, mascot (glass mark), landing, app (no Tailwind)
 ```
 
 Routes (`web/src/app/router.tsx`):
@@ -263,7 +271,7 @@ Pinned launch SDK version must stay `1.36.0` in both `web/package.json` and `ver
 | SSRF / images | `axiom_scanner/security/fetch.py`, `images.py` |
 | RPC proxy | `vercel_api/routes/rpc.py` |
 | Token honesty | `vercel_api/routes/token.py`, `web/src/solana/tokenOnchain.ts` |
-| Brand motion | `Wordmark.tsx`, `BornMascot.tsx`, `Atmosphere.tsx`, `PageShell.tsx` |
+| Brand motion | `Wordmark.tsx`, `GlassMark.tsx`, `Atmosphere.tsx`, `PageShell.tsx` |
 | API envelope | `vercel_api/envelope.py`, `web/src/services/api.ts` |
 | Security headers | `vercel_api/security_headers.py`, `vercel.json` |
 

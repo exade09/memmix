@@ -1,14 +1,14 @@
 export const SAFETY_PROMISE =
-  "Your keys stay in your wallet. MIXBORN builds and checks the launch transaction; only you can sign it. We never ask for a seed phrase or private key.";
+  "Your keys stay in your wallet. FONS builds and checks the launch transaction; only you can sign it. We never ask for a seed phrase or private key.";
 
 export const RISK_DISCLOSURE =
-  "Token creation and trading are risky. MIXBORN does not guarantee value, liquidity, market integrity or profit. Review every transaction and every external link yourself.";
+  "Token creation and trading are risky. FONS does not guarantee value, liquidity, market integrity or profit. Review every transaction and every external link yourself.";
 
 export const FOOTER_DISCLAIMER =
-  "MIXBORN is an independent interface using public Solana programs. It is not a promise of endorsement by Pump.fun, Solana or any token shown in the feed. Nothing on this site is financial advice.";
+  "FONS is an independent interface using public Solana programs. It is not a promise of endorsement by Pump.fun, Solana or any token shown in the feed. Nothing on this site is financial advice.";
 
 export const ZERO_PLATFORM_FEE =
-  "Pump.fun currently lists a 0 SOL creation fee, and MIXBORN adds no platform launch fee in this version. Solana network fees, account rent and any initial buy still cost SOL. The app shows an estimate before you sign.";
+  "Pump.fun currently lists a 0 SOL creation fee, and FONS adds no platform launch fee in this version. Solana network fees, account rent and any initial buy still cost SOL. The app shows an estimate before you sign.";
 
 export const INDEXER_NOTICE =
   "The token is live on-chain. Market data will appear after external indexers discover trading activity.";
@@ -17,14 +17,14 @@ export const DEVNET_LAUNCH_NOTICE =
   "Launch is in devnet mode. Tokens created here have no mainnet market value.";
 
 export const FAQ_ITEMS = [
-  ["What does MIXBORN do?", "MIXBORN combines the character logic of two existing Solana tokens, generates one editable token concept and lets you launch that concept through the Pump protocol. You can also skip AI and launch manually."],
+  ["What does FONS do?", "FONS combines the character logic of two existing Solana tokens, generates one editable token concept and lets you launch that concept through the Pump protocol. You can also skip AI and launch manually."],
   ["Is token creation free?", ZERO_PLATFORM_FEE],
-  ["Does MIXBORN hold my funds?", "No. MIXBORN is non-custodial. Your wallet signs the transaction and remains in control of its funds."],
+  ["Does FONS hold my funds?", "No. FONS is non-custodial. Your wallet signs the transaction and remains in control of its funds."],
   ["Can AI launch a token without me?", "No. AI only produces editable creative fields. It cannot connect your wallet, sign a transaction or launch a token for you."],
   ["Can I launch without using AI?", "Yes. Direct Launch accepts your own name, ticker, description, image and links."],
   ["Can I edit the generated result?", "Yes. Every generated field is editable before metadata is pinned and the transaction is signed."],
-  ["Is a token launched here guaranteed to be safe?", "MIXBORN protects the launch workflow by keeping keys in your wallet, checking expected program IDs and simulating the transaction. It cannot guarantee the future behaviour, market, holders, links or price of any token."],
-  ["Does MIXBORN guarantee profit?", "No. MIXBORN does not provide investment advice or predict returns."],
+  ["Is a token launched here guaranteed to be safe?", "FONS protects the launch workflow by keeping keys in your wallet, checking expected program IDs and simulating the transaction. It cannot guarantee the future behaviour, market, holders, links or price of any token."],
+  ["Does FONS guarantee profit?", "No. FONS does not provide investment advice or predict returns."],
   ["Can metadata be edited after launch?", "Treat submitted token data as permanent. Review the name, ticker, image, description and links before signing."],
   ["Who is responsible for uploaded and generated content?", "The launcher is responsible for having the right to use uploaded names, images and links. AI output must also be reviewed before launch."],
 ] as const;
@@ -69,9 +69,9 @@ export function shareLaunchCopy(input: {
 }): string {
   const title = `${input.name} ($${input.ticker})`;
   if (input.parentA && input.parentB) {
-    return `${title} was born from ${input.parentA} + ${input.parentB} in MIXBORN. ${input.pumpUrl}`;
+    return `${title} was born from ${input.parentA} + ${input.parentB} in FONS. ${input.pumpUrl}`;
   }
-  return `${title} was born in MIXBORN. ${input.pumpUrl}`;
+  return `${title} was born in FONS. ${input.pumpUrl}`;
 }
 
 export function pumpCoinUrl(mint: string): string {

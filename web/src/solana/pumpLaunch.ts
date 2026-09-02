@@ -28,7 +28,7 @@ export const COST_BUFFER_PERCENT = 10;
 
 export type CostEstimate = {
   pumpCreationLamports: bigint;
-  mixbornFeeLamports: bigint;
+  fonsFeeLamports: bigint;
   networkFeeLamports: bigint;
   rentLamports: bigint;
   initialBuyLamports: bigint;
@@ -245,7 +245,7 @@ export async function simulateAndEstimate(
   const bufferLamports = applyPercentBuffer(subtotal, COST_BUFFER_PERCENT);
   const estimate: CostEstimate = {
     pumpCreationLamports: 0n,
-    mixbornFeeLamports: 0n,
+    fonsFeeLamports: 0n,
     networkFeeLamports,
     rentLamports,
     initialBuyLamports: prepared.initialBuyLamports,
@@ -262,7 +262,7 @@ export async function simulateAndEstimate(
 
 export function formatCost(estimate: CostEstimate | null, fallback: string): {
   pumpCreation: string;
-  mixbornFee: string;
+  fonsFee: string;
   networkRent: string;
   initialBuy: string;
   maxDebit: string;
@@ -271,7 +271,7 @@ export function formatCost(estimate: CostEstimate | null, fallback: string): {
   if (!estimate) {
     return {
       pumpCreation: "0 SOL",
-      mixbornFee: "0 SOL",
+      fonsFee: "0 SOL",
       networkRent: fallback,
       initialBuy: fallback,
       maxDebit: fallback,
@@ -280,7 +280,7 @@ export function formatCost(estimate: CostEstimate | null, fallback: string): {
   }
   return {
     pumpCreation: lamportsToSolLabel(estimate.pumpCreationLamports),
-    mixbornFee: lamportsToSolLabel(estimate.mixbornFeeLamports),
+    fonsFee: lamportsToSolLabel(estimate.fonsFeeLamports),
     networkRent: lamportsToSolLabel(estimate.networkFeeLamports + estimate.rentLamports),
     initialBuy: lamportsToSolLabel(estimate.initialBuyLamports),
     maxDebit: lamportsToSolLabel(estimate.maxDebitLamports),
@@ -437,7 +437,7 @@ export function releaseLaunchSubmit(): void {
 function emptyEstimate(initialBuyLamports: bigint): CostEstimate {
   return {
     pumpCreationLamports: 0n,
-    mixbornFeeLamports: 0n,
+    fonsFeeLamports: 0n,
     networkFeeLamports: 0n,
     rentLamports: 0n,
     initialBuyLamports,

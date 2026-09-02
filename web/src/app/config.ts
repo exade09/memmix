@@ -1,6 +1,6 @@
 export const appConfig = {
-  productName: "MIXBORN",
-  tokenSymbol: "MIXBRN",
+  productName: "FONS",
+  tokenSymbol: "FONS",
   primaryTagline: "Two tokens in. One born.",
   secondaryTagline: "Mix the logic. Launch what is born.",
   canonicalUrl: import.meta.env.VITE_CANONICAL_URL ?? "",

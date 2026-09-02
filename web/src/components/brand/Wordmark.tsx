@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 
-const SESSION_KEY = "mixborn.logoBirthPlayed";
+const SESSION_KEY = "mixborn.logoBirthPlayed"; // storage key kept: renaming it would replay the intro for everyone
 
-/** The O of MIXBORN: two parent orbs locked into one ring. */
+/** The O of FONS: two parent orbs locked into one glass ring. */
 export function MergeMark({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 32 32" aria-hidden="true">
-      <circle cx="12.5" cy="16" r="8.5" fill="none" stroke="var(--copper)" strokeWidth="2.4" />
-      <circle cx="19.5" cy="16" r="8.5" fill="none" stroke="var(--ash)" strokeWidth="2.4" />
-      <circle cx="16" cy="16" r="2.6" fill="var(--cream)" />
+      <circle cx="12.5" cy="16" r="8.5" fill="none" stroke="var(--sun)" strokeWidth="2.4" />
+      <circle cx="19.5" cy="16" r="8.5" fill="none" stroke="var(--sky)" strokeWidth="2.4" />
+      <circle cx="16" cy="16" r="2.8" fill="var(--ink)" />
     </svg>
   );
 }
@@ -53,8 +53,8 @@ export function Wordmark({ to = "/", sub }: { to?: string; sub?: string }) {
   }, [reduceMotion, born]);
 
   return (
-    <Link to={to} className="wordmark" aria-label="MIXBORN">
-      <span>MIXB</span>
+    <Link to={to} className="wordmark" aria-label="FONS">
+      <span>F</span>
       <span className="wordmark-slot" aria-hidden="true">
         {showMark ? (
           <motion.span
@@ -83,7 +83,7 @@ export function Wordmark({ to = "/", sub }: { to?: string; sub?: string }) {
           </>
         )}
       </span>
-      <span>RN</span>
+      <span>NS</span>
       {sub ? <span className="wordmark-sub">{sub}</span> : null}
     </Link>
   );

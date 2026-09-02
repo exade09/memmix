@@ -20,7 +20,7 @@ export function SiteFooter() {
             <Link to="/app/mix">AI Mix</Link>
             <Link to="/app/launch">Direct Launch</Link>
             <Link to="/app/explore">Explore</Link>
-            <Link to="/#mascot">Meet BORN</Link>
+            <Link to="/#mascot">The mark</Link>
           </div>
           <div className="footer-col">
             <h4>Read first</h4>
@@ -38,7 +38,7 @@ export function SiteFooter() {
         </div>
       </div>
       <span className="footer-watermark" aria-hidden="true">
-        MIXBORN
+        FONS
       </span>
     </footer>
   );

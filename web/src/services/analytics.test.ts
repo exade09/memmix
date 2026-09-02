@@ -53,7 +53,7 @@ describe("launch share copy", () => {
   it("omits parents for direct launch", () => {
     expect(
       shareLaunchCopy({ name: "Direct", ticker: "DIR", pumpUrl: "https://pump.fun/coin/x" }),
-    ).toBe("Direct ($DIR) was born in MIXBORN. https://pump.fun/coin/x");
+    ).toBe("Direct ($DIR) was born in FONS. https://pump.fun/coin/x");
     expect(
       shareLaunchCopy({
         name: "Mix",

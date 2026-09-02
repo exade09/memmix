@@ -46,16 +46,16 @@ export function LegalHubPage() {
           Privacy
         </ButtonLink>
       </nav>
-      <h3>What MIXBORN can verify</h3>
+      <h3>What FONS can verify</h3>
       <ul className="legal-list">
         <li>Non-custodial wallet: keys stay in the wallet you connect.</li>
         <li>Explicit signature: nothing is sent until you approve it.</li>
         <li>Transaction simulation before the wallet prompt.</li>
         <li>Program allowlist for the launch path.</li>
         <li>Visible wallet debit on the review screen.</li>
-        <li>No hidden MIXBORN platform launch fee in this version.</li>
+        <li>No hidden FONS platform launch fee in this version.</li>
       </ul>
-      <h3>What MIXBORN does not promise</h3>
+      <h3>What FONS does not promise</h3>
       <ul className="legal-list">
         {NOT_PROMISED.map((item) => (
           <li key={item}>{item}</li>
@@ -81,7 +81,7 @@ export function SafetyPage() {
       </ol>
       <h3>Process, not market</h3>
       <p className="body-copy">
-        MIXBORN protects the launch workflow. It does not make a token safe, liquid, honest or valuable after it exists.
+        FONS protects the launch workflow. It does not make a token safe, liquid, honest or valuable after it exists.
       </p>
       <ul className="legal-list">
         {NOT_PROMISED.map((item) => (

@@ -8,7 +8,7 @@ const links = [
   { to: "/app/mix", label: "Mix" },
   { to: "/app/launch", label: "Launch" },
   { to: "/app/explore", label: "Explore" },
-  { to: "/#mascot", label: "BORN" },
+  { to: "/#mascot", label: "Mark" },
   { to: "/safety", label: "Safety" },
 ];
 
@@ -37,7 +37,7 @@ export function SiteHeader({ onOpenSearch }: { onOpenSearch: () => void }) {
   return (
     <header className="site-header">
       <Wordmark />
-      <nav className="header-nav" aria-label="MIXBORN">
+      <nav className="header-nav" aria-label="FONS">
         {links.map((link) => {
           if (link.to.startsWith("/#")) {
             const onLanding = location.pathname === "/";

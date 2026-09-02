@@ -34,7 +34,7 @@ import {
   type PreparedLaunchTx,
 } from "../../solana/pumpLaunch";
 import { Button } from "../ui/Button";
-import { BornMascot } from "../brand/BornMascot";
+import { GlassMark } from "../brand/GlassMark";
 import { SafetyBanner } from "../layout/SafetyBanner";
 import { track } from "../../services/analytics";
 
@@ -57,8 +57,8 @@ export function CostSummary({
         <dd>{formatted.pumpCreation}</dd>
       </div>
       <div>
-        <dt>MIXBORN fee</dt>
-        <dd>{formatted.mixbornFee}</dd>
+        <dt>FONS fee</dt>
+        <dd>{formatted.fonsFee}</dd>
       </div>
       <div>
         <dt>Network + rent</dt>
@@ -103,7 +103,7 @@ export function LivePreview(props: {
         {props.telegram ? <span>Telegram</span> : null}
         {props.website ? <span>Web</span> : null}
       </p>
-      {props.generated ? <p className="metric-label">Generated with MIXBORN</p> : null}
+      {props.generated ? <p className="metric-label">Generated with FONS</p> : null}
     </div>
   );
 }
@@ -410,10 +410,10 @@ export function LaunchReview(props: LaunchReviewProps) {
               : "Nothing is signed until the Pump path is ready"}
           </h1>
         </div>
-        <BornMascot
+        <GlassMark
           state={phase === "WALLET_OPEN" ? "wallet" : error ? "warning" : "idle"}
           quiet
-          className="bare sz-sm"
+          className="sz-sm"
         />
       </header>
 
@@ -430,7 +430,7 @@ export function LaunchReview(props: LaunchReviewProps) {
               <strong className="review-token-name">
                 {props.name} <span className="metric-label">${props.ticker}</span>
               </strong>
-              {props.generated ? <span className="chip copper">Generated with MIXBORN</span> : null}
+              {props.generated ? <span className="chip copper">Generated with FONS</span> : null}
             </div>
           </div>
           <dl className="facts">
@@ -468,7 +468,7 @@ export function LaunchReview(props: LaunchReviewProps) {
         <div className="panel stack">
           <p className="eyebrow">Mechanics</p>
           <p className="body-copy">Pump bonding curve → automatic PumpSwap migration</p>
-          <p className="metric-label">Mayhem off. Cashback off. SOL quote. MIXBORN launch fee 0.</p>
+          <p className="metric-label">Mayhem off. Cashback off. SOL quote. FONS launch fee 0.</p>
         </div>
 
         <div className="panel stack">

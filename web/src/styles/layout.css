@@ -21,17 +21,18 @@
 
 .section {
   position: relative;
-  padding-block: clamp(64px, 9vw, 132px);
+  padding-block: clamp(64px, 9vw, 128px);
 }
 
 .section.tight {
   padding-block: clamp(44px, 6vw, 84px);
 }
 
+/* a band of slightly deeper daylight, used to separate long stretches */
 .section.raised {
-  background: var(--ink);
-  border-top: 1px solid var(--line-soft);
-  border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(223, 231, 214, 0.55));
+  border-top: 1px solid var(--glass-line);
+  border-bottom: 1px solid var(--glass-line);
 }
 
 .stack {
@@ -49,30 +50,48 @@
 }
 
 /* ---------------------------------------------------------------
-   Atmosphere: grain, vignette, horizon
+   Atmosphere
+
+   Daylight, not film grain: a soft bloom at the top of the page and a
+   whisper of paper tooth. A photographic plate dropped into
+   web/public/assets/scene/meadow.webp layers under everything without
+   replacing the gradients, so the page never depends on it.
 --------------------------------------------------------------- */
+
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image: var(--scene-image, none);
+  background-size: cover;
+  background-position: center 20%;
+  opacity: var(--scene-opacity, 0.5);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.35) 45%, transparent 78%);
+}
+
+.bloom {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 45% at 50% 0%, rgba(255, 255, 255, 0.75), transparent 70%),
+    radial-gradient(50% 32% at 82% 6%, rgba(247, 232, 200, 0.45), transparent 72%);
+}
 
 .grain {
   position: fixed;
   inset: 0;
   z-index: 90;
   pointer-events: none;
-  opacity: 0.035;
-  mix-blend-mode: screen;
+  opacity: 0.028;
+  mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.vignette {
-  position: fixed;
-  inset: 0;
-  z-index: 89;
-  pointer-events: none;
-  /* atmospheric only — it must never dim a control enough to matter */
-  background: radial-gradient(125% 95% at 50% 0%, transparent 58%, rgba(0, 0, 0, 0.3) 100%);
-}
-
 body[data-page-hidden="true"] .grain {
-  opacity: 0.02;
+  opacity: 0.015;
 }
 
 /* ---------------------------------------------------------------
@@ -94,9 +113,9 @@ body[data-page-hidden="true"] .grain {
   align-items: center;
   gap: 20px;
   padding-inline: clamp(14px, 3vw, 28px);
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(14px) saturate(140%);
-  border-bottom: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(var(--blur-lg)) saturate(120%);
+  border-bottom: 1px solid var(--glass-line);
 }
 
 .header-nav {
@@ -113,22 +132,22 @@ body[data-page-hidden="true"] .grain {
   padding-inline: 14px;
   border-radius: var(--radius-pill);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--track-mid);
   text-transform: uppercase;
-  color: var(--cream-mute);
+  color: var(--ink-mute);
   transition: color var(--t-micro), background var(--t-micro);
 }
 
 .nav-link:hover {
-  color: var(--cream);
-  background: var(--surface-2);
+  color: var(--ink);
+  background: var(--glass-2);
 }
 
 .nav-link.is-active {
-  color: var(--cream);
-  background: var(--surface-3);
+  color: var(--ink);
+  background: var(--glass-3);
 }
 
 .header-tools {
@@ -144,20 +163,20 @@ body[data-page-hidden="true"] .grain {
   gap: 10px;
   height: 36px;
   padding: 0 12px 0 14px;
-  border: 1px solid var(--line-soft);
+  border: 1px solid var(--glass-line-2);
   border-radius: var(--radius-pill);
-  background: var(--surface);
-  color: var(--cream-mute);
+  background: var(--glass-2);
+  color: var(--ink-mute);
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-size: 10px;
+  letter-spacing: var(--track-mid);
   text-transform: uppercase;
-  transition: color var(--t-micro), border-color var(--t-micro);
+  transition: color var(--t-micro), border-color var(--t-micro), background var(--t-micro);
 }
 
 .search-chip:hover {
-  color: var(--cream);
-  border-color: var(--line);
+  color: var(--ink);
+  background: var(--glass-3);
 }
 
 .search-chip svg {
@@ -168,12 +187,12 @@ body[data-page-hidden="true"] .grain {
 
 .search-chip kbd {
   padding: 2px 6px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--glass-line-2);
   border-radius: 6px;
-  background: var(--surface-2);
+  background: var(--glass-3);
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--cream-mute);
+  color: var(--ink-mute);
 }
 
 .network-badge {
@@ -181,15 +200,15 @@ body[data-page-hidden="true"] .grain {
   align-items: center;
   gap: 7px;
   height: 36px;
-  padding-inline: 12px;
-  border: 1px solid var(--line-soft);
+  padding-inline: 13px;
+  border: 1px solid var(--glass-line-2);
   border-radius: var(--radius-pill);
-  background: var(--surface);
+  background: var(--glass-2);
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--track-mid);
   text-transform: uppercase;
-  color: var(--cream-mute);
+  color: var(--ink-mute);
   white-space: nowrap;
 }
 
@@ -220,29 +239,33 @@ body[data-page-hidden="true"] .grain {
   align-items: center;
   gap: 8px;
   height: 36px;
-  padding-inline: 12px;
-  border: 1px solid rgba(140, 196, 111, 0.3);
+  padding-inline: 13px;
+  border: 1px solid rgba(95, 156, 87, 0.4);
   border-radius: var(--radius-pill);
-  background: rgba(140, 196, 111, 0.08);
+  background: rgba(147, 177, 131, 0.2);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.06em;
-  color: var(--live);
+  color: var(--moss-deep);
 }
 
 /* ---------------------------------------------------------------
    Wordmark
+
+   Wide-tracked capitals, the way the reference sets its name. The O is
+   still the thing that is born from two parents.
 --------------------------------------------------------------- */
 
 .wordmark {
   display: inline-flex;
   align-items: center;
   gap: 1px;
-  font-family: var(--font-brand);
-  font-weight: 700;
-  font-size: 19px;
-  letter-spacing: 0.02em;
-  color: var(--cream);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--ink);
   flex: none;
 }
 
@@ -250,9 +273,9 @@ body[data-page-hidden="true"] .grain {
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 0.86em;
-  height: 0.86em;
-  margin-inline: 0.06em;
+  width: 1em;
+  height: 1em;
+  margin-inline: 0.1em 0.24em;
 }
 
 .wordmark-slot svg {
@@ -261,38 +284,38 @@ body[data-page-hidden="true"] .grain {
 }
 
 .wordmark-void {
-  width: 0.5em;
-  height: 0.5em;
+  width: 0.55em;
+  height: 0.55em;
   border-radius: 50%;
-  border: 1px dashed var(--cream-faint);
+  border: 1px dashed var(--ink-faint);
 }
 
 .wordmark-orb {
   position: absolute;
-  width: 0.34em;
-  height: 0.34em;
+  width: 0.36em;
+  height: 0.36em;
   border-radius: 50%;
 }
 
 .wordmark-orb.a {
-  background: var(--copper);
+  background: var(--sun);
 }
 
 .wordmark-orb.b {
-  background: var(--ash);
+  background: var(--sky);
 }
 
 .wordmark-sub {
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 400;
-  letter-spacing: 0.24em;
-  color: var(--cream-faint);
+  letter-spacing: var(--track-wide);
+  color: var(--ink-faint);
   text-transform: uppercase;
 }
 
 /* ---------------------------------------------------------------
-   App frame (sidebar rail + content)
+   App frame
 --------------------------------------------------------------- */
 
 .app-frame {
@@ -318,9 +341,9 @@ body[data-page-hidden="true"] .grain {
   padding: 0 14px 12px;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--track-wide);
   text-transform: uppercase;
-  color: var(--cream-faint);
+  color: var(--ink-faint);
 }
 
 .rail-link {
@@ -332,45 +355,38 @@ body[data-page-hidden="true"] .grain {
   padding: 10px 14px;
   border-radius: var(--radius-tile);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--track-mid);
   text-transform: uppercase;
-  color: var(--cream-mute);
+  color: var(--ink-mute);
   transition: color var(--t-micro), background var(--t-micro);
 }
 
 .rail-link:hover {
-  color: var(--cream);
-  background: var(--surface);
+  color: var(--ink);
+  background: var(--glass);
 }
 
 .rail-link.is-active {
-  color: var(--cream);
-  background: var(--surface-2);
+  color: var(--ink);
+  background: var(--glass-2);
+  box-shadow: var(--inner-glass);
 }
 
 .rail-link .rail-index {
   font-size: 10px;
-  color: var(--cream-faint);
+  color: var(--ink-faint);
 }
 
 .rail-link.is-active .rail-index {
-  color: var(--copper);
+  color: var(--moss);
 }
 
 .rail-foot {
   margin-top: 28px;
   padding: 16px 14px;
-  border-top: 1px solid var(--line-soft);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.rail-figure {
-  width: 84px;
-  opacity: 0.9;
+  border-top: 1px solid var(--glass-line);
 }
 
 .app-main {
@@ -388,7 +404,6 @@ body[data-page-hidden="true"] .grain {
   }
 }
 
-/* mobile bottom nav */
 .bottom-nav {
   position: fixed;
   left: 50%;
@@ -398,11 +413,11 @@ body[data-page-hidden="true"] .grain {
   display: none;
   gap: 4px;
   padding: 5px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--glass-line);
   border-radius: var(--radius-pill);
-  background: rgba(8, 8, 10, 0.9);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 20px 50px -30px rgba(0, 0, 0, 1);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(var(--blur-lg));
+  box-shadow: var(--lift);
 }
 
 .bottom-nav a {
@@ -412,16 +427,16 @@ body[data-page-hidden="true"] .grain {
   padding-inline: 18px;
   border-radius: var(--radius-pill);
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  font-size: 10px;
+  letter-spacing: var(--track-mid);
   text-transform: uppercase;
-  color: var(--cream-mute);
+  color: var(--ink-mute);
   transition: background var(--t-micro), color var(--t-micro);
 }
 
 .bottom-nav a.active {
-  background: var(--cream);
-  color: var(--black);
+  background: var(--ink);
+  color: var(--haze);
 }
 
 @media (max-width: 960px) {
@@ -441,7 +456,6 @@ body[data-page-hidden="true"] .grain {
     padding-inline: 12px;
   }
 
-  /* keep the cluster readable, drop the keyboard hint and the word "Search" */
   .search-chip > span,
   .search-chip kbd,
   .network-badge .net-long {
@@ -469,7 +483,7 @@ body[data-page-hidden="true"] .grain {
 
 .site-footer {
   position: relative;
-  border-top: 1px solid var(--line-soft);
+  border-top: 1px solid var(--glass-line);
   padding-block: clamp(48px, 6vw, 80px) 0;
   overflow: hidden;
 }
@@ -484,7 +498,9 @@ body[data-page-hidden="true"] .grain {
 .footer-brand p:first-of-type {
   font-family: var(--font-display);
   font-size: var(--step-2);
-  color: var(--cream);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
 }
 
 .footer-col {
@@ -497,27 +513,27 @@ body[data-page-hidden="true"] .grain {
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--track-wide);
   text-transform: uppercase;
-  color: var(--cream-faint);
+  color: var(--ink-faint);
   margin-bottom: 4px;
 }
 
 .footer-col a,
 .footer-col span {
   font-size: 14px;
-  color: var(--cream-mute);
+  color: var(--ink-mute);
   transition: color var(--t-micro);
 }
 
 .footer-col a:hover {
-  color: var(--cream);
+  color: var(--ink);
 }
 
 .footer-legal {
   margin-top: 40px;
   padding-block: 20px;
-  border-top: 1px solid var(--line-soft);
+  border-top: 1px solid var(--glass-line);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -527,7 +543,7 @@ body[data-page-hidden="true"] .grain {
   font-family: var(--font-mono);
   font-size: var(--step--1);
   line-height: 1.6;
-  color: var(--cream-faint);
+  color: var(--ink-faint);
   max-width: 92ch;
 }
 
@@ -535,14 +551,14 @@ body[data-page-hidden="true"] .grain {
   display: block;
   width: 100%;
   margin-top: 12px;
-  font-family: var(--font-brand);
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(3rem, 15vw, 13rem);
   line-height: 0.8;
-  letter-spacing: -0.04em;
+  letter-spacing: 0.06em;
   text-align: center;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(242, 239, 232, 0.09);
+  -webkit-text-stroke: 1px rgba(34, 51, 31, 0.1);
   user-select: none;
   pointer-events: none;
   transform: translateY(18%);

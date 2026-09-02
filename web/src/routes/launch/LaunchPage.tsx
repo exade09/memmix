@@ -519,7 +519,7 @@ export function LaunchPage() {
           </label>
           <label className="confirm-row">
             <input type="checkbox" checked={risk} onChange={(event) => setRisk(event.currentTarget.checked)} />
-            I understand that token launches and markets are risky and MIXBORN does not guarantee value or liquidity.
+            I understand that token launches and markets are risky and FONS does not guarantee value or liquidity.
           </label>
 
           <Button

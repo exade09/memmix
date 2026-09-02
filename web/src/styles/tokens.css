@@ -1,104 +1,101 @@
 /*
-  MIXBORN design tokens.
+  FONS design tokens.
 
-  Ground: pure black with cream type — the darkness/reading rhythm of the
-  reference agent sites. Structure: soft rounded panels, pill actions and a
-  fact strip — the launchpad landing language.
+  Light, airy and made of glass. The page is daylight over a meadow; every
+  surface is a translucent pane resting on it, and the only ink is deep
+  forest green. Nothing is opaque black, nothing shouts.
 
-  Colour story follows the product: Parent A is warm (copper, taken straight
-  from BORN's robe), Parent B is cool (ash), and what is BORN is cream-white.
-  Never two loud accent fields at once.
+  Colour still carries the product logic: Parent A is warm sunrise, Parent B
+  is cool sky, and what is born is clear glass.
 */
 
 :root {
-  /* ---- ground ---- */
-  --black: #000000;
-  --ink: #08080a;
-  --ink-2: #0d0d10;
-  --ink-3: #121216;
+  /* ---- daylight ---- */
+  --paper: #f2f5ee;
+  --paper-2: #e9efe2;
+  --paper-3: #dfe7d6;
+  --haze: #f7f9f4;
 
-  /* ---- surfaces drawn on top of the ground ---- */
-  --surface: rgba(242, 239, 232, 0.035);
-  --surface-2: rgba(242, 239, 232, 0.06);
-  --surface-3: rgba(242, 239, 232, 0.09);
-  --line: rgba(242, 239, 232, 0.12);
-  --line-soft: rgba(242, 239, 232, 0.07);
-  --line-strong: rgba(242, 239, 232, 0.24);
+  /* ---- ink: deep forest, never black ---- */
+  --ink: #22331f;
+  --ink-2: #3d5535;
+  --ink-dim: rgba(34, 51, 31, 0.66);
+  --ink-mute: rgba(34, 51, 31, 0.46);
+  --ink-faint: rgba(34, 51, 31, 0.28);
 
-  /* ---- type colours ---- */
-  --cream: #f2efe8;
-  --cream-dim: rgba(242, 239, 232, 0.66);
-  --cream-mute: rgba(242, 239, 232, 0.42);
-  --cream-faint: rgba(242, 239, 232, 0.26);
+  /* ---- glass ---- */
+  --glass: rgba(255, 255, 255, 0.44);
+  --glass-2: rgba(255, 255, 255, 0.62);
+  --glass-3: rgba(255, 255, 255, 0.78);
+  --glass-tint: rgba(206, 224, 196, 0.34);
+  --glass-edge: rgba(255, 255, 255, 0.85);
+  --glass-line: rgba(34, 51, 31, 0.1);
+  --glass-line-2: rgba(34, 51, 31, 0.18);
+  --blur: 18px;
+  --blur-lg: 32px;
 
-  /* ---- the character ---- */
-  --robe: #6b4a2e;
-  --robe-deep: #3b2817;
-  --robe-light: #8b6039;
-  --robe-shadow: #2a1c10;
-  --void-face: #1b1b1e;
-  --void-face-lit: #2e2e33;
-
-  /* ---- semantics ---- */
-  --copper: #d08a45; /* Parent A · warm · primary accent */
-  --copper-soft: #e7b47f;
-  --copper-deep: #7a4d1e;
-  --ash: #7f97b5; /* Parent B · cool */
-  --ash-soft: #a9bdd4;
-  --ash-deep: #3d4d63;
-  --born: #f2efe8; /* what is born is cream-white */
-  --live: #8cc46f; /* confirmed on-chain */
-  --live-deep: #37502c;
-  --danger: #e2665e;
-  --danger-deep: #5a231f;
-  --warn: #e0a93f;
-  --warn-deep: #533c14;
+  /* ---- accents ---- */
+  --sage: #93b183;
+  --moss: #5c7d50;
+  --moss-deep: #3c5c33;
+  --sun: #d8a85e; /* Parent A · sunrise */
+  --sun-soft: #ecd0a2;
+  --sky: #8fb3c4; /* Parent B · morning sky */
+  --sky-soft: #c3d8e2;
+  --live: #5f9c57;
+  --danger: #b5563f;
+  --warn: #bf8b3c;
 
   /* ---- type ---- */
-  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
-  --font-ui: "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-ui: var(--font-display);
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-brand: "Space Grotesk", var(--font-ui);
 
   --step--1: clamp(0.75rem, 0.72rem + 0.14vw, 0.82rem);
   --step-0: clamp(0.94rem, 0.9rem + 0.18vw, 1rem);
   --step-1: clamp(1.06rem, 1rem + 0.3vw, 1.19rem);
-  --step-2: clamp(1.35rem, 1.2rem + 0.7vw, 1.75rem);
-  --step-3: clamp(1.85rem, 1.5rem + 1.6vw, 2.9rem);
-  --step-4: clamp(2.4rem, 1.7rem + 3.2vw, 4.6rem);
-  --step-5: clamp(3rem, 1.9rem + 5.2vw, 6.5rem);
+  --step-2: clamp(1.3rem, 1.15rem + 0.7vw, 1.7rem);
+  --step-3: clamp(1.8rem, 1.4rem + 1.7vw, 2.9rem);
+  --step-4: clamp(2.4rem, 1.7rem + 3.2vw, 4.4rem);
+  --step-5: clamp(2.9rem, 1.9rem + 4.8vw, 6rem);
+
+  /* wide-tracked micro labels are a signature of this system */
+  --track-wide: 0.28em;
+  --track-mid: 0.16em;
 
   /* ---- geometry ---- */
   --space: 8px;
-  --radius-panel: 24px;
-  --radius-card: 18px;
-  --radius-tile: 12px;
+  --radius-panel: 26px;
+  --radius-card: 20px;
+  --radius-tile: 14px;
   --radius-pill: 999px;
-  --radius-avatar: 16px;
+  --radius-avatar: 18px;
 
-  --content-max: 1200px;
-  --shell-max: 1440px;
-  --rail-w: 200px;
-  --header-h: 68px;
+  --content-max: 1180px;
+  --shell-max: 1420px;
+  --rail-w: 196px;
+  --header-h: 70px;
   --header-h-mobile: 58px;
 
-  /* ---- motion ---- */
-  --t-micro: 140ms cubic-bezier(0.32, 0.72, 0, 1);
-  --t-base: 220ms cubic-bezier(0.32, 0.72, 0, 1);
-  --t-slow: 420ms cubic-bezier(0.32, 0.72, 0, 1);
+  /* ---- motion: slow and calm ---- */
+  --t-micro: 160ms cubic-bezier(0.32, 0.72, 0, 1);
+  --t-base: 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  --t-slow: 520ms cubic-bezier(0.32, 0.72, 0, 1);
 
   --touch: 44px;
 
-  /* ---- elevation ---- */
-  --glow-copper: 0 0 0 1px rgba(208, 138, 69, 0.28), 0 18px 60px -28px rgba(208, 138, 69, 0.55);
-  --glow-ash: 0 0 0 1px rgba(127, 151, 181, 0.28), 0 18px 60px -28px rgba(127, 151, 181, 0.5);
-  --glow-born: 0 0 0 1px rgba(242, 239, 232, 0.3), 0 22px 70px -30px rgba(242, 239, 232, 0.4);
-  --shadow-panel: 0 30px 80px -50px rgba(0, 0, 0, 0.9);
+  /* ---- elevation: light, never heavy ---- */
+  --lift: 0 18px 50px -30px rgba(34, 51, 31, 0.42);
+  --lift-lg: 0 34px 80px -44px rgba(34, 51, 31, 0.5);
+  --inner-glass: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(255, 255, 255, 0.35);
+  --glow-sun: 0 0 0 1px rgba(216, 168, 94, 0.34), 0 20px 50px -30px rgba(216, 168, 94, 0.55);
+  --glow-sky: 0 0 0 1px rgba(143, 179, 196, 0.36), 0 20px 50px -30px rgba(143, 179, 196, 0.5);
+  --glow-born: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 24px 60px -30px rgba(147, 177, 131, 0.6);
 }
 
 @media (max-width: 720px) {
   :root {
-    --radius-panel: 18px;
-    --radius-card: 14px;
+    --radius-panel: 20px;
+    --radius-card: 16px;
   }
 }

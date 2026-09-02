@@ -9,33 +9,35 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--line-soft);
+  padding: 20px;
+  border: 1px solid var(--glass-line);
   border-radius: var(--radius-card);
-  background: var(--surface);
-  transition: border-color var(--t-micro), background var(--t-micro);
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur));
+  box-shadow: var(--inner-glass);
+  transition: background var(--t-micro), box-shadow var(--t-micro), transform var(--t-micro);
 }
 
 .token-card:hover {
-  border-color: var(--line);
-  background: var(--surface-2);
+  background: var(--glass-2);
+  box-shadow: var(--inner-glass), var(--lift);
 }
 
 .token-card.is-a {
-  border-color: rgba(208, 138, 69, 0.45);
-  background: rgba(208, 138, 69, 0.06);
+  border-color: rgba(216, 168, 94, 0.5);
+  background: linear-gradient(160deg, rgba(236, 208, 162, 0.34), var(--glass));
 }
 
 .token-card.is-b {
-  border-color: rgba(127, 151, 181, 0.45);
-  background: rgba(127, 151, 181, 0.06);
+  border-color: rgba(143, 179, 196, 0.5);
+  background: linear-gradient(160deg, rgba(195, 216, 226, 0.34), var(--glass));
 }
 
 .token-card.is-skeleton {
-  min-height: 208px;
-  background: linear-gradient(100deg, var(--surface) 30%, var(--surface-2) 50%, var(--surface) 70%);
+  min-height: 214px;
+  background: linear-gradient(100deg, var(--glass) 30%, var(--glass-3) 50%, var(--glass) 70%);
   background-size: 220% 100%;
-  animation: skeleton 1.4s ease-in-out infinite;
+  animation: skeleton 1.6s ease-in-out infinite;
 }
 
 @keyframes skeleton {
@@ -46,23 +48,23 @@
 
 .token-card-flag {
   position: absolute;
-  top: -9px;
-  left: 16px;
-  padding: 3px 10px;
+  top: -10px;
+  left: 18px;
+  padding: 4px 11px;
   border-radius: var(--radius-pill);
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
+  font-size: 9px;
+  letter-spacing: var(--track-mid);
   text-transform: uppercase;
-  color: var(--black);
+  color: var(--haze);
 }
 
 .token-card-flag.a {
-  background: var(--copper);
+  background: #a97b32;
 }
 
 .token-card-flag.b {
-  background: var(--ash);
+  background: #5a8298;
 }
 
 .token-card-head {
@@ -96,29 +98,29 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
-  background: var(--line-soft);
-  border: 1px solid var(--line-soft);
+  background: var(--glass-line);
+  border: 1px solid var(--glass-line);
   border-radius: var(--radius-tile);
   overflow: hidden;
 }
 
 .token-card-metrics > div {
-  padding: 9px 10px;
-  background: var(--ink);
+  padding: 9px 11px;
+  background: var(--glass-2);
 }
 
 .token-card-metrics dt {
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--track-mid);
   text-transform: uppercase;
-  color: var(--cream-faint);
+  color: var(--ink-faint);
 }
 
 .token-card-metrics dd {
   font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--cream-dim);
+  color: var(--ink-dim);
   margin-top: 2px;
 }
 
@@ -139,15 +141,15 @@
 .token-card-view {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  font-size: 10px;
+  letter-spacing: var(--track-mid);
   text-transform: uppercase;
-  color: var(--cream-mute);
+  color: var(--ink-mute);
   transition: color var(--t-micro);
 }
 
 .token-card-view:hover {
-  color: var(--copper-soft);
+  color: var(--moss);
 }
 
 .feed-grid {
@@ -172,39 +174,41 @@
   flex-direction: column;
   gap: 10px;
   min-width: 0;
-  padding: 16px;
-  border: 1px solid var(--line-soft);
+  padding: 18px;
+  border: 1px solid var(--glass-line);
   border-radius: var(--radius-card);
-  background: var(--surface);
-  transition: border-color var(--t-base), background var(--t-base);
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur));
+  box-shadow: var(--inner-glass);
+  transition: border-color var(--t-base), background var(--t-base), box-shadow var(--t-base);
 }
 
 .slot[data-side="a"]:focus-within,
 .slot[data-side="a"]:has(.slot-filled) {
-  border-color: rgba(208, 138, 69, 0.4);
-  background: rgba(208, 138, 69, 0.05);
+  border-color: rgba(216, 168, 94, 0.5);
+  background: linear-gradient(160deg, rgba(236, 208, 162, 0.3), var(--glass));
 }
 
 .slot[data-side="b"]:focus-within,
 .slot[data-side="b"]:has(.slot-filled) {
-  border-color: rgba(127, 151, 181, 0.4);
-  background: rgba(127, 151, 181, 0.05);
+  border-color: rgba(143, 179, 196, 0.5);
+  background: linear-gradient(160deg, rgba(195, 216, 226, 0.3), var(--glass));
 }
 
 .slot-label {
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: 9px;
+  letter-spacing: var(--track-wide);
   text-transform: uppercase;
-  color: var(--cream-faint);
+  color: var(--ink-faint);
 }
 
 .slot[data-side="a"] .slot-label {
-  color: var(--copper);
+  color: #8a6323;
 }
 
 .slot[data-side="b"] .slot-label {
-  color: var(--ash);
+  color: #45697b;
 }
 
 .slot-filled {
@@ -246,10 +250,11 @@
   max-height: 264px;
   overflow: auto;
   padding: 6px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--glass-line);
   border-radius: var(--radius-card);
-  background: var(--ink-2);
-  box-shadow: var(--shadow-panel);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(var(--blur-lg));
+  box-shadow: var(--lift-lg);
 }
 
 /* ---------- search result row ---------- */
@@ -264,13 +269,13 @@
   border: 0;
   border-radius: var(--radius-tile);
   background: transparent;
-  color: var(--cream);
+  color: var(--ink);
   text-align: left;
   transition: background var(--t-micro);
 }
 
 .search-result:hover {
-  background: var(--surface-2);
+  background: var(--glass-2);
 }
 
 .search-result img,
@@ -278,9 +283,9 @@
   width: 30px;
   height: 30px;
   flex: none;
-  border-radius: 8px;
-  border: 1px solid var(--line-soft);
-  background: var(--surface-2);
+  border-radius: 9px;
+  border: 1px solid var(--glass-line);
+  background: var(--glass-2);
   object-fit: cover;
 }
 
@@ -293,7 +298,7 @@
 
 .search-result strong {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -303,7 +308,7 @@
   font-family: var(--font-mono);
   font-size: 11px;
   font-style: normal;
-  color: var(--cream-mute);
+  color: var(--ink-mute);
 }
 
 /* ---------- global search dialog ---------- */
@@ -317,15 +322,15 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 6px 18px;
-  border-bottom: 1px solid var(--line-soft);
+  padding: 6px 20px;
+  border-bottom: 1px solid var(--glass-line);
 }
 
 .search-dialog-input svg {
   width: 16px;
   height: 16px;
   flex: none;
-  color: var(--cream-faint);
+  color: var(--ink-faint);
 }
 
 .search-dialog-input input {
@@ -351,10 +356,10 @@
 .search-group-label {
   padding: 0 12px 6px;
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.18em;
+  font-size: 9px;
+  letter-spacing: var(--track-wide);
   text-transform: uppercase;
-  color: var(--cream-faint);
+  color: var(--ink-faint);
 }
 
 .search-row {
@@ -378,13 +383,13 @@
 }
 
 .search-row.is-active {
-  background: var(--surface-2);
-  box-shadow: inset 0 0 0 1px var(--line);
+  background: var(--glass-2);
+  box-shadow: inset 0 0 0 1px var(--glass-line-2);
 }
 
 .search-help {
-  padding: 12px 18px;
-  border-top: 1px solid var(--line-soft);
+  padding: 13px 20px;
+  border-top: 1px solid var(--glass-line);
 }
 
 /* ---------- avatar studio ---------- */
@@ -393,10 +398,12 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--line-soft);
+  padding: 20px;
+  border: 1px solid var(--glass-line);
   border-radius: var(--radius-card);
-  background: var(--surface);
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur));
+  box-shadow: var(--inner-glass);
 }
 
 .avatar-studio-frame {
@@ -421,12 +428,12 @@
   inset: auto 0 0;
   padding: 10px 12px;
   border-radius: 0 0 var(--radius-avatar) var(--radius-avatar);
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(6px);
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--cream);
+  font-size: 10px;
+  letter-spacing: var(--track-mid);
+  color: var(--ink-dim);
   text-align: center;
 }
 
@@ -436,10 +443,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 18px;
-  border: 1px solid var(--line-soft);
+  padding: 20px;
+  border: 1px solid var(--glass-line);
   border-radius: var(--radius-card);
-  background: var(--ink);
+  background: var(--glass-2);
+  box-shadow: var(--inner-glass);
 }
 
 .live-preview .avatar {
@@ -452,7 +460,7 @@
 }
 
 .live-preview p {
-  color: var(--cream-dim);
+  color: var(--ink-dim);
   font-size: 14px;
 }
 
@@ -464,23 +472,25 @@
 
 .preview-socials span {
   padding: 4px 10px;
-  border: 1px solid var(--line-soft);
+  border: 1px solid var(--glass-line-2);
   border-radius: var(--radius-pill);
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: 9px;
+  letter-spacing: var(--track-mid);
   text-transform: uppercase;
-  color: var(--cream-mute);
+  color: var(--ink-mute);
 }
 
-/* ---------- step / pillar cards ---------- */
+/* ---------- step and pillar cards ----------
+   Glass stones set on the grass, the way the reference lays out a path.
+*/
 
 .step-index {
   display: inline-block;
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  color: var(--copper);
+  font-size: 10px;
+  letter-spacing: var(--track-mid);
+  color: var(--moss);
 }
 
 .step-card,
@@ -488,41 +498,52 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 22px;
-  border: 1px solid var(--line-soft);
+  padding: 24px;
+  border: 1px solid var(--glass-line);
   border-radius: var(--radius-card);
-  background: var(--surface);
-  transition: border-color var(--t-base), background var(--t-base);
+  background: linear-gradient(155deg, var(--glass-3), var(--glass));
+  backdrop-filter: blur(var(--blur));
+  box-shadow: var(--inner-glass);
+  transition: background var(--t-base), box-shadow var(--t-base), transform var(--t-base);
 }
 
 .step-card:hover,
 .pillar-card:hover {
-  border-color: var(--line);
-  background: var(--surface-2);
+  transform: translateY(-2px);
+  box-shadow: var(--inner-glass), var(--lift);
+}
+
+/* each stone sits a little differently, as stones do */
+.step-card:nth-child(odd) {
+  border-radius: 28px 20px 26px 22px;
+}
+
+.step-card:nth-child(even) {
+  border-radius: 20px 28px 22px 26px;
 }
 
 .step-card h3,
 .pillar-card h3 {
-  font-family: var(--font-ui);
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   text-transform: none;
 }
 
 .pillar-card h3 {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--track-mid);
   text-transform: uppercase;
 }
 
 .step-card p,
 .pillar-card p {
   font-size: 14px;
-  line-height: 1.55;
-  color: var(--cream-dim);
+  line-height: 1.6;
+  color: var(--ink-dim);
 }
 
 .step-grid,
@@ -535,7 +556,7 @@
 /* ---------- cropper ---------- */
 
 .cropper-card {
-  padding: 24px;
+  padding: 26px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -547,9 +568,9 @@
   margin-inline: auto;
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--glass-line-2);
   border-radius: var(--radius-avatar);
-  background: var(--black);
+  background: var(--paper-2);
   cursor: grab;
   touch-action: none;
 }

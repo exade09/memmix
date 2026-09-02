@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { appConfig } from "../../app/config";
-import { BornMascot } from "../../components/brand/BornMascot";
+import { GlassMark } from "../../components/brand/GlassMark";
 import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { Button, ButtonAnchor, ButtonLink } from "../../components/ui/Button";
 import { setDraftParent } from "../../domain/draft";
@@ -66,7 +66,7 @@ export function LaunchSuccessPage() {
             <p className="eyebrow">Launch</p>
             <h1>Waiting for a confirmed mint</h1>
           </div>
-          <BornMascot state="warning" quiet className="bare sz-sm" />
+          <GlassMark state="warning" quiet className="sz-sm" />
         </header>
         <p className="empty-state">A launch is not confirmed until the mint exists on-chain.</p>
         <div className="btn-row">
@@ -91,7 +91,7 @@ export function LaunchSuccessPage() {
             {locallyConfirmed ? "It is alive" : "Verify this mint on-chain before you treat it as launched"}
           </h1>
         </div>
-        <BornMascot state="launched" parentA parentB lit className="sz-sm" />
+        <GlassMark state="launched" className="sz-md" />
       </header>
 
       <div className="panel token-hero">
@@ -144,7 +144,7 @@ export function LaunchSuccessPage() {
           View on Solscan
         </ButtonAnchor>
         <ButtonLink to={`/token/${mint}`} variant="outline">
-          Open MIXBORN token page
+          Open FONS token page
         </ButtonLink>
         <ButtonAnchor
           variant="ghost"

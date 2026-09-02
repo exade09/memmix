@@ -1,13 +1,11 @@
 /* ---------------------------------------------------------------
-   BORN — the operator.
+   The glass mark
 
-   The figure is drawn in black ink, so on a black page he lives on a
-   bone "specimen plate": a print pinned to a dark wall. The plate also
-   matches the light background of the final raster art, so dropping the
-   real files in does not change the composition.
+   Two parent rings and the bead born between them. It sits in daylight
+   with nothing behind it: the glass is the object, so it needs no plate.
 --------------------------------------------------------------- */
 
-.born {
+.glass-mark {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -16,162 +14,73 @@
   width: 100%;
 }
 
-.born-plate {
+.glass-mark-body {
   position: relative;
   width: 100%;
-  overflow: hidden;
-  border: 1px solid rgba(242, 239, 232, 0.14);
-  border-radius: var(--radius-panel);
-  background: linear-gradient(168deg, #e6e1d5 0%, #d6d0c2 62%, #c6bfae 100%);
-  box-shadow: 0 40px 90px -50px rgba(0, 0, 0, 0.95);
-  transition: box-shadow var(--t-slow), border-color var(--t-base);
+  filter: drop-shadow(0 18px 26px rgba(34, 51, 31, 0.14));
 }
 
-.born .born-plate {
-  aspect-ratio: 1;
-}
-
-.born-svg {
-  position: relative;
-  z-index: 1;
+.glass-mark svg {
   width: 100%;
-  height: 100%;
+  height: auto;
 }
 
-/* raster override: silent until the real art exists */
-.born-raster {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity var(--t-slow);
-}
-
-.born-raster.is-on {
-  opacity: 1;
-}
-
-/* paper tooth over the plate */
-.born-grain {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  opacity: 0.16;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23p)'/%3E%3C/svg%3E");
-}
-
-.born-plate::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  border-radius: inherit;
-  box-shadow: inset 0 0 90px -20px rgba(58, 40, 23, 0.4);
-}
-
-/* state aura, behind the plate */
-.born-aura {
-  position: absolute;
-  inset: -18%;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: 50%;
-  opacity: 0;
-  filter: blur(48px);
-  transition: opacity var(--t-slow), background var(--t-slow);
-}
-
-.born[data-state="searching"] .born-plate,
-.born[data-state="ready"] .born-plate,
-.born[data-state="mixing"] .born-plate,
-.born[data-state="generating"] .born-plate {
-  box-shadow: var(--glow-copper), 0 40px 90px -50px rgba(0, 0, 0, 0.95);
-}
-
-.born[data-state="success"] .born-plate,
-.born[data-state="launched"] .born-plate {
-  box-shadow: var(--glow-born), 0 40px 90px -50px rgba(0, 0, 0, 0.95);
-}
-
-.born[data-state="warning"] .born-plate {
-  border-color: rgba(224, 169, 63, 0.5);
-}
-
-/* halo painted outside the plate for the hero figure */
-.born::before {
+/* a faint bloom behind the glass, warmed or cooled by state */
+.glass-mark::before {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: -14% -10%;
+  inset: -12% -8% 6%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(208, 138, 69, 0.3), transparent 68%);
-  filter: blur(28px);
-  opacity: 0;
-  transition: opacity var(--t-slow);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.85), transparent 66%);
+  filter: blur(22px);
+  opacity: 0.9;
   pointer-events: none;
+  transition: background var(--t-slow);
 }
 
-.born.is-lit::before {
-  opacity: 1;
+.glass-mark[data-state="searching"]::before,
+.glass-mark[data-state="ready"]::before,
+.glass-mark[data-state="mixing"]::before,
+.glass-mark[data-state="generating"]::before {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(236, 208, 162, 0.35) 48%, transparent 72%);
 }
 
-.born.is-lit[data-state="ready"]::before,
-.born.is-lit[data-state="mixing"]::before,
-.born.is-lit[data-state="generating"]::before {
-  background: radial-gradient(circle, rgba(208, 138, 69, 0.34), rgba(127, 151, 181, 0.18) 45%, transparent 70%);
-  opacity: 1;
+.glass-mark[data-state="success"]::before,
+.glass-mark[data-state="launched"]::before {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(147, 177, 131, 0.4) 46%, transparent 72%);
 }
 
-.born.is-lit[data-state="success"]::before,
-.born.is-lit[data-state="launched"]::before {
-  background: radial-gradient(circle, rgba(242, 239, 232, 0.24), transparent 68%);
+.glass-mark[data-state="warning"]::before {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(236, 208, 162, 0.45) 46%, transparent 72%);
 }
 
-.born-caption {
+.glass-mark-caption {
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.22em;
+  font-size: 9px;
+  letter-spacing: var(--track-wide);
   text-transform: uppercase;
-  color: var(--cream-faint);
+  color: var(--ink-faint);
   text-align: center;
 }
 
 /* sizes */
-.born.sz-xs {
-  max-width: 96px;
+.glass-mark.sz-xs {
+  max-width: 88px;
 }
 
-.born.sz-sm {
-  max-width: 150px;
+.glass-mark.sz-sm {
+  max-width: 132px;
 }
 
-.born.sz-md {
-  max-width: 220px;
+.glass-mark.sz-md {
+  max-width: 210px;
 }
 
-.born.sz-lg {
-  max-width: 320px;
+.glass-mark.sz-lg {
+  max-width: 300px;
 }
 
-/* a slim frame variant used inside dense app panels */
-.born.bare .born-plate {
-  border-radius: var(--radius-card);
-  box-shadow: none;
-}
-
-.born.bare .born-plate::after {
-  box-shadow: inset 0 0 60px -18px rgba(58, 40, 23, 0.4);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .born-aura,
-  .born::before {
-    transition: none;
-  }
+.glass-mark.sz-hero {
+  max-width: 380px;
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { appConfig } from "../../app/config";
-import { BornMascot, type BornState } from "../../components/brand/BornMascot";
+import { GlassMark, type GlassState } from "../../components/brand/GlassMark";
 import { ParentPicker } from "../../components/mix/ParentPicker";
 import { Button, ButtonAnchor, ButtonLink, FileButton } from "../../components/ui/Button";
 import { setMemoryAvatar } from "../../domain/avatarMemory";
@@ -103,7 +103,7 @@ export function MixPage() {
     !drawing &&
     appConfig.enableAiImage;
   const previewSrc = avatarUrl || "";
-  const mascot: BornState = drawing
+  const mascot: GlassState = drawing
     ? "generating"
     : analyzing
       ? "mixing"
@@ -452,10 +452,14 @@ export function MixPage() {
       <div className="panel flush mix-console">
         <div className="chrome-bar">
           <span>
-            <i className="dot" aria-hidden="true" />
-            MUTATION_BENCH
+            <span className="chrome-lights" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            FONS · MUTATION
           </span>
-          <span>{analyzing ? analyzeLabel : drawing ? drawLabel : "IDLE"}</span>
+          <span>{analyzing ? analyzeLabel : drawing ? drawLabel : "Idle"}</span>
         </div>
         <div className="mix-console-body">
           <ParentPicker
@@ -468,12 +472,10 @@ export function MixPage() {
             onClear={() => clearSide("a")}
           />
           <div className="mix-core">
-            <BornMascot
+            <GlassMark
               state={mascot}
-              parentA={Boolean(parentA)}
-              parentB={Boolean(parentB)}
-              className="bare sz-md"
-              caption={analyzing ? "mixing" : drawing ? "drawing" : "operator"}
+              className="sz-md"
+              caption={analyzing ? "mixing" : drawing ? "drawing" : "waiting"}
             />
           </div>
           <ParentPicker
