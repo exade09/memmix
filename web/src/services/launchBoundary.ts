@@ -83,7 +83,7 @@ export function getTransactionBoundary(input: SignGateInput = {}): Boundary {
     return { ...base, nativeLaunchFlag: true, reason: `Metadata URI exceeds the ${METADATA_URI_MAX}-character limit.` };
   }
   if (input.contractOk === false) {
-    return { ...base, nativeLaunchFlag: true, reason: "No contract found at the Pons factory address. Sign is disabled." };
+    return { ...base, nativeLaunchFlag: true, reason: "No contract found at the launch contract address. Sign is disabled." };
   }
   if (input.simulationOk === false) {
     return { ...base, nativeLaunchFlag: true, reason: "Simulation failed. Sign is disabled until the transaction is rebuilt." };
@@ -108,5 +108,5 @@ export function signAndLaunch(): never {
 }
 
 export function expectedContractNote(): string {
-  return "The Pons v2 launch factory on Robinhood Chain. Its bytecode is checked and the launch is simulated before any signature is requested.";
+  return "The launch contract on Robinhood Chain. Its bytecode is checked and the launch is simulated before any signature is requested.";
 }

@@ -49,7 +49,7 @@ export type LaunchReadiness = {
  */
 export function launchReadiness(): LaunchReadiness {
   if (!launchpadAddress()) {
-    return { configured: false, reason: "No Pons factory address is configured for this build." };
+    return { configured: false, reason: "No launch contract address is configured for this build." };
   }
   return { configured: true, reason: "Ready to build a launch transaction." };
 }
@@ -75,7 +75,7 @@ export async function assertLaunchpadDeployed(client: PublicClient): Promise<Add
   const code = await client.getCode({ address });
   if (!code || code === "0x") {
     throw new LaunchError(
-      "No contract found at the Pons factory address on this network.",
+      "No contract found at the launch contract address on this network.",
       "LAUNCHPAD_NOT_DEPLOYED",
     );
   }
@@ -134,7 +134,7 @@ async function shortfallMessage(client: PublicClient, account: Address, feeWei: 
   }
   return (
     `This wallet does not have enough ETH on Robinhood Chain. ` +
-    `It holds ${balance} and the launch needs ${weiToEthLabel(feeWei)} for the Pons fee plus gas.`
+    `It holds ${balance} and the launch needs ${weiToEthLabel(feeWei)} for the launch fee plus gas.`
   );
 }
 
@@ -166,10 +166,10 @@ export async function simulateLaunch(input: LaunchInput): Promise<PreparedLaunch
 
   const terms = await readLaunchTerms(client, DEFAULT_LAUNCH_CONFIG_ID);
   if (!terms.launchEnabled || !terms.config.enabled) {
-    throw new LaunchError("Pons has launching switched off right now.", "LAUNCH_DISABLED_ONCHAIN");
+    throw new LaunchError("Launching is switched off on chain right now.", "LAUNCH_DISABLED_ONCHAIN");
   }
   if (!(await canLaunch(client, account))) {
-    throw new LaunchError("This wallet is not allowed to launch on Pons right now.", "LAUNCH_NOT_PERMITTED");
+    throw new LaunchError("This wallet is not allowed to launch right now.", "LAUNCH_NOT_PERMITTED");
   }
 
   const params: TokenParamsTuple = {
