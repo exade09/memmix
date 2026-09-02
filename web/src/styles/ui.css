@@ -933,6 +933,21 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: var(--inner-glass);
 }
 
+/*
+  A token with no picture. Deliberately plain: it used to fall back to the FONS
+  mark, which made unrelated tokens look like ours.
+*/
+.token-avatar-blank {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--ink) 55%, transparent);
+  user-select: none;
+}
+
 .avatar.placeholder {
   display: grid;
   place-items: center;

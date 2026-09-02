@@ -22,9 +22,25 @@ export function isWalletRejection(error: unknown): boolean {
   return code === 4001 || body.includes("user rejected") || body.includes("user denied");
 }
 
+/*
+  The wording varies by client and by node, and getting this wrong is not
+  cosmetic: an unmatched insufficient-balance error falls through as a generic
+  failure and the user is shown a wall of calldata instead of "add ETH". viem's
+  own message is "the total cost ... exceeds the balance of the account", which
+  the previous "exceeds balance" check did not match.
+*/
+const INSUFFICIENT_BALANCE_PHRASES = [
+  "insufficient funds",
+  "insufficient balance",
+  "exceeds balance",
+  "exceeds the balance",
+  "gas required exceeds",
+  "enough funds",
+];
+
 export function isInsufficientBalance(error: unknown): boolean {
   const body = text(error);
-  return body.includes("insufficient funds") || body.includes("exceeds balance");
+  return INSUFFICIENT_BALANCE_PHRASES.some((phrase) => body.includes(phrase));
 }
 
 export function isWrongNetwork(error: unknown): boolean {

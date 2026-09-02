@@ -4,6 +4,7 @@ import { isTokenAddress } from "../../chain/address";
 import { SearchResultButton, toParent } from "../token/TokenFeedCard";
 import { searchTokensResult, type TokenSummary } from "../../services/api";
 import type { ParentToken } from "../../domain/draft";
+import { TokenAvatar } from "../token/TokenAvatar";
 
 
 
@@ -99,12 +100,13 @@ export function ParentPicker({
     return (
       <article className="slot is-picked" data-side={side}>
         <p className="slot-label">Parent {side.toUpperCase()}</p>
-        <img
-          className="avatar picked-avatar"
-          src={selected.image_url || "/assets/brand/token-fallback.webp"}
-          alt={`${selected.name} avatar`}
-          width={96}
-          height={96}
+        <TokenAvatar
+          className="picked-avatar"
+          src={selected.image_url}
+          symbol={selected.symbol}
+          name={selected.name}
+          seed={selected.mint}
+          size={96}
         />
         <div className="stack sm">
           <strong className="picked-name">

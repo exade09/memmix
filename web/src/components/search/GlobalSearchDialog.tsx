@@ -6,6 +6,7 @@ import { searchTokensResult, type TokenSummary } from "../../services/api";
 import { track } from "../../services/analytics";
 import { toParent } from "../token/TokenFeedCard";
 import { Button } from "../ui/Button";
+import { TokenAvatar } from "../token/TokenAvatar";
 
 export function GlobalSearchDialog({
   open,
@@ -235,7 +236,7 @@ function ResultRow({
   return (
     <div className={`search-row${active ? " is-active" : ""}`}>
       <button type="button" className="search-result" onClick={onOpen}>
-        <img src={token.image_url || "/assets/brand/token-fallback.webp"} alt="" width={30} height={30} />
+        <TokenAvatar src={token.image_url} symbol={token.symbol} name={token.name} seed={token.mint} size={30} />
         <span>
           <strong>{token.name}</strong>
           <em>${token.symbol}</em>

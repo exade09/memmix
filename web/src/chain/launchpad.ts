@@ -1,5 +1,5 @@
 import { decodeEventLog, type Address, type PublicClient, type WalletClient } from "viem";
-import { LaunchError, mapSendFailure } from "./errors";
+import { LaunchError, isInsufficientBalance, isWalletRejection, mapSendFailure } from "./errors";
 import { applyPercentBuffer, weiToEthLabel } from "./units";
 import { TARGET_CHAIN_ID } from "./wallet";
 import {
@@ -117,6 +117,27 @@ export type PreparedLaunch = {
   estimate: CostEstimate;
 };
 
+/**
+ * What the wallet has against what the launch needs, in words.
+ *
+ * The fee is exact; the gas is not known until the estimate succeeds, which it
+ * cannot when the balance is already short. So this states the fee it can
+ * prove and calls the rest gas, rather than inventing a total.
+ */
+async function shortfallMessage(client: PublicClient, account: Address, feeWei: bigint): Promise<string> {
+  let balance = "unknown";
+  try {
+    balance = weiToEthLabel(await client.getBalance({ address: account }));
+  } catch {
+    // A node that will not answer getBalance should not turn this into a
+    // different error; the shortfall is still the thing to report.
+  }
+  return (
+    `This wallet does not have enough ETH on Robinhood Chain. ` +
+    `It holds ${balance} and the launch needs ${weiToEthLabel(feeWei)} for the Pons fee plus gas.`
+  );
+}
+
 export type LaunchInput = {
   client: PublicClient;
   account: Address;
@@ -180,6 +201,19 @@ export async function simulateLaunch(input: LaunchInput): Promise<PreparedLaunch
   try {
     await client.simulateContract(call);
   } catch (error: unknown) {
+    /*
+      A failed simulation is not one thing. Reporting every cause as
+      "simulation failed" and printing the raw client message hands the user a
+      screen of calldata when the actual answer is "this wallet needs more
+      ETH". Classify first; fall back to the raw message only for causes we
+      genuinely cannot name.
+    */
+    if (isInsufficientBalance(error)) {
+      throw new LaunchError(await shortfallMessage(client, account, terms.launchFeeWei), "INSUFFICIENT_BALANCE");
+    }
+    if (isWalletRejection(error)) {
+      throw new LaunchError("Wallet request was rejected. Nothing was sent.", "WALLET_REJECTED");
+    }
     throw new LaunchError(
       error instanceof Error ? error.message : "Simulation failed.",
       "SIMULATION_FAILED",

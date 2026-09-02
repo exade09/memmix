@@ -12,6 +12,7 @@ import { FAQ_ITEMS, SAFETY_PILLARS } from "../../domain/legalCopy";
 import { readDraftMix, setDraftParent, type ParentToken } from "../../domain/draft";
 import { track } from "../../services/analytics";
 import { fetchFeedResult, searchTokensResult, type TokenSummary } from "../../services/api";
+import { TokenAvatar } from "../../components/token/TokenAvatar";
 
 const HOW = [
   ["01", "Pick", "Any two Robinhood Chain tokens"],
@@ -461,7 +462,6 @@ function MixBench({
             query={queryA}
             selected={parentA}
             results={resultsA}
-            reduceMotion={reduceMotion}
             onQuery={onQueryA}
             onSelect={(token) => onSelect("a", token)}
             onClear={() => onClear("a")}
@@ -474,7 +474,6 @@ function MixBench({
             query={queryB}
             selected={parentB}
             results={resultsB}
-            reduceMotion={reduceMotion}
             onQuery={onQueryB}
             onSelect={(token) => onSelect("b", token)}
             onClear={() => onClear("b")}
@@ -539,7 +538,6 @@ function ParentSearch({
   query,
   selected,
   results,
-  reduceMotion,
   onQuery,
   onSelect,
   onClear,
@@ -548,7 +546,6 @@ function ParentSearch({
   query: string;
   selected: ParentToken | null;
   results: TokenSummary[];
-  reduceMotion: boolean;
   onQuery: (value: string) => void;
   onSelect: (token: TokenSummary) => void;
   onClear: () => void;
@@ -559,14 +556,13 @@ function ParentSearch({
       <p className="slot-label">Parent {side.toUpperCase()}</p>
       {selected ? (
         <div className="slot-filled">
-          <motion.img
-            className="avatar"
-            src={selected.image_url || "/assets/brand/token-fallback.webp"}
-            alt={`${selected.name} avatar`}
-            width={44}
-            height={44}
-            layoutId={reduceMotion ? undefined : `token-${selected.mint}`}
-            transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+          <TokenAvatar
+            src={selected.image_url}
+            symbol={selected.symbol}
+            name={selected.name}
+            seed={selected.mint}
+            size={44}
+            layoutId={`token-${selected.mint}`}
           />
           <div className="slot-filled-id">
             <strong>{selected.name}</strong>

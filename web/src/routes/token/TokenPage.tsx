@@ -9,6 +9,7 @@ import { INDEXER_NOTICE, explorerTokenUrl, marketUrl } from "../../domain/legalC
 import { track } from "../../services/analytics";
 import { fetchToken, TokenApiError, type TokenDetail } from "../../services/api";
 import { readOnchainToken, type OnchainTokenView } from "../../chain/tokenOnchain";
+import { TokenAvatar } from "../../components/token/TokenAvatar";
 
 function metric(value?: number | null, kind: "money" | "percent" | "text" = "text"): string {
   if (value == null || Number.isNaN(value)) return "Unknown";
@@ -92,7 +93,7 @@ export function TokenPage() {
   const notFound = !loading && errorCode === "TOKEN_NOT_FOUND" && !onchain?.exists;
   const name = onchain?.name || detail?.metadata.name || "Unknown";
   const symbol = onchain?.symbol || detail?.metadata.symbol || "Unknown";
-  const image = detail?.metadata.image_url || "/assets/brand/token-fallback.webp";
+  const image = detail?.metadata.image_url || "";
   const creator = detail?.onchain.creator || "Unknown";
   const lineage = detail?.lineage;
   const market = detail?.market;
@@ -175,7 +176,7 @@ export function TokenPage() {
       {showToken ? (
         <>
           <div className="panel token-hero">
-            <img className="avatar" src={image} alt={`${name} avatar`} width={96} height={96} />
+            <TokenAvatar src={image} symbol={symbol} name={name} seed={mint} size={96} />
             <div className="stack sm token-hero-id">
               <h1>
                 {name} <span className="token-hero-ticker">${symbol}</span>

@@ -4,6 +4,7 @@ import { setDraftParent, type ParentToken } from "../../domain/draft";
 import { clampScore } from "../../domain/validation";
 import type { TokenSummary } from "../../services/api";
 import { Button, ButtonLink } from "../ui/Button";
+import { TokenAvatar } from "./TokenAvatar";
 
 function ageLabel(minutes?: number | null): string {
   if (minutes == null) return "Unknown";
@@ -71,14 +72,13 @@ export function TokenFeedCard({
         <span className={`token-card-flag ${assignedSide}`}>Parent {assignedSide?.toUpperCase()}</span>
       ) : null}
       <div className="token-card-head">
-        <motion.img
-          className="avatar"
-          src={token.image_url || "/assets/brand/token-fallback.webp"}
-          alt={`${token.name} avatar`}
-          width={48}
-          height={48}
-          layoutId={reduceMotion || consumed || !token.mint ? undefined : `token-${token.mint}`}
-          transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+        <TokenAvatar
+          src={token.image_url}
+          symbol={token.symbol}
+          name={token.name}
+          seed={token.mint}
+          size={48}
+          layoutId={consumed || !token.mint ? undefined : `token-${token.mint}`}
         />
         <div className="token-card-id">
           <strong>{token.name}</strong>
@@ -160,16 +160,15 @@ export function SearchResultButton({
   onSelect: (token: TokenSummary) => void;
   layoutId?: string;
 }) {
-  const reduceMotion = useReducedMotion();
   return (
     <button type="button" className="search-result" onClick={() => onSelect(token)}>
-      <motion.img
-        src={token.image_url || "/assets/brand/token-fallback.webp"}
-        alt=""
-        width={30}
-        height={30}
-        layoutId={reduceMotion ? undefined : layoutId}
-        transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+      <TokenAvatar
+        src={token.image_url}
+        symbol={token.symbol}
+        name={token.name}
+        seed={token.mint}
+        size={30}
+        layoutId={layoutId}
       />
       <span>
         <strong>{token.name}</strong>
