@@ -65,7 +65,7 @@ def _ingest_pairs(http: JsonGetter, url: str, now_ms: int, by_mint: dict[str, di
     for pair in pairs:
         if not isinstance(pair, dict):
             continue
-        if str(pair.get("chainId", "")).lower() != "solana":
+        if str(pair.get("chainId", "")).lower() != "robinhood":
             continue
         snapshot = _pair_to_snapshot(pair, now_ms=now_ms)
         if not snapshot.token_address:
@@ -78,7 +78,7 @@ def _ingest_pairs(http: JsonGetter, url: str, now_ms: int, by_mint: dict[str, di
 
 
 def _ingest_token(http: JsonGetter, mint: str, now_ms: int, by_mint: dict[str, dict[str, object]]) -> None:
-    url = f"{DexScreenerSource.BASE_URL}/tokens/v1/solana/{mint}"
+    url = f"{DexScreenerSource.BASE_URL}/tokens/v1/robinhood/{mint}"
     try:
         payload = http.get_json(url)
     except RuntimeError:
@@ -88,13 +88,13 @@ def _ingest_token(http: JsonGetter, mint: str, now_ms: int, by_mint: dict[str, d
         return
     for pair in pairs:
         if isinstance(pair, dict):
-            pair.setdefault("chainId", "solana")
+            pair.setdefault("chainId", "robinhood")
             _ingest_pairs_list([pair], now_ms, by_mint)
 
 
 def _ingest_pairs_list(pairs: list[dict[str, Any]], now_ms: int, by_mint: dict[str, dict[str, object]]) -> None:
     for pair in pairs:
-        if str(pair.get("chainId", "")).lower() != "solana":
+        if str(pair.get("chainId", "")).lower() != "robinhood":
             continue
         snapshot = _pair_to_snapshot(pair, now_ms=now_ms)
         if not snapshot.token_address:

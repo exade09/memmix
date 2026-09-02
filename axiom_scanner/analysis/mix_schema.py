@@ -39,7 +39,7 @@ PARENT_B_DATA
 USER_HINT_UNTRUSTED
 {user_hint}
 
-Each record contains a sanitized name, symbol, validated Solana mint, sanitized description and visual observations.
+Each record contains a sanitized name, symbol, validated contract address, sanitized description and visual observations.
 
 Requirements:
 - use a different mutation strategy for each concept where possible;

@@ -15,7 +15,7 @@ class ScoringTests(unittest.TestCase):
         config = ScannerConfig()
         weak = TokenSnapshot(
             source="test",
-            chain_id="solana",
+            chain_id="robinhood",
             token_address="weak",
             symbol="WEAK",
             name="Weak",
@@ -27,7 +27,7 @@ class ScoringTests(unittest.TestCase):
         )
         strong = TokenSnapshot(
             source="test",
-            chain_id="solana",
+            chain_id="robinhood",
             token_address="strong",
             symbol="STRONG",
             name="Strong",
@@ -52,7 +52,7 @@ class ScoringTests(unittest.TestCase):
         config = ScannerConfig()
         token = TokenSnapshot(
             source="test",
-            chain_id="solana",
+            chain_id="robinhood",
             token_address="risk",
             symbol="RISK",
             name="Risk",
@@ -75,7 +75,7 @@ class ScoringTests(unittest.TestCase):
         config = ScannerConfig()
         token = TokenSnapshot(
             source="test",
-            chain_id="solana",
+            chain_id="robinhood",
             token_address="hot",
             symbol="HOT",
             name="Hot",
@@ -99,7 +99,7 @@ class ScoringTests(unittest.TestCase):
         config = ScannerConfig(min_market_cap_usd=500_000)
         token = TokenSnapshot(
             source="test",
-            chain_id="solana",
+            chain_id="robinhood",
             token_address="small",
             symbol="SMALL",
             name="Small",

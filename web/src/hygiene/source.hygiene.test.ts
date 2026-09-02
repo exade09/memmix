@@ -23,7 +23,10 @@ describe("source hygiene", () => {
   it("keeps required packages and a single animation runtime", () => {
     expect(pkg.dependencies.zod).toBeTruthy();
     expect(pkg.dependencies.motion).toBeTruthy();
-    expect(pkg.dependencies["@pump-fun/pump-sdk"]).toBe("1.36.0");
+    expect(pkg.dependencies.viem).toBeTruthy();
+    // the Solana stack must not creep back in alongside the EVM one
+    expect(pkg.dependencies["@solana/web3.js"]).toBeUndefined();
+    expect(pkg.dependencies["@pump-fun/pump-sdk"]).toBeUndefined();
     expect(pkg.dependencies.tailwindcss).toBeUndefined();
     expect(pkg.dependencies.gsap).toBeUndefined();
     expect(pkg.dependencies.three).toBeUndefined();

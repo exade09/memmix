@@ -48,10 +48,10 @@ export function LegalHubPage() {
       </nav>
       <h3>What FONS can verify</h3>
       <ul className="legal-list">
-        <li>Non-custodial wallet: keys stay in the wallet you connect.</li>
+        <li>Non-custodial: keys stay in MetaMask.</li>
         <li>Explicit signature: nothing is sent until you approve it.</li>
-        <li>Transaction simulation before the wallet prompt.</li>
-        <li>Program allowlist for the launch path.</li>
+        <li>Transaction simulation before MetaMask opens.</li>
+        <li>The launchpad contract is verified to hold code before signing.</li>
         <li>Visible wallet debit on the review screen.</li>
         <li>No hidden FONS platform launch fee in this version.</li>
       </ul>
@@ -120,7 +120,7 @@ export function TermsPage() {
         ))}
       </ul>
       <p className="body-copy">
-        External Pump, Solscan, DexScreener and social links are third-party sites. Review them yourself.
+        Blockscout, DexScreener and social links are third-party sites. Review them yourself.
       </p>
     </LegalShell>
   );

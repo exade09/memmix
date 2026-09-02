@@ -33,7 +33,7 @@ from vercel_api.shared import read_json_body, client_ip, send_json
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 WEB_ROOT = PROJECT_ROOT / "web"
-ALLOWED_CHAINS = ["solana"]
+ALLOWED_CHAINS = ["robinhood"]
 OG_IMAGE_CACHE: dict[str, str] = {}
 
 

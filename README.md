@@ -1,10 +1,14 @@
-# MIXBORN
+# FONS
 
-> Previously Axiom Meme Lab. The source of truth for the MIXBORN product, AI mixer and native Solana launch flow is [docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md](docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md). Coding agents should read [AGENTS.md](AGENTS.md) first.
+> Previously Axiom Meme Lab, then MIXBORN. Pick two existing tokens, let the AI mix their logic, launch the one that is born.
+>
+> [docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md](docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md) remains the product source of truth for the mixer, security and Definition of Done, but it predates two owner-directed changes: the rename to **FONS** and the migration from Solana/Pump to **Robinhood Chain** with **MetaMask**. On chain, wallet and naming, [AGENTS.md](AGENTS.md) is current. Coding agents should read it first.
+>
+> FONS is not affiliated with, endorsed by, or a partner of Robinhood Markets. It builds on the public Robinhood Chain network.
 
-The MIXBORN web app lives in `web/` as a Vite + React + TypeScript client. The existing Python scanner API still serves `/api/*`.
+The FONS web app lives in `web/` as a Vite + React + TypeScript client. The existing Python scanner API still serves `/api/*`.
 
-Local MIXBORN UI:
+Local FONS UI:
 
 ```powershell
 python main.py web --port 8080 --limit 100
@@ -137,10 +141,14 @@ Optional environment variables:
 - `PINATA_JWT`: server-only Pinata JWT for metadata pinning. Never expose it to the browser.
 - `PUBLIC_IPFS_GATEWAY` or `PINATA_GATEWAY_HOST`: HTTPS IPFS gateway used to render CIDs.
 - `CANONICAL_SITE_URL`: `createdOn` value written into token metadata.
-- `INITIAL_BUY_MAX_SOL`: optional launch form cap, defaults to `5`.
+- `INITIAL_BUY_MAX_ETH`: optional launch form cap, defaults to `0.5`.
+- `ROBINHOOD_RPC_URL`: read-only JSON-RPC endpoint proxied by `/api/chain/rpc`.
+- `FONS_LAUNCHPAD_ADDRESS`: the deployed launchpad. While it is empty, launching is disabled and the UI says so.
 
 If live DexScreener requests fail in a serverless function, `/api/scan` falls back
-to bundled Solana meme data so the dashboard still renders.
+to a bundled meme dataset so the dashboard still renders. That dataset is
+historical Solana reference data used by the narrative mixer; it is not the
+live feed, which reads Robinhood Chain.
 
 Vercel ignores the local CLI entrypoint `main.py`; production routes use the
 single explicit Python entrypoint configured in `pyproject.toml`.
@@ -288,7 +296,7 @@ python main.py scan --config config.json
 
 Useful fields:
 
-- `chains`: chain IDs to scan. The default setup keeps this to `solana`.
+- `chains`: chain IDs to scan. The default setup keeps this to `robinhood`.
 - `min_liquidity_usd`: filters very thin pairs. Default is intentionally loose.
 - `min_market_cap_usd`: keeps the visible set at or above the target market cap.
 - `max_token_age_hours`: focuses on fresh launches.

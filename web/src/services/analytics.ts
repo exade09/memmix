@@ -26,7 +26,7 @@ export const ANALYTICS_EVENTS = [
   "launch_submitted",
   "launch_confirmed",
   "launch_reconciliation_needed",
-  "external_pump_opened",
+  "external_market_opened",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];

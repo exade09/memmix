@@ -17,14 +17,11 @@ from axiom_scanner.security.query import (
     snapshot_to_summary,
 )
 from axiom_scanner.sources.dexscreener import DexScreenerSource, _pair_to_snapshot
-from vercel_api.launch_config import solana_rpc_url
+from vercel_api.launch_config import chain_rpc_url
 
 INDEXER_NOTICE = (
     "The token is live on-chain. Market data will appear after external indexers discover trading activity."
 )
-TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-TOKEN_2022_PROGRAM_ID = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-MINT_OWNERS = {TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID}
 
 
 class JsonGetter(Protocol):
@@ -43,7 +40,7 @@ def token_detail(
         raise QueryError("That mint address is not valid.", "INVALID_MINT")
 
     client = http or HttpClient(timeout_seconds=min(config.request_timeout_seconds, 10), retries=1)
-    url = f"{DexScreenerSource.BASE_URL}/tokens/v1/solana/{address}"
+    url = f"{DexScreenerSource.BASE_URL}/tokens/v1/robinhood/{address}"
     try:
         payload = client.get_json(url)
     except SourceError:
@@ -58,9 +55,9 @@ def token_detail(
     for pair in pairs:
         if not isinstance(pair, dict):
             continue
-        if str(pair.get("chainId", "")).lower() not in {"", "solana"}:
+        if str(pair.get("chainId", "")).lower() not in {"", "robinhood"}:
             continue
-        pair.setdefault("chainId", "solana")
+        pair.setdefault("chainId", "robinhood")
         snapshot = _pair_to_snapshot(pair, now_ms=now_ms)
         if snapshot.token_address.lower() != address.lower():
             continue
@@ -70,7 +67,7 @@ def token_detail(
 
     mint_exists = rpc_mint_exists(address, rpc_post=rpc_post)
     if best is None and mint_exists is False:
-        raise QueryError("That mint was not found on-chain.", "TOKEN_NOT_FOUND")
+        raise QueryError("No contract was found at that address.", "TOKEN_NOT_FOUND")
 
     if best is None:
         notice = None
@@ -156,12 +153,14 @@ def token_detail(
 
 
 def rpc_mint_exists(mint: str, *, rpc_post=None) -> bool | None:
-    body = {
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "getAccountInfo",
-        "params": [mint, {"encoding": "base64", "commitment": "confirmed"}],
-    }
+    """
+    An address is a token only if it holds contract code. An externally owned
+    account returns "0x" and is reported as absent, the same honesty the
+    Solana build got from checking the mint owner program.
+
+    None means the node could not answer, which is not the same as absent.
+    """
+    body = {"jsonrpc": "2.0", "id": 1, "method": "eth_getCode", "params": [mint, "latest"]}
     try:
         payload = rpc_post(body) if rpc_post is not None else _post_rpc(body)
     except (OSError, TimeoutError, ValueError, json.JSONDecodeError, HTTPError, URLError):
@@ -169,23 +168,17 @@ def rpc_mint_exists(mint: str, *, rpc_post=None) -> bool | None:
     if not isinstance(payload, dict):
         return None
     result = payload.get("result")
-    if not isinstance(result, dict):
+    if not isinstance(result, str):
         return None
-    value = result.get("value")
-    if value is None:
-        return False
-    if not isinstance(value, dict):
-        return None
-    owner = str(value.get("owner") or "")
-    return owner in MINT_OWNERS
+    return result not in {"", "0x", "0x0"}
 
 
 def _post_rpc(payload: dict[str, Any]) -> dict[str, Any]:
     request = Request(
-        solana_rpc_url(),
+        chain_rpc_url(),
         data=json.dumps(payload).encode("utf-8"),
         method="POST",
-        headers={"Accept": "application/json", "Content-Type": "application/json", "User-Agent": "mixborn-token/0.1"},
+        headers={"Accept": "application/json", "Content-Type": "application/json", "User-Agent": "fons-token/0.1"},
     )
     with urlopen(request, timeout=8) as response:
         parsed = json.loads(response.read().decode("utf-8"))

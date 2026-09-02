@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
-import { appConfig, clusterLabel } from "../../app/config";
+import { isTokenAddress } from "../../chain/address";
+import { appConfig, networkLabel } from "../../app/config";
 import { GlassMark, type GlassState } from "../../components/brand/GlassMark";
 import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { SiteFooter } from "../../components/layout/SiteFooter";
@@ -13,7 +14,7 @@ import { track } from "../../services/analytics";
 import { fetchFeedResult, searchTokensResult, type TokenSummary } from "../../services/api";
 
 const HOW = [
-  ["01", "Pick", "Any two Solana tokens"],
+  ["01", "Pick", "Any two Robinhood Chain tokens"],
   ["02", "Mutate", "AI finds the logic, not a word splice"],
   ["03", "Edit", "Every field stays yours"],
   ["04", "Launch", "See the debit, then sign it"],
@@ -26,7 +27,7 @@ const HOW = [
 const FACTS = [
   ["Parents in", "2", "Never one"],
   ["AI outputs", "4", "Name, ticker, description, avatar"],
-  ["Platform fee", "0 SOL", "Network fees and rent still cost SOL"],
+  ["Platform fee", "0 ETH", "Gas still costs ETH"],
   ["Custody", "None", "Keys stay in your wallet"],
 ] as const;
 
@@ -36,7 +37,7 @@ const SAFETY_INDEXED = SAFETY_PILLARS.map(([title, copy], index) => [
   copy,
 ] as const);
 
-const MINT_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
 
 export function LandingPage() {
   const reduceMotion = useReducedMotion();
@@ -110,7 +111,7 @@ export function LandingPage() {
     const query = value.trim();
     const abortRef = side === "a" ? abortA : abortB;
     abortRef.current?.abort();
-    if (query.length < 2 && !MINT_RE.test(query)) {
+    if (query.length < 2 && !isTokenAddress(query)) {
       if (side === "a") setResultsA([]);
       else setResultsB([]);
       return;
@@ -129,7 +130,7 @@ export function LandingPage() {
       if (error instanceof DOMException && error.name === "AbortError") return;
       if (side === "a") setResultsA([]);
       else setResultsB([]);
-      setSearchError("The scanner is offline. Try a mint address or retry.");
+      setSearchError("The scanner is offline. Try a contract address or retry.");
     }
   }
 
@@ -184,13 +185,13 @@ export function LandingPage() {
         <section className="hero">
           <div className="wrap hero-inner">
             <div className="hero-copy">
-              <p className="eyebrow">Solana launchpad · {clusterLabel()}</p>
+              <p className="eyebrow">Launchpad · {networkLabel()}</p>
               <h1>
                 Two tokens in.
                 <br />
                 <span className="hero-born">One born</span>
               </h1>
-              <p className="lede">Pick two tokens. Get one new character. Launch it on Pump</p>
+              <p className="lede">Pick two tokens. Get one new character. Launch it on Robinhood Chain</p>
             </div>
 
             <MixBench
@@ -304,7 +305,7 @@ export function LandingPage() {
             </div>
             {feedError ? (
               <p className="note error" role="status">
-                {feedError} Retry the scanner or use a mint address.
+                {feedError} Retry the scanner or paste a token address.
               </p>
             ) : null}
             {!feedLoading && !feedError && feed.length === 0 ? (
@@ -589,7 +590,7 @@ function ParentSearch({
               className="control"
               value={query}
               onChange={(event) => onQuery(event.target.value)}
-              placeholder="Name, ticker or mint"
+              placeholder="Name, ticker or address"
               autoComplete="off"
               spellCheck={false}
             />

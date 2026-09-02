@@ -94,23 +94,23 @@ export function websiteError(value: string): string | null {
 
 export function normalizeInitialBuy(value: string): string {
   const text = value.trim() || INITIAL_BUY_DEFAULT;
-  if (!/^\d+(\.\d{1,9})?$/.test(text)) return text;
+  if (!/^\d+(\.\d{1,18})?$/.test(text)) return text;
   if (text === "0" || /^0+$/.test(text)) return "0";
   if (text.includes(".")) return text.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
   return text;
 }
 
-export function initialBuyError(value: string, maxSol: number): string | null {
+export function initialBuyError(value: string, maxEth: number): string | null {
   const text = value.trim() || INITIAL_BUY_DEFAULT;
-  if (!/^\d+(\.\d{1,9})?$/.test(text)) return "Initial buy must be a SOL amount.";
+  if (!/^\d+(\.\d{1,18})?$/.test(text)) return "Initial buy must be an ETH amount.";
   const amount = Number(text);
-  if (!Number.isFinite(amount) || amount < 0) return "Initial buy must be a SOL amount.";
-  if (amount > maxSol) return `Initial buy cannot exceed ${maxSol} SOL.`;
+  if (!Number.isFinite(amount) || amount < 0) return "Initial buy must be an ETH amount.";
+  if (amount > maxEth) return `Initial buy cannot exceed ${maxEth} ETH.`;
   return null;
 }
 
-export function formatSol(value: string): string {
+export function formatEth(value: string): string {
   const normalized = normalizeInitialBuy(value);
-  if (initialBuyError(normalized, Number.POSITIVE_INFINITY)) return `${value} SOL`;
-  return `${normalized} SOL`;
+  if (initialBuyError(normalized, Number.POSITIVE_INFINITY)) return `${value} ETH`;
+  return `${normalized} ETH`;
 }

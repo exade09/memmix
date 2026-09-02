@@ -22,7 +22,7 @@ class SourceConfig:
             "pepe",
             "moon",
             "cto",
-            "solana",
+            "robinhood",
             "trump",
             "viral",
             "new",
@@ -56,7 +56,7 @@ class ScoringConfig:
 
 @dataclass
 class ScannerConfig:
-    chains: list[str] = field(default_factory=lambda: ["solana"])
+    chains: list[str] = field(default_factory=lambda: ["robinhood"])
     min_liquidity_usd: float = 20
     min_market_cap_usd: float = 10_000
     max_token_age_hours: float = 2160

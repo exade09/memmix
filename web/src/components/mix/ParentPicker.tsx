@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, FileButton } from "../ui/Button";
+import { isTokenAddress } from "../../chain/address";
 import { SearchResultButton, toParent } from "../token/TokenFeedCard";
 import { searchTokensResult, type TokenSummary } from "../../services/api";
 import type { ParentToken } from "../../domain/draft";
 
-const MINT_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
-function shortenMint(mint: string): string {
+
+function shortenAddressLabel(mint: string): string {
   if (mint.length <= 10) return mint;
   return `${mint.slice(0, 4)}…${mint.slice(-4)}`;
 }
@@ -54,7 +55,7 @@ export function ParentPicker({
     window.clearTimeout(timer.current);
     abort.current?.abort();
     const trimmed = value.trim();
-    if (trimmed.length < 2 && !MINT_RE.test(trimmed)) {
+    if (trimmed.length < 2 && !isTokenAddress(trimmed)) {
       setResults([]);
       setError("");
       return;
@@ -78,7 +79,7 @@ export function ParentPicker({
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       setResults([]);
-      setError(err instanceof Error ? err.message : "The scanner is offline. Try a mint address or retry.");
+      setError(err instanceof Error ? err.message : "The scanner is offline. Try a contract address or retry.");
     }
   }
 
@@ -109,7 +110,7 @@ export function ParentPicker({
           <strong className="picked-name">
             {selected.name} <span className="metric-label">${selected.symbol}</span>
           </strong>
-          <p className="metric-label">{shortenMint(selected.mint)}</p>
+          <p className="metric-label">{shortenAddressLabel(selected.mint)}</p>
           <p className="metric-label">
             Liq {money(selected.liquidity_usd)} · Vol {money(selected.volume_24h_usd)}
           </p>
@@ -124,7 +125,7 @@ export function ParentPicker({
             size="sm"
             onClick={() => void navigator.clipboard.writeText(selected.mint)}
           >
-            Copy mint
+            Copy address
           </Button>
           <FileButton
             variant="ghost"
@@ -152,12 +153,12 @@ export function ParentPicker({
           value={query}
           disabled={locked}
           onChange={(event) => onQuery(event.target.value)}
-          placeholder="Name, ticker, mint or Pump link"
+          placeholder="Name, ticker or contract address"
           autoComplete="off"
           spellCheck={false}
         />
       </label>
-      <p className="metric-label">Search any live Solana token, or paste a mint</p>
+      <p className="metric-label">Search any live Robinhood Chain token, or paste an address</p>
       {error ? <p className="metric-label">{error}</p> : null}
       {results.length > 0 ? (
         <div className="slot-results" role="listbox" aria-label={label}>

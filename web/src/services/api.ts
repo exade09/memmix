@@ -345,6 +345,7 @@ export async function checkLaunchName(name: string, ticker: string, signal?: Abo
 }
 
 export type LaunchHealth = {
+  chain_id?: number;
   status: string;
   scanner: string;
   text_ai: string;

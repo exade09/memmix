@@ -1,14 +1,14 @@
-import { useConnection } from "@solana/wallet-adapter-react";
+import { useChain } from "../../chain/wallet";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { appConfig } from "../../app/config";
 import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { Button, ButtonAnchor, ButtonLink } from "../../components/ui/Button";
 import { setDraftParent } from "../../domain/draft";
-import { INDEXER_NOTICE, pumpCoinUrl } from "../../domain/legalCopy";
+import { INDEXER_NOTICE, explorerTokenUrl, marketUrl } from "../../domain/legalCopy";
 import { track } from "../../services/analytics";
 import { fetchToken, TokenApiError, type TokenDetail } from "../../services/api";
-import { readOnchainToken, type OnchainTokenView } from "../../solana/tokenOnchain";
+import { readOnchainToken, type OnchainTokenView } from "../../chain/tokenOnchain";
 
 function metric(value?: number | null, kind: "money" | "percent" | "text" = "text"): string {
   if (value == null || Number.isNaN(value)) return "Unknown";
@@ -21,16 +21,7 @@ function metric(value?: number | null, kind: "money" | "percent" | "text" = "tex
   return String(value);
 }
 
-function curveLabel(status: string): string {
-  if (status === "on_curve") return "On curve";
-  if (status === "graduated") return "Graduated";
-  return "Unknown";
-}
 
-function progressLabel(value?: number | null): string {
-  if (value == null || !Number.isFinite(value) || value < 0 || value > 1) return "Unknown";
-  return `${Math.round(value * 100)}%`;
-}
 
 function parentCard(mint: string, label: string) {
   return {
@@ -44,7 +35,7 @@ function parentCard(mint: string, label: string) {
 export function TokenPage() {
   const { mint = "" } = useParams();
   const navigate = useNavigate();
-  const { connection } = useConnection();
+  const { publicClient } = useChain();
   const [detail, setDetail] = useState<TokenDetail | null>(null);
   const [onchain, setOnchain] = useState<OnchainTokenView | null>(null);
   const [error, setError] = useState("");
@@ -80,8 +71,8 @@ export function TokenPage() {
         }
       });
 
-    const chain = readOnchainToken(connection, mint)
-      .then((payload) => {
+    const chain = readOnchainToken(publicClient, mint)
+      .then((payload: OnchainTokenView) => {
         if (!cancelled) setOnchain(payload);
       })
       .catch(() => {
@@ -94,7 +85,7 @@ export function TokenPage() {
     return () => {
       cancelled = true;
     };
-  }, [connection, mint]);
+  }, [publicClient, mint]);
 
   const mintExists = onchain ? onchain.exists : detail?.onchain.mint_exists === true;
   const exists = Boolean(mintExists || detail?.market);
@@ -102,9 +93,8 @@ export function TokenPage() {
   const name = onchain?.name || detail?.metadata.name || "Unknown";
   const symbol = onchain?.symbol || detail?.metadata.symbol || "Unknown";
   const image = detail?.metadata.image_url || "/assets/brand/token-fallback.webp";
-  const creator = onchain?.creator || detail?.onchain.creator || "Unknown";
-  const status = onchain?.status && onchain.status !== "unknown" ? onchain.status : detail?.onchain.status || "unknown";
-  const lineage = onchain?.lineage || detail?.lineage;
+  const creator = detail?.onchain.creator || "Unknown";
+  const lineage = detail?.lineage;
   const market = detail?.market;
   const notice = mintExists && !market
     ? INDEXER_NOTICE
@@ -115,7 +105,7 @@ export function TokenPage() {
   const showToken = !loading && (exists || Boolean(detail) || onchainError) && !notFound;
 
   const buyPlatform = useMemo(() => {
-    const value = appConfig.platformTokenMint.trim();
+    const value = appConfig.platformTokenAddress.trim();
     return value || "";
   }, []);
 
@@ -151,7 +141,7 @@ export function TokenPage() {
             <h1>Token not found</h1>
           </div>
         </header>
-        <p className="empty-state">That mint was not found on-chain.</p>
+        <p className="empty-state">No contract was found at that address</p>
         <p className="metric-label">{mint}</p>
         <div className="btn-row">
           <ButtonLink to="/app/explore" variant="secondary">
@@ -193,7 +183,7 @@ export function TokenPage() {
               <p className="metric-label">{mint}</p>
               <div className="btn-row tight">
                 <Button type="button" variant="outline" size="sm" onClick={copyMint}>
-                  {copied ? "Copied" : "Copy mint"}
+                  {copied ? "Copied" : "Copy address"}
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => useAs("a")}>
                   Use as Parent A
@@ -211,12 +201,12 @@ export function TokenPage() {
               <dd>{creator}</dd>
             </div>
             <div>
-              <dt>Status</dt>
-              <dd>{curveLabel(status)}</dd>
+              <dt>Contract</dt>
+              <dd>{onchain?.exists ? "Verified ERC-20" : "Unknown"}</dd>
             </div>
             <div>
-              <dt>Bonding curve</dt>
-              <dd>{progressLabel(onchain?.progress)}</dd>
+              <dt>Decimals</dt>
+              <dd>{onchain?.decimals ?? "Unknown"}</dd>
             </div>
             <div>
               <dt>Liquidity</dt>
@@ -274,25 +264,28 @@ export function TokenPage() {
             <ButtonAnchor
               variant="primary"
               arrow
-              href={pumpCoinUrl(mint)}
+              href={marketUrl(mint)}
               target="_blank"
               rel="noreferrer"
-              onClick={() => track("external_pump_opened")}
+              onClick={() => track("external_market_opened")}
             >
-              View / trade on Pump
+              View the market
+            </ButtonAnchor>
+            <ButtonAnchor variant="secondary" href={explorerTokenUrl(mint)} target="_blank" rel="noreferrer">
+              View on Blockscout
             </ButtonAnchor>
             {market?.pair_url ? (
-              <ButtonAnchor variant="secondary" href={market.pair_url} target="_blank" rel="noreferrer">
+              <ButtonAnchor variant="ghost" href={market.pair_url} target="_blank" rel="noreferrer">
                 DexScreener
               </ButtonAnchor>
             ) : null}
             {buyPlatform ? (
               <ButtonAnchor
                 variant="ghost"
-                href={pumpCoinUrl(buyPlatform)}
+                href={marketUrl(buyPlatform)}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => track("external_pump_opened")}
+                onClick={() => track("external_market_opened")}
               >
                 Buy ${appConfig.tokenSymbol}
               </ButtonAnchor>

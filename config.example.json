@@ -1,5 +1,5 @@
 {
-  "chains": ["solana"],
+  "chains": ["robinhood"],
   "min_liquidity_usd": 20,
   "min_market_cap_usd": 10000,
   "max_token_age_hours": 2160,

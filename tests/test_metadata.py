@@ -155,7 +155,7 @@ class MetadataPinTests(unittest.TestCase):
             description="hello",
             image_uri="https://gateway.pinata.cloud/ipfs/QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
             generated=True,
-            parent_a_mint="So11111111111111111111111111111111111111112",
+            parent_a_mint="0x0000000000000000000000000000000000001111",
         )
         dumped = json.dumps(payload)
         self.assertNotIn("prompt", dumped)

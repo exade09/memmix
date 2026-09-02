@@ -33,7 +33,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="footer-legal">
-          <p>Built on Solana. Launch mechanics powered by the Pump protocol</p>
+          <p>Built on Robinhood Chain. Not affiliated with Robinhood Markets</p>
           <p>{FOOTER_DISCLAIMER}</p>
         </div>
       </div>

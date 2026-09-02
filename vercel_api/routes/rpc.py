@@ -19,7 +19,7 @@ from vercel_api.launch_config import (
     RPC_SEND_WINDOW_SECONDS,
     allowed_origins,
     send_transaction_allowed,
-    solana_rpc_url,
+    chain_rpc_url,
 )
 
 
@@ -39,7 +39,7 @@ class RpcProxyError(RuntimeError):
         self.status = status
 
 
-def solana_rpc_route(
+def chain_rpc_route(
     payload: Any,
     *,
     client_ip: str,
@@ -82,7 +82,7 @@ def solana_rpc_route(
 
 
 def forward_rpc(payload: Any, *, timeout: float, retries: int) -> tuple[int, dict[str, Any]]:
-    url = solana_rpc_url()
+    url = chain_rpc_url()
     data = json.dumps(payload).encode("utf-8")
     last_error: Exception | None = None
     attempts = max(retries, 0) + 1
@@ -124,7 +124,7 @@ def forward_rpc(payload: Any, *, timeout: float, retries: int) -> tuple[int, dic
                 time.sleep(0.4 * (attempt + 1))
                 continue
     del last_error
-    return 504, envelope(success=False, code="RPC_UNAVAILABLE", message="The Solana RPC is unavailable.")
+    return 504, envelope(success=False, code="RPC_UNAVAILABLE", message="The Robinhood Chain RPC is unavailable.")
 
 
 def encoded_rpc_size(payload: Any) -> int:

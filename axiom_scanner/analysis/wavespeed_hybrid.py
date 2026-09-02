@@ -57,6 +57,7 @@ PROMPT_BLOCKLIST = (
     "token",
     "ticker",
     "solana",
+    "robinhood",
     "degen",
     "raid",
     "raids",

@@ -224,7 +224,7 @@ body[data-page-hidden="true"] .grain {
   flex: none;
 }
 
-.network-badge[data-cluster="mainnet-beta"] .pip {
+.network-badge[data-network="mainnet"] .pip {
   background: var(--live);
 }
 

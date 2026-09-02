@@ -7,11 +7,12 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from vercel_api.launch_config import (
-    PINNED_LAUNCH_SDK_VERSION,
+    chain_id,
+    chain_rpc_url,
+    is_mainnet,
+    launchpad_address,
     mainnet_launch_enabled,
     native_launch_enabled,
-    solana_cluster,
-    solana_rpc_url,
 )
 
 
@@ -28,10 +29,12 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
         ),
         "metadata": "configured" if os.getenv("PINATA_JWT", "").strip() else "disabled",
         "rpc": rpc_status,
-        "launch_sdk_version": PINNED_LAUNCH_SDK_VERSION,
-        "cluster": solana_cluster(),
+        "chain": "robinhood",
+        "chain_id": chain_id(),
+        # Whether a launch can happen at all, without leaking the address itself.
+        "launchpad": "configured" if launchpad_address() else "not_configured",
         "native_launch": native_launch_enabled(),
-        "mainnet_launch": bool(mainnet_launch_enabled() and solana_cluster() == "mainnet-beta"),
+        "mainnet_launch": bool(mainnet_launch_enabled() and is_mainnet()),
     }
     dumped = json.dumps(payload)
     for name in ("PINATA_JWT", "OPENAI_API_KEY", "WAVESPEED_API_KEY"):
@@ -44,8 +47,9 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
                 "image_ai": "disabled",
                 "metadata": "disabled",
                 "rpc": "degraded",
-                "launch_sdk_version": PINNED_LAUNCH_SDK_VERSION,
-                "cluster": solana_cluster(),
+                "chain": "robinhood",
+                "chain_id": chain_id(),
+                "launchpad": "not_configured",
                 "native_launch": False,
                 "mainnet_launch": False,
             }
@@ -53,23 +57,23 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
 
 
 def _probe_rpc() -> str:
-    body = json.dumps(
-        {"jsonrpc": "2.0", "id": 1, "method": "getLatestBlockhash", "params": [{"commitment": "confirmed"}]}
-    ).encode("utf-8")
+    """A chain id that matches what this build expects is the cheapest liveness proof."""
+    body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "eth_chainId", "params": []}).encode("utf-8")
     request = Request(
-        solana_rpc_url(),
+        chain_rpc_url(),
         data=body,
         method="POST",
         headers={
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": "mixborn-health/0.1",
+            "User-Agent": "fons-health/0.1",
         },
     )
     try:
         with urlopen(request, timeout=8) as response:
             payload = json.loads(response.read().decode("utf-8"))
-        if isinstance(payload, dict) and payload.get("result"):
+        result = payload.get("result") if isinstance(payload, dict) else None
+        if isinstance(result, str) and result.startswith("0x"):
             return "ok"
         return "degraded"
     except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValueError, OSError):

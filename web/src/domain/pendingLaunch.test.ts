@@ -1,40 +1,41 @@
 import { describe, expect, it } from "vitest";
-import { isPublicSignature, stripPendingSecrets } from "./pendingLaunch";
+import { isPublicTxHash, stripPendingSecrets } from "./pendingLaunch";
 
 const URI = "https://gateway.pinata.cloud/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi";
-const SIG = "5".repeat(88);
+const HASH = `0x${"a".repeat(64)}`;
+const TOKEN = "0x1111111111111111111111111111111111111111";
 
 describe("pending launch record", () => {
-  it("keeps public pin fields, public signature, and drops secrets", () => {
+  it("keeps public pin fields, a public tx hash, and drops secrets", () => {
     const stored = stripPendingSecrets({
-      mint: "So11111111111111111111111111111111111111112",
-      creator: "So11111111111111111111111111111111111111112",
+      token: TOKEN,
+      creator: TOKEN,
       metadata_uri: URI,
       image_hash: "abc",
-      signature: SIG,
+      tx_hash: HASH,
       state: "submitted",
-      created_at: "2026-08-25T00:00:00.000Z",
+      created_at: "2026-09-02T00:00:00.000Z",
     });
-    expect(isPublicSignature(SIG)).toBe(true);
-    expect(stored?.signature).toBe(SIG);
-    expect(stored?.mint).toContain("So111");
+    expect(isPublicTxHash(HASH)).toBe(true);
+    expect(stored?.tx_hash).toBe(HASH);
+    expect(stored?.token).toBe(TOKEN);
     expect(stored?.metadata_uri).toContain("ipfs/");
     expect(
       stripPendingSecrets({
         metadata_uri: URI,
         image_hash: "abc",
-        parent_a: "BONK",
-        parent_b: "WIF",
+        parent_a: "HOOD",
+        parent_b: "ROBIN",
         generated: true,
       }),
-    ).toMatchObject({ parent_a: "BONK", parent_b: "WIF", generated: true });
-    expect(stripPendingSecrets({ metadata_uri: "https://x", image_hash: "a", mint_secret: "secret" })).toBeNull();
+    ).toMatchObject({ parent_a: "HOOD", parent_b: "ROBIN", generated: true });
+    expect(stripPendingSecrets({ metadata_uri: "https://x", image_hash: "a", private_key: "secret" })).toBeNull();
     expect(
       stripPendingSecrets({
         metadata_uri: URI,
         image_hash: "a",
-        signature: "not-a-signature",
-      })?.signature,
+        tx_hash: "not-a-hash",
+      })?.tx_hash,
     ).toBeNull();
   });
 });

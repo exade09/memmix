@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "vitest run src/solana/secrets.scan.test.ts src/solana/source.hygiene.test.ts",
+    "lint": "vitest run src/hygiene/secrets.scan.test.ts src/hygiene/source.hygiene.test.ts",
     "test": "vitest run"
   },
   "dependencies": {
@@ -16,22 +16,15 @@
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/instrument-serif": "^5.3.0",
     "@fontsource/space-grotesk": "^5.3.0",
-    "@pump-fun/pump-sdk": "1.36.0",
-    "@solana/spl-token": "0.4.13",
-    "@solana/wallet-adapter-base": "0.9.27",
-    "@solana/wallet-adapter-react": "0.15.39",
-    "@solana/wallet-adapter-react-ui": "0.9.39",
-    "@solana/web3.js": "1.98.4",
-    "bn.js": "5.2.5",
     "buffer": "6.0.3",
     "motion": "^13.1.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",
+    "viem": "^2.56.3",
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@types/bn.js": "5.2.0",
     "@types/node": "^26.3.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",

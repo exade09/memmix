@@ -84,7 +84,7 @@ export function ExplorePage() {
       setCached(false);
       rememberSearch({ query });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "The scanner is offline. Try a mint address or retry.");
+      setError(err instanceof Error ? err.message : "The scanner is offline. Try a contract address or retry.");
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ export function ExplorePage() {
           className="control"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Name, ticker, mint, Pump or DexScreener URL"
+          placeholder="Name, ticker, address or DexScreener URL"
         />
         <Button type="submit" variant="secondary">
           Search

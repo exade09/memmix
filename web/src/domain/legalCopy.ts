@@ -1,23 +1,23 @@
 export const SAFETY_PROMISE =
-  "Your keys stay in your wallet. FONS builds and checks the launch transaction; only you can sign it. We never ask for a seed phrase or private key.";
+  "Your keys stay in MetaMask. FONS builds and checks the launch transaction; only you can sign it. We never ask for a seed phrase or private key.";
 
 export const RISK_DISCLOSURE =
   "Token creation and trading are risky. FONS does not guarantee value, liquidity, market integrity or profit. Review every transaction and every external link yourself.";
 
 export const FOOTER_DISCLAIMER =
-  "FONS is an independent interface using public Solana programs. It is not a promise of endorsement by Pump.fun, Solana or any token shown in the feed. Nothing on this site is financial advice.";
+  "FONS is an independent interface using public Robinhood Chain contracts. It is not affiliated with, endorsed by, or a partner of Robinhood Markets, and it is not a promise of endorsement by any token shown in the feed. Nothing on this site is financial advice.";
 
 export const ZERO_PLATFORM_FEE =
-  "Pump.fun currently lists a 0 SOL creation fee, and FONS adds no platform launch fee in this version. Solana network fees, account rent and any initial buy still cost SOL. The app shows an estimate before you sign.";
+  "FONS adds no platform launch fee in this version. Robinhood Chain gas and any initial buy still cost ETH. The app shows an estimate from the node before you sign.";
 
 export const INDEXER_NOTICE =
-  "The token is live on-chain. Market data will appear after external indexers discover trading activity.";
+  "The contract is live on-chain. Market data will appear after external indexers discover trading activity.";
 
 export const DEVNET_LAUNCH_NOTICE =
-  "Launch is in devnet mode. Tokens created here have no mainnet market value.";
+  "Launch is in testnet mode. Tokens created here have no mainnet market value.";
 
 export const FAQ_ITEMS = [
-  ["What does FONS do?", "FONS combines the character logic of two existing Solana tokens, generates one editable token concept and lets you launch that concept through the Pump protocol. You can also skip AI and launch manually."],
+  ["What does FONS do?", "FONS combines the character logic of two existing Robinhood Chain tokens, generates one editable token concept and lets you launch it through the Fons launchpad. You can also skip AI and launch manually."],
   ["Is token creation free?", ZERO_PLATFORM_FEE],
   ["Does FONS hold my funds?", "No. FONS is non-custodial. Your wallet signs the transaction and remains in control of its funds."],
   ["Can AI launch a token without me?", "No. AI only produces editable creative fields. It cannot connect your wallet, sign a transaction or launch a token for you."],
@@ -55,35 +55,33 @@ export const PRIVACY_COPY =
 
 export const SAFETY_PILLARS = [
   ["NON-CUSTODIAL", "We never receive your seed phrase or private key."],
-  ["VERIFIED PATH", "Launch transactions may call only the configured Pump and Solana programs."],
-  ["COST BEFORE SIGN", "You see the estimated debit and optional buy before the wallet opens."],
+  ["VERIFIED PATH", "The launchpad contract is checked for bytecode before any signature is requested."],
+  ["COST BEFORE SIGN", "You see the estimated debit and optional buy before MetaMask opens."],
   ["MARKET REALITY", "We do not promise profit, liquidity or honest third parties."],
 ] as const;
 
 export function shareLaunchCopy(input: {
   name: string;
   ticker: string;
-  pumpUrl: string;
+  tradeUrl: string;
   parentA?: string;
   parentB?: string;
 }): string {
   const title = `${input.name} ($${input.ticker})`;
   if (input.parentA && input.parentB) {
-    return `${title} was born from ${input.parentA} + ${input.parentB} in FONS. ${input.pumpUrl}`;
+    return `${title} was born from ${input.parentA} + ${input.parentB} in FONS. ${input.tradeUrl}`;
   }
-  return `${title} was born in FONS. ${input.pumpUrl}`;
+  return `${title} was born in FONS. ${input.tradeUrl}`;
 }
 
-export function pumpCoinUrl(mint: string): string {
-  return `https://pump.fun/coin/${mint}`;
+export function marketUrl(token: string): string {
+  return `https://dexscreener.com/robinhood/${token}`;
 }
 
-export function solscanTxUrl(signature: string, cluster: string): string {
-  const base = `https://solscan.io/tx/${signature}`;
-  return cluster === "mainnet-beta" ? base : `${base}?cluster=devnet`;
+export function explorerTxUrl(hash: string): string {
+  return `https://robinhoodchain.blockscout.com/tx/${hash}`;
 }
 
-export function solscanAccountUrl(address: string, cluster: string): string {
-  const base = `https://solscan.io/account/${address}`;
-  return cluster === "mainnet-beta" ? base : `${base}?cluster=devnet`;
+export function explorerTokenUrl(address: string): string {
+  return `https://robinhoodchain.blockscout.com/token/${address}`;
 }
