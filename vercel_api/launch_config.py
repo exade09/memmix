@@ -16,6 +16,12 @@ DEFAULT_PONS_FACTORY = "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e"
 
 # Only what the client actually needs. Writes go through the wallet, never
 # through this proxy, so eth_sendRawTransaction is deliberately absent.
+#
+# Every entry here is a read. The list is not a guess about what viem might
+# want: eth_getBlockByNumber was missing and estimateFeesPerGas reads
+# baseFeePerGas from the latest block, so every launch died at the fee
+# estimate with a 403. tests/test_rpc.py now pins the launch flow's methods so
+# a gap fails a test instead of a user's launch.
 RPC_ALLOWED_METHODS = frozenset(
     {
         "eth_chainId",
@@ -27,11 +33,30 @@ RPC_ALLOWED_METHODS = frozenset(
         "eth_gasPrice",
         "eth_maxPriorityFeePerGas",
         "eth_feeHistory",
+        # Fee estimation reads the latest block header for baseFeePerGas.
+        "eth_getBlockByNumber",
+        "eth_getBlockByHash",
         "eth_getTransactionByHash",
         "eth_getTransactionReceipt",
         "eth_getTransactionCount",
         "eth_getLogs",
         "net_version",
+    }
+)
+
+# The calls a launch makes, start to finish. Kept next to the allowlist
+# because the two must not drift apart.
+LAUNCH_FLOW_RPC_METHODS = frozenset(
+    {
+        "eth_chainId",           # network check
+        "eth_getCode",           # factory holds code
+        "eth_call",              # launchFee, previewLaunchEconomics, canLaunch, simulate
+        "eth_getBlockByNumber",  # baseFeePerGas
+        "eth_maxPriorityFeePerGas",
+        "eth_estimateGas",
+        "eth_getBalance",        # what the wallet actually holds
+        "eth_blockNumber",       # receipt polling
+        "eth_getTransactionReceipt",
     }
 )
 

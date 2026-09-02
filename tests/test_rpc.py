@@ -124,6 +124,53 @@ class RpcProxyTests(unittest.TestCase):
         self.assertTrue(allowed, reason)
 
 
+class LaunchFlowRpcTests(unittest.TestCase):
+    """
+    eth_getBlockByNumber was missing from the allowlist, so viem's fee
+    estimate got a 403 and every launch failed at the last step before the
+    wallet opened. The proxy is the only path the client has, so a method it
+    needs and does not have is a broken product, not a tightened one.
+    """
+
+    def setUp(self) -> None:
+        reset_rpc_limits()
+        os.environ.pop("ALLOWED_ORIGINS", None)
+
+    def test_every_method_a_launch_needs_is_allowed(self) -> None:
+        from vercel_api.launch_config import LAUNCH_FLOW_RPC_METHODS, RPC_ALLOWED_METHODS
+
+        missing = LAUNCH_FLOW_RPC_METHODS - RPC_ALLOWED_METHODS
+        self.assertEqual(missing, set(), f"launch would 403 on: {sorted(missing)}")
+
+    def test_the_proxy_actually_accepts_them(self) -> None:
+        from vercel_api.launch_config import LAUNCH_FLOW_RPC_METHODS
+
+        def fake_forward(payload, *, timeout, retries):
+            return 200, {"jsonrpc": "2.0", "id": payload.get("id"), "result": "0x1"}
+
+        for method in sorted(LAUNCH_FLOW_RPC_METHODS):
+            with self.subTest(method=method):
+                reset_rpc_limits()
+                with patch("vercel_api.routes.rpc.forward_rpc", side_effect=fake_forward):
+                    status, _ = handle_api_post(
+                        "/api/chain/rpc",
+                        read_body=lambda max_bytes: {"jsonrpc": "2.0", "id": 1, "method": method, "params": []},
+                        client_ip="127.0.0.1",
+                        origin="http://localhost:5173",
+                        host="localhost:5173",
+                    )
+                self.assertEqual(status, 200, f"{method} was rejected")
+
+    def test_widening_the_list_did_not_let_a_write_in(self) -> None:
+        from vercel_api.launch_config import RPC_ALLOWED_METHODS
+
+        for method in RPC_ALLOWED_METHODS:
+            self.assertFalse(
+                method.startswith(("eth_send", "eth_sign", "personal_", "eth_account")),
+                f"{method} can move funds or sign and must not be proxied",
+            )
+
+
 class PonsFactoryTests(unittest.TestCase):
     """
     The factory address is the one thing here that must never drift: it is
