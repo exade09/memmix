@@ -31,8 +31,9 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
         "rpc": rpc_status,
         "chain": "robinhood",
         "chain_id": chain_id(),
-        # Whether a launch can happen at all, without leaking the address itself.
-        "launchpad": "configured" if launchpad_address() else "not_configured",
+        # Which launchpad this build sends people to. The address is public.
+        "launchpad": "pons_v2",
+        "launchpad_address": launchpad_address(),
         "native_launch": native_launch_enabled(),
         "mainnet_launch": bool(mainnet_launch_enabled() and is_mainnet()),
     }
@@ -49,7 +50,7 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
                 "rpc": "degraded",
                 "chain": "robinhood",
                 "chain_id": chain_id(),
-                "launchpad": "not_configured",
+                "launchpad": "pons_v2",
                 "native_launch": False,
                 "mainnet_launch": False,
             }

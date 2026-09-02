@@ -4,7 +4,9 @@
 >
 > [docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md](docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md) remains the product source of truth for the mixer, security and Definition of Done, but it predates two owner-directed changes: the rename to **FONS** and the migration from Solana/Pump to **Robinhood Chain** with **MetaMask**. On chain, wallet and naming, [AGENTS.md](AGENTS.md) is current. Coding agents should read it first.
 >
-> FONS is not affiliated with, endorsed by, or a partner of Robinhood Markets. It builds on the public Robinhood Chain network.
+> Tokens are launched through the public [Pons v2](https://docs.ponsfamily.com/v2) factory on Robinhood Chain. FONS charges no fee of its own; the 0.0005 ETH launch fee is Pons's, read live from the contract.
+>
+> FONS is not affiliated with, endorsed by, or a partner of Robinhood Markets or Pons. It builds on public contracts on the Robinhood Chain network.
 
 The FONS web app lives in `web/` as a Vite + React + TypeScript client. The existing Python scanner API still serves `/api/*`.
 
@@ -143,7 +145,8 @@ Optional environment variables:
 - `CANONICAL_SITE_URL`: `createdOn` value written into token metadata.
 - `INITIAL_BUY_MAX_ETH`: optional launch form cap, defaults to `0.5`.
 - `ROBINHOOD_RPC_URL`: read-only JSON-RPC endpoint proxied by `/api/chain/rpc`.
-- `FONS_LAUNCHPAD_ADDRESS`: the deployed launchpad. While it is empty, launching is disabled and the UI says so.
+- `PONS_FACTORY_ADDRESS`: optional override for the Pons v2 launch factory. Defaults to the verified live deployment.
+- `ENABLE_NATIVE_LAUNCH` / `ENABLE_MAINNET_LAUNCH`: both default to `true`. Set either to `false` to switch launching off.
 
 If live DexScreener requests fail in a serverless function, `/api/scan` falls back
 to a bundled meme dataset so the dashboard still renders. That dataset is

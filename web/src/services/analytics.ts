@@ -25,6 +25,8 @@ export const ANALYTICS_EVENTS = [
   "wallet_signature_rejected",
   "launch_submitted",
   "launch_confirmed",
+  "initial_buy_submitted",
+  "initial_buy_skipped",
   "launch_reconciliation_needed",
   "external_market_opened",
 ] as const;

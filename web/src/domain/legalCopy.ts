@@ -74,6 +74,18 @@ export function shareLaunchCopy(input: {
   return `${title} was born in FONS. ${input.tradeUrl}`;
 }
 
+/**
+ * Where a token trades right after launch.
+ *
+ * A new launch lives on its Pons bonding curve, so DexScreener has nothing to
+ * show until it graduates into a pool. Sending someone to an empty chart and
+ * calling it "the market" would be a lie about their own token.
+ */
+export function ponsTokenUrl(token: string): string {
+  return `https://www.ponsfamily.com/launchpad/${token}`;
+}
+
+/** The DEX chart, which only exists once the curve has graduated. */
 export function marketUrl(token: string): string {
   return `https://dexscreener.com/robinhood/${token}`;
 }

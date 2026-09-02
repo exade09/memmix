@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from vercel_api.dispatch import handle_api_get, handle_api_post
-from vercel_api.launch_config import ROBINHOOD_MAINNET_ID
+from vercel_api.launch_config import DEFAULT_PONS_FACTORY, ROBINHOOD_MAINNET_ID
 from vercel_api.routes.rpc import reset_rpc_limits
 
 
@@ -22,7 +22,8 @@ class HealthEndpointTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertTrue(payload["success"])
         self.assertEqual(payload["data"]["chain"], "robinhood")
-        self.assertEqual(payload["data"]["launchpad"], "not_configured")
+        self.assertEqual(payload["data"]["launchpad"], "pons_v2")
+        self.assertEqual(payload["data"]["launchpad_address"], DEFAULT_PONS_FACTORY)
         self.assertEqual(payload["data"]["chain_id"], ROBINHOOD_MAINNET_ID)
         self.assertFalse(payload["data"]["native_launch"])
         self.assertFalse(payload["data"]["mainnet_launch"])
@@ -90,28 +91,59 @@ class RpcProxyTests(unittest.TestCase):
         self.assertEqual(status, 403)
         self.assertEqual(payload["error"]["code"], "INVALID_INPUT")
 
-    def test_mainnet_launch_stays_off_without_owner_flag(self) -> None:
+    def test_either_kill_switch_stops_a_launch(self) -> None:
         """
-        The proxy no longer carries sends, so the mainnet kill switch is
-        asserted where it now lives: the launch gate itself.
+        The proxy no longer carries sends, so the kill switches are asserted
+        where they now live: the launch gate itself. Both default to on now
+        that the path runs through a deployed factory, so what matters is that
+        either one still stops it.
         """
         from vercel_api.launch_config import send_transaction_allowed
 
         os.environ["ENABLE_NATIVE_LAUNCH"] = "true"
-        os.environ["FONS_LAUNCHPAD_ADDRESS"] = "0x" + "1" * 40
-        os.environ["ROBINHOOD_MAINNET"] = "true"
         os.environ["ENABLE_MAINNET_LAUNCH"] = "false"
         allowed, reason = send_transaction_allowed()
         self.assertFalse(allowed)
         self.assertIn("Mainnet", reason)
 
         os.environ["ENABLE_NATIVE_LAUNCH"] = "false"
+        os.environ["ENABLE_MAINNET_LAUNCH"] = "true"
         allowed, reason = send_transaction_allowed()
         self.assertFalse(allowed)
         self.assertIn("disabled", reason)
 
-        os.environ.pop("FONS_LAUNCHPAD_ADDRESS", None)
-        os.environ.pop("ROBINHOOD_MAINNET", None)
+    def test_launch_is_allowed_when_both_switches_are_on(self) -> None:
+        from vercel_api.launch_config import send_transaction_allowed
+
+        os.environ["ENABLE_NATIVE_LAUNCH"] = "true"
+        os.environ["ENABLE_MAINNET_LAUNCH"] = "true"
+        allowed, reason = send_transaction_allowed()
+        self.assertTrue(allowed, reason)
+
+
+class PonsFactoryTests(unittest.TestCase):
+    """
+    The factory address is the one thing here that must never drift: it is
+    where a user's launch fee goes. These values were read off the deployed
+    contract, not copied from a blog post.
+    """
+
+    def test_defaults_to_the_verified_deployment(self) -> None:
+        from vercel_api.launch_config import launchpad_address
+
+        os.environ.pop("PONS_FACTORY_ADDRESS", None)
+        self.assertEqual(launchpad_address(), DEFAULT_PONS_FACTORY)
+        self.assertTrue(DEFAULT_PONS_FACTORY.startswith("0x"))
+        self.assertEqual(len(DEFAULT_PONS_FACTORY), 42)
+
+    def test_env_can_override_the_factory(self) -> None:
+        from vercel_api.launch_config import launchpad_address
+
+        os.environ["PONS_FACTORY_ADDRESS"] = "0x" + "2" * 40
+        try:
+            self.assertEqual(launchpad_address(), "0x" + "2" * 40)
+        finally:
+            os.environ.pop("PONS_FACTORY_ADDRESS", None)
 
 
 if __name__ == "__main__":

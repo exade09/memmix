@@ -2,6 +2,7 @@ export type PendingLaunchState = "prepared" | "submitted" | "confirmed" | "faile
 
 export type PendingLaunch = {
   token: string | null;
+  curve?: string | null;
   creator: string | null;
   metadata_uri: string;
   image_uri?: string;
@@ -57,6 +58,7 @@ export function stripPendingSecrets(raw: unknown): PendingLaunch | null {
   const allowed: PendingLaunchState[] = ["prepared", "submitted", "confirmed", "failed", "unknown"];
   return {
     token: typeof input.token === "string" && input.token ? input.token : null,
+    curve: typeof input.curve === "string" && input.curve ? input.curve : null,
     creator: typeof input.creator === "string" && input.creator ? input.creator : null,
     metadata_uri: metadataUri,
     image_uri: typeof input.image_uri === "string" ? input.image_uri : undefined,

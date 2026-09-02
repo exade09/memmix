@@ -23,6 +23,7 @@ import {
   reconcileLaunch,
   releaseLaunchSubmit,
   simulateLaunch,
+  submitInitialBuy,
   submitLaunch,
   type CostEstimate,
   type PreparedLaunch,
@@ -109,6 +110,8 @@ type LaunchReviewProps = {
   avatarSrc: string;
   imageHash: string;
   metadataUri: string;
+  /** The pinned image, which Pons stores on the launch as its logo. */
+  imageUri: string;
   twitter: string;
   telegram: string;
   website: string;
@@ -142,7 +145,7 @@ export function LaunchReview(props: LaunchReviewProps) {
   });
 
   const persist = useCallback(
-    (patch: Partial<{ token: string | null; creator: string | null; tx_hash: string | null; state: "prepared" | "submitted" | "confirmed" | "failed" | "unknown" }>) => {
+    (patch: Partial<{ token: string | null; curve: string | null; creator: string | null; tx_hash: string | null; state: "prepared" | "submitted" | "confirmed" | "failed" | "unknown" }>) => {
       const current = readPendingLaunch();
       if (!current) return;
       writePendingLaunch({ ...current, ...patch });
@@ -167,6 +170,15 @@ export function LaunchReview(props: LaunchReviewProps) {
         symbol: props.ticker,
         metadataUri: props.metadataUri,
         initialBuyWei: ethToWei(props.initialBuy),
+        // Pons stores these on the launch itself, so they go in the call
+        // rather than only into the pinned metadata document.
+        description: props.description,
+        logo: props.imageUri || props.avatarSrc,
+        socials: {
+          twitter: props.twitter,
+          telegram: props.telegram,
+          website: props.website,
+        },
       });
       preparedRef.current = prepared;
       setEstimate(prepared.estimate);
@@ -190,10 +202,16 @@ export function LaunchReview(props: LaunchReviewProps) {
     chainMismatch,
     onTargetChain,
     persist,
+    props.avatarSrc,
+    props.description,
+    props.imageUri,
     props.initialBuy,
     props.metadataUri,
     props.name,
+    props.telegram,
     props.ticker,
+    props.twitter,
+    props.website,
     publicClient,
   ]);
 
@@ -234,9 +252,30 @@ export function LaunchReview(props: LaunchReviewProps) {
       setState("CONFIRMING");
       setError("Transaction sent. Waiting for confirmation.");
       const confirmed = await confirmLaunch(publicClient, hash);
-      persist({ token: confirmed.token, tx_hash: confirmed.hash, state: "confirmed" });
-      setState("SUCCESS");
+      persist({ token: confirmed.token, curve: confirmed.curve, tx_hash: confirmed.hash, state: "confirmed" });
       track("launch_confirmed", { generated: props.generated });
+
+      /*
+        The opening buy is deliberately after the launch is already confirmed
+        and persisted. Pons requires msg.value on launchToken to equal the
+        launch fee exactly, so it cannot be bundled; and the token exists
+        either way, so a declined or failed buy must never read as a failed
+        launch.
+      */
+      const buyWei = ethToWei(props.initialBuy);
+      if (buyWei > 0n) {
+        setState("SUBMITTING");
+        setError("Token created. Approve the opening buy, or skip it.");
+        try {
+          await submitInitialBuy(walletClient, publicClient, address, confirmed.curve, buyWei);
+          track("initial_buy_submitted");
+        } catch (buyErr: unknown) {
+          track("initial_buy_skipped");
+          console.warn("Opening buy did not go through:", buyErr);
+        }
+      }
+
+      setState("SUCCESS");
       navigate(`/app/launch/success?token=${confirmed.token}`);
     } catch (err: unknown) {
       const code = err instanceof LaunchError ? err.code : "";
@@ -278,8 +317,9 @@ export function LaunchReview(props: LaunchReviewProps) {
       try {
         const receipt = await publicClient.getTransactionReceipt({ hash: pending.tx_hash as `0x${string}` });
         receiptStatus = receipt.status === "success" ? "success" : "reverted";
+        // TokenLaunched puts the token in topic 1 and the curve in topic 2.
         const created = receipt.logs.find(
-          (log) => log.address.toLowerCase() === launchpadAddress()?.toLowerCase(),
+          (log) => log.address.toLowerCase() === launchpadAddress()?.toLowerCase() && log.topics.length >= 3,
         );
         if (created?.topics?.[1]) token = `0x${created.topics[1].slice(-40)}`;
       } catch {

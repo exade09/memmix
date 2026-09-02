@@ -6,8 +6,8 @@ import { launchReadiness, METADATA_URI_MAX } from "../chain/launchpad";
 
   Same contract as the Solana build: every path returns a reason a user can
   read, and the default is disabled. What changed is what it checks — a
-  configured launchpad contract and the right chain, instead of a Pump program
-  allowlist and a cluster.
+  deployed Pons v2 factory: that it holds code, that the simulation passed,
+  and that this build has not been switched off.
 */
 
 export const LAUNCH_STATES = [
@@ -83,7 +83,7 @@ export function getTransactionBoundary(input: SignGateInput = {}): Boundary {
     return { ...base, nativeLaunchFlag: true, reason: `Metadata URI exceeds the ${METADATA_URI_MAX}-character limit.` };
   }
   if (input.contractOk === false) {
-    return { ...base, nativeLaunchFlag: true, reason: "No contract found at the launchpad address. Sign is disabled." };
+    return { ...base, nativeLaunchFlag: true, reason: "No contract found at the Pons factory address. Sign is disabled." };
   }
   if (input.simulationOk === false) {
     return { ...base, nativeLaunchFlag: true, reason: "Simulation failed. Sign is disabled until the transaction is rebuilt." };
@@ -108,5 +108,5 @@ export function signAndLaunch(): never {
 }
 
 export function expectedContractNote(): string {
-  return "The Fons launchpad contract on Robinhood Chain. Its bytecode is checked before any signature is requested.";
+  return "The Pons v2 launch factory on Robinhood Chain. Its bytecode is checked and the launch is simulated before any signature is requested.";
 }

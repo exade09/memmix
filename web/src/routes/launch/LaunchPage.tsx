@@ -296,6 +296,7 @@ export function LaunchPage() {
         avatarSrc={avatarSrc}
         imageHash={pinResult.image_sha256}
         metadataUri={pinResult.metadata_uri}
+        imageUri={pinResult.image_uri}
         twitter={twitter}
         telegram={telegram}
         website={website}
@@ -351,10 +352,10 @@ export function LaunchPage() {
               <p className="eyebrow">Unfinished launch</p>
               <p className="body-copy">
                 {pending.state === "submitted"
-                  ? "A launch transaction may already have been sent. Reconcile before creating a new mint."
+                  ? "A launch transaction may already have been sent. Reconcile before creating a new token."
                   : appConfig.enableNativeLaunch
                     ? "Metadata is pinned. Resume review to build the launch transaction."
-                    : "Metadata is pinned. Blockchain launch is not connected yet."}
+                    : "Metadata is pinned. Launching is switched off in this build."}
               </p>
               <div className="btn-row">
                 <Button type="button" variant="secondary" onClick={resumePending}>

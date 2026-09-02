@@ -9,6 +9,11 @@ ROBINHOOD_TESTNET_ID = 46630
 DEFAULT_RPC = "https://rpc.mainnet.chain.robinhood.com"
 DEFAULT_EXPLORER = "https://robinhoodchain.blockscout.com"
 
+# Pons v2 launch factory, the deployment this build launches through. Read back
+# off chain before being written here: launchFee 0.0005 ETH, launchEnabled true,
+# launchConfigCount 1. Overridable, never guessed.
+DEFAULT_PONS_FACTORY = "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e"
+
 # Only what the client actually needs. Writes go through the wallet, never
 # through this proxy, so eth_sendRawTransaction is deliberately absent.
 RPC_ALLOWED_METHODS = frozenset(
@@ -58,8 +63,9 @@ def chain_id() -> int:
     is no published public testnet RPC to point at. Claiming testnet while
     talking to mainnet would be worse than saying which chain this really is.
 
-    Safety does not rest on this value: launching needs ENABLE_NATIVE_LAUNCH,
-    a configured launchpad address, and ENABLE_MAINNET_LAUNCH on top.
+    Safety does not rest on this value: launching still needs
+    ENABLE_NATIVE_LAUNCH and, on mainnet, ENABLE_MAINNET_LAUNCH, and every
+    transaction is simulated and then signed in the user's own wallet.
     """
     explicit = os.getenv("ROBINHOOD_CHAIN_ID", "").strip()
     if explicit.isdigit():
@@ -74,15 +80,18 @@ def is_mainnet() -> bool:
 
 
 def launchpad_address() -> str:
-    return (os.getenv("FONS_LAUNCHPAD_ADDRESS") or "").strip()
+    """The Pons v2 factory. Falls back to the verified live deployment."""
+    override = (os.getenv("PONS_FACTORY_ADDRESS") or "").strip()
+    return override or DEFAULT_PONS_FACTORY
 
 
 def native_launch_enabled() -> bool:
-    return env_flag("ENABLE_NATIVE_LAUNCH", False)
+    """On by default: launching now runs through a deployed, public factory."""
+    return env_flag("ENABLE_NATIVE_LAUNCH", True)
 
 
 def mainnet_launch_enabled() -> bool:
-    return env_flag("ENABLE_MAINNET_LAUNCH", False)
+    return env_flag("ENABLE_MAINNET_LAUNCH", True)
 
 
 def send_transaction_allowed() -> tuple[bool, str]:

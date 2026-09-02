@@ -4,7 +4,7 @@ import { GlassMark } from "../../components/brand/GlassMark";
 import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { Button, ButtonAnchor, ButtonLink } from "../../components/ui/Button";
 import { setDraftParent } from "../../domain/draft";
-import { explorerTokenUrl, explorerTxUrl, marketUrl, shareLaunchCopy } from "../../domain/legalCopy";
+import { explorerTokenUrl, explorerTxUrl, marketUrl, ponsTokenUrl, shareLaunchCopy } from "../../domain/legalCopy";
 import { isPublicTxHash, readPendingLaunch } from "../../domain/pendingLaunch";
 import { shortenAddress } from "../../chain/address";
 import { track } from "../../services/analytics";
@@ -118,14 +118,17 @@ export function LaunchSuccessPage() {
         <ButtonAnchor
           variant="primary"
           arrow
-          href={tradeUrl}
+          href={ponsTokenUrl(token)}
           target="_blank"
           rel="noreferrer"
           onClick={() => track("external_market_opened")}
         >
-          View the market
+          Trade on the curve
         </ButtonAnchor>
-        <ButtonAnchor variant="secondary" href={explorerTokenUrl(token)} target="_blank" rel="noreferrer">
+        <ButtonAnchor variant="secondary" href={tradeUrl} target="_blank" rel="noreferrer">
+          DexScreener after graduation
+        </ButtonAnchor>
+        <ButtonAnchor variant="outline" href={explorerTokenUrl(token)} target="_blank" rel="noreferrer">
           View on Blockscout
         </ButtonAnchor>
         <ButtonLink to={`/token/${token}`} variant="outline">
