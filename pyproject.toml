@@ -2,6 +2,15 @@
 name = "memmix"
 version = "0.1.0"
 requires-python = ">=3.12,<3.13"
+# Vercel's Python runtime installs what is declared here. It was missing, and
+# vercel.json's installCommand replaces the default install step, so Pillow
+# never reached production: every avatar upload failed with MISSING_PILLOW and
+# no launch could get past metadata pinning. Keep this in step with
+# requirements.txt, which is what local development installs.
+# tests/test_dependencies.py fails if the two ever drift apart.
+dependencies = [
+    "Pillow>=10.4,<12",
+]
 
 [tool.vercel]
 entrypoint = "api.index:handler"
