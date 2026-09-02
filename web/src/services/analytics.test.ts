@@ -52,16 +52,16 @@ describe("anonymous analytics", () => {
 describe("launch share copy", () => {
   it("omits parents for direct launch", () => {
     expect(
-      shareLaunchCopy({ name: "Direct", ticker: "DIR", pumpUrl: "https://pump.fun/coin/x" }),
-    ).toBe("Direct ($DIR) was born in FONS. https://pump.fun/coin/x");
+      shareLaunchCopy({ name: "Direct", ticker: "DIR", tradeUrl: "https://dexscreener.com/robinhood/0xabc" }),
+    ).toBe("Direct ($DIR) was born in FONS. https://dexscreener.com/robinhood/0xabc");
     expect(
       shareLaunchCopy({
         name: "Mix",
         ticker: "MIX",
-        pumpUrl: "https://pump.fun/coin/x",
-        parentA: "BONK",
-        parentB: "WIF",
+        tradeUrl: "https://dexscreener.com/robinhood/0xabc",
+        parentA: "HOOD",
+        parentB: "ROBIN",
       }),
-    ).toContain("born from BONK + WIF");
+    ).toContain("born from HOOD + ROBIN");
   });
 });

@@ -15,7 +15,7 @@ def scan_once(config: ScannerConfig, limit: int, *, resolve_images: bool = True)
     source = DexScreenerSource(config=config)
     snapshots = source.fetch_tokens()
     ranked = rank_tokens(snapshots, config=config)
-    visible_ranked = [item for item in ranked if item.snapshot.chain_id.lower() == "solana"]
+    visible_ranked = [item for item in ranked if item.snapshot.chain_id.lower() == "robinhood"]
 
     selected_items = []
     for item in visible_ranked:

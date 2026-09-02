@@ -950,38 +950,3 @@ input[type="range"]::-moz-range-thumb {
   max-width: 320px;
 }
 
-/* ---------------------------------------------------------------
-   Wallet adapter overrides
---------------------------------------------------------------- */
-
-.wallet-adapter-modal-wrapper {
-  background: rgba(255, 255, 255, 0.92) !important;
-  border: 1px solid var(--glass-line) !important;
-  border-radius: var(--radius-panel) !important;
-  backdrop-filter: blur(var(--blur-lg));
-  font-family: var(--font-ui) !important;
-  color: var(--ink) !important;
-}
-
-.wallet-adapter-modal-title {
-  font-family: var(--font-display) !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.03em !important;
-  color: var(--ink) !important;
-}
-
-.wallet-adapter-modal-list li,
-.wallet-adapter-button {
-  font-family: var(--font-ui) !important;
-  border-radius: var(--radius-pill) !important;
-  background: var(--glass-2) !important;
-  color: var(--ink) !important;
-}
-
-.wallet-adapter-button:hover {
-  background: #fff !important;
-}
-
-.wallet-adapter-modal-button-close {
-  background: var(--glass-2) !important;
-}

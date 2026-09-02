@@ -112,7 +112,7 @@ export function GlobalSearchDialog({
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       setItems([]);
-      setError(err instanceof Error ? err.message : "The scanner is offline. Try a mint address or retry.");
+      setError(err instanceof Error ? err.message : "The scanner is offline. Try a contract address or retry.");
     } finally {
       setLoading(false);
     }
@@ -152,7 +152,7 @@ export function GlobalSearchDialog({
             ref={inputRef}
             value={query}
             onChange={(event) => schedule(event.target.value)}
-            placeholder="Name, ticker, mint, Pump or DexScreener URL"
+            placeholder="Name, ticker, address or DexScreener URL"
             aria-autocomplete="list"
           />
         </div>
@@ -162,7 +162,7 @@ export function GlobalSearchDialog({
           {error ? <p className="metric-label">{error}</p> : null}
           {rows.exact.length > 0 ? (
             <section>
-              <p className="search-group-label">Exact mint</p>
+              <p className="search-group-label">Exact address</p>
               {rows.exact.map((token, index) => (
                 <ResultRow
                   key={token.mint}

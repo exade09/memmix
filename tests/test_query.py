@@ -16,20 +16,20 @@ from axiom_scanner.models import TokenSnapshot
 
 class QueryParsingTests(unittest.TestCase):
     def test_raw_mint_is_returned_first(self) -> None:
-        mint = "So11111111111111111111111111111111111111112"
+        mint = "0x0000000000000000000000000000000000001111"
         query, exact = parse_search_query(mint)
         self.assertEqual(query, mint)
         self.assertEqual(exact, mint)
 
     def test_pump_url_extracts_mint(self) -> None:
-        mint = "BcQQtAi9yLkhzM2ukY85Kj1URXkFLU49Fw5mU2Wpump"
-        query, exact = parse_search_query(f"https://pump.fun/coin/{mint}")
+        mint = "0x000000000000000000000000000000000000cccc"
+        query, exact = parse_search_query(f"https://dexscreener.com/robinhood/{mint}")
         self.assertEqual(query, mint)
         self.assertEqual(exact, mint)
 
     def test_dexscreener_url_extracts_mint(self) -> None:
-        mint = "So11111111111111111111111111111111111111112"
-        query, exact = parse_search_query(f"https://dexscreener.com/solana/{mint}")
+        mint = "0x0000000000000000000000000000000000001111"
+        query, exact = parse_search_query(f"https://dexscreener.com/robinhood/{mint}")
         self.assertEqual(query, mint)
         self.assertEqual(exact, mint)
 
@@ -38,7 +38,7 @@ class QueryParsingTests(unittest.TestCase):
             parse_search_query("https://example.com/coin/abc")
 
     def test_mint_from_url_ignores_other_hosts(self) -> None:
-        self.assertIsNone(mint_from_url("https://evil.example/solana/So11111111111111111111111111111111111111112"))
+        self.assertIsNone(mint_from_url("https://evil.example/solana/0x0000000000000000000000000000000000001111"))
 
     def test_empty_search_is_rejected(self) -> None:
         with self.assertRaises(QueryError) as ctx:
@@ -47,7 +47,7 @@ class QueryParsingTests(unittest.TestCase):
 
     def test_invalid_mint_is_rejected(self) -> None:
         with self.assertRaises(QueryError) as ctx:
-            parse_search_query("0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0123")
+            parse_search_query("0x" + "a" * 39)
         self.assertEqual(ctx.exception.code, "INVALID_MINT")
 
     def test_short_query_without_mint_is_rejected(self) -> None:
@@ -57,8 +57,8 @@ class QueryParsingTests(unittest.TestCase):
     def test_xss_like_token_content_is_stripped(self) -> None:
         snapshot = TokenSnapshot(
             source="test",
-            chain_id="solana",
-            token_address="So11111111111111111111111111111111111111112",
+            chain_id="robinhood",
+            token_address="0x0000000000000000000000000000000000001111",
             symbol="<script>alert(1)</script>WIF",
             name="<img src=x onerror=alert(1)>dogwifhat",
             liquidity_usd=120000,
@@ -75,8 +75,8 @@ class QueryParsingTests(unittest.TestCase):
 
     def test_exact_name_ticker_collision_warning(self) -> None:
         items = [
-            {"mint": "MintA11111111111111111111111111111111111111", "name": "Wen", "symbol": "WEN"},
-            {"mint": "MintB11111111111111111111111111111111111111", "name": "Wen Two", "symbol": "WEN"},
+            {"mint": "0x000000000000000000000000000000000000aaaa", "name": "Wen", "symbol": "WEN"},
+            {"mint": "0x000000000000000000000000000000000000bbbb", "name": "Wen Two", "symbol": "WEN"},
         ]
         warning = collision_warning(items, "WEN")
         self.assertIsNotNone(warning)
@@ -85,8 +85,8 @@ class QueryParsingTests(unittest.TestCase):
     def test_missing_metrics_stay_unknown(self) -> None:
         snapshot = TokenSnapshot(
             source="test",
-            chain_id="solana",
-            token_address="So11111111111111111111111111111111111111112",
+            chain_id="robinhood",
+            token_address="0x0000000000000000000000000000000000001111",
             symbol="NONE",
             name="None",
         )
@@ -138,11 +138,11 @@ class SearchRouteTests(unittest.TestCase):
         result = search_tokens("bonk", 8, ScannerConfig(), http=FakeHttp(payload={"pairs": []}))
         self.assertEqual(result["items"], [])
 
-    def test_solana_only_and_duplicate_mint_keeps_highest_liquidity(self) -> None:
+    def test_robinhood_only_and_duplicate_token_keeps_highest_liquidity(self) -> None:
         from axiom_scanner.config import ScannerConfig
         from vercel_api.routes.search import search_tokens
 
-        mint = "So11111111111111111111111111111111111111112"
+        mint = "0x0000000000000000000000000000000000001111"
         payload = {
             "pairs": [
                 _pair(mint, "Wrapped SOL", "SOL", liquidity=10, volume=1, chain="ethereum"),
@@ -167,7 +167,7 @@ class DispatchTests(unittest.TestCase):
     def test_invalid_mint_returns_invalid_mint(self) -> None:
         from vercel_api.dispatch import handle_api_get
 
-        status, payload = handle_api_get("/api/search", {"q": ["0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0123"]})
+        status, payload = handle_api_get("/api/search", {"q": ["0x" + "a" * 39]})
         self.assertEqual(status, 400)
         self.assertEqual(payload["error"]["code"], "INVALID_MINT")
 
@@ -228,7 +228,7 @@ class FeedFallbackTests(unittest.TestCase):
         payload = {
             "tokens": [
                 {
-                    "address": "MintA11111111111111111111111111111111111111",
+                    "address": "0x000000000000000000000000000000000000aaaa",
                     "name": "Alpha",
                     "token": "AAA",
                     "image_url": "https://example.com/a.png",
@@ -239,7 +239,7 @@ class FeedFallbackTests(unittest.TestCase):
                     "risk_flags": [],
                 },
                 {
-                    "address": "MintB11111111111111111111111111111111111111",
+                    "address": "0x000000000000000000000000000000000000bbbb",
                     "name": "Beta",
                     "token": "BBB",
                     "image_url": "",
@@ -268,12 +268,12 @@ class TokenRouteTests(unittest.TestCase):
         from axiom_scanner.config import ScannerConfig
         from vercel_api.routes.token import token_detail
 
-        mint = "So11111111111111111111111111111111111111112"
+        mint = "0x0000000000000000000000000000000000001111"
         detail = token_detail(
             mint,
             ScannerConfig(),
             http=FakeHttp(payload=[]),
-            rpc_post=lambda _body: {"result": {"value": {"lamports": 1, "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"}}},
+            rpc_post=lambda _body: {"result": "0x60806040"},  # contract code present
         )
         self.assertIsNone(detail["market"])
         self.assertIn("indexers", detail["notice"] or "")
@@ -285,35 +285,29 @@ class TokenRouteTests(unittest.TestCase):
         from axiom_scanner.security.query import QueryError
         from vercel_api.routes.token import token_detail
 
-        mint = "So11111111111111111111111111111111111111112"
+        mint = "0x0000000000000000000000000000000000001111"
         with self.assertRaises(QueryError) as ctx:
             token_detail(
                 mint,
                 ScannerConfig(),
                 http=FakeHttp(payload=[]),
-                rpc_post=lambda _body: {"result": {"value": None}},
+                rpc_post=lambda _body: {"result": "0x"},  # nothing deployed here
             )
         self.assertEqual(ctx.exception.code, "TOKEN_NOT_FOUND")
 
-    def test_non_mint_account_is_not_treated_as_a_token(self) -> None:
+    def test_account_without_code_is_not_treated_as_a_token(self) -> None:
         from axiom_scanner.config import ScannerConfig
         from axiom_scanner.security.query import QueryError
         from vercel_api.routes.token import token_detail
 
-        mint = "11111111111111111111111111111111"
+        mint = "0x0000000000000000000000000000000000000001"
         with self.assertRaises(QueryError) as ctx:
             token_detail(
                 mint,
                 ScannerConfig(),
                 http=FakeHttp(payload=[]),
-                rpc_post=lambda _body: {
-                    "result": {
-                        "value": {
-                            "lamports": 1,
-                            "owner": "NativeLoader1111111111111111111111111111111",
-                        }
-                    }
-                },
+                # an externally owned account holds a balance but no code
+                rpc_post=lambda _body: {"result": "0x"},
             )
         self.assertEqual(ctx.exception.code, "TOKEN_NOT_FOUND")
 
@@ -321,7 +315,7 @@ class TokenRouteTests(unittest.TestCase):
         from axiom_scanner.config import ScannerConfig
         from vercel_api.routes.token import token_detail
 
-        mint = "So11111111111111111111111111111111111111112"
+        mint = "0x0000000000000000000000000000000000001111"
 
         def boom(_body):
             raise TimeoutError("rpc down")
@@ -336,7 +330,7 @@ class TokenRouteTests(unittest.TestCase):
         from axiom_scanner.security.query import QueryError
         from vercel_api.dispatch import handle_api_get
 
-        mint = "So11111111111111111111111111111111111111112"
+        mint = "0x0000000000000000000000000000000000001111"
         with patch(
             "vercel_api.dispatch.token_detail",
             side_effect=QueryError("That mint was not found on-chain.", "TOKEN_NOT_FOUND"),
@@ -346,12 +340,12 @@ class TokenRouteTests(unittest.TestCase):
         self.assertEqual(payload["error"]["code"], "TOKEN_NOT_FOUND")
 
 
-def _pair(mint: str, name: str, symbol: str, liquidity: float, volume: float, chain: str = "solana") -> dict:
+def _pair(mint: str, name: str, symbol: str, liquidity: float, volume: float, chain: str = "robinhood") -> dict:
     return {
         "chainId": chain,
         "pairAddress": f"pair-{mint[-6:]}-{int(liquidity)}",
         "dexId": "pump",
-        "url": f"https://dexscreener.com/solana/{mint}",
+        "url": f"https://dexscreener.com/robinhood/{mint}",
         "baseToken": {"address": mint, "name": name, "symbol": symbol},
         "liquidity": {"usd": liquidity},
         "volume": {"h24": volume},

@@ -1,38 +1,32 @@
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import type { VersionedTransaction } from "@solana/web3.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { appConfig, clusterLabel } from "../../app/config";
-import { formatSol } from "../../domain/validation";
+import type { Address } from "viem";
+import { appConfig, networkLabel } from "../../app/config";
+import { formatEth } from "../../domain/validation";
 import { readPendingLaunch, writePendingLaunch } from "../../domain/pendingLaunch";
 import { fetchLaunchHealth, type NameCheckResult } from "../../services/api";
 import {
-  expectedProgramsNote,
+  expectedContractNote,
   getTransactionBoundary,
   NAME_CHECK_NOTICE,
   NAME_CHECK_UNAVAILABLE,
   type LaunchState,
-} from "../../services/pumpBoundary";
-import { solToLamports } from "../../solana/lamports";
-import { mintKeypairForUri, wipeMintSecret } from "../../solana/mintMemory";
+} from "../../services/launchBoundary";
+import { useChain } from "../../chain/wallet";
+import { ethToWei } from "../../chain/units";
+import { LaunchError } from "../../chain/errors";
 import {
   acquireLaunchSubmit,
-  buildLaunchInstructions,
-  compileLaunchTransaction,
   confirmLaunch,
-  fetchLaunchGlobal,
   formatCost,
-  LaunchError,
+  launchpadAddress,
   reconcileLaunch,
   releaseLaunchSubmit,
-  signLaunchTransaction,
-  simulateAndEstimate,
-  submitLaunchTransaction,
-  verifyOnchainLaunch,
+  simulateLaunch,
+  submitLaunch,
   type CostEstimate,
-  type PreparedLaunchTx,
-} from "../../solana/pumpLaunch";
+  type PreparedLaunch,
+} from "../../chain/launchpad";
 import { Button } from "../ui/Button";
 import { GlassMark } from "../brand/GlassMark";
 import { SafetyBanner } from "../layout/SafetyBanner";
@@ -53,20 +47,20 @@ export function CostSummary({
   return (
     <dl className="facts strong">
       <div>
-        <dt>Pump creation fee</dt>
-        <dd>{formatted.pumpCreation}</dd>
+        <dt>Launchpad fee</dt>
+        <dd>{formatted.launchFee}</dd>
       </div>
       <div>
         <dt>FONS fee</dt>
         <dd>{formatted.fonsFee}</dd>
       </div>
       <div>
-        <dt>Network + rent</dt>
-        <dd>{estimate ? formatted.networkRent : unknown}</dd>
+        <dt>Gas</dt>
+        <dd>{estimate ? formatted.gas : unknown}</dd>
       </div>
       <div>
         <dt>Initial buy</dt>
-        <dd>{formatSol(initialBuy)}</dd>
+        <dd>{formatEth(initialBuy)}</dd>
       </div>
       <div>
         <dt>Maximum wallet debit</dt>
@@ -97,7 +91,7 @@ export function LivePreview(props: {
       <h2>
         {props.name.trim() || "Untitled"} <span className="live-preview-ticker">${props.ticker || "TICKER"}</span>
       </h2>
-      <p>{props.description.trim() || "Description appears here."}</p>
+      <p>{props.description.trim() || "Description appears here"}</p>
       <p className="preview-socials">
         {props.twitter ? <span>X</span> : null}
         {props.telegram ? <span>Telegram</span> : null}
@@ -126,33 +120,29 @@ type LaunchReviewProps = {
 
 export function LaunchReview(props: LaunchReviewProps) {
   const navigate = useNavigate();
-  const { connection } = useConnection();
-  const wallet = useWallet();
-  const { setVisible } = useWalletModal();
-  const [phase, setPhase] = useState<LaunchState>("REVIEWING");
+  const { address, phase, onTargetChain, publicClient, walletClient, connect, switchNetwork } = useChain();
+  const [state, setState] = useState<LaunchState>("REVIEWING");
   const [estimate, setEstimate] = useState<CostEstimate | null>(null);
   const [error, setError] = useState("");
-  const [healthCluster, setHealthCluster] = useState<string | null>(null);
-  const [createV2Disabled, setCreateV2Disabled] = useState(false);
-  const [allowlistOk, setAllowlistOk] = useState<boolean | undefined>(undefined);
+  const [healthChainId, setHealthChainId] = useState<number | null>(null);
+  const [contractOk, setContractOk] = useState<boolean | undefined>(undefined);
   const [simulationOk, setSimulationOk] = useState<boolean | undefined>(undefined);
-  const [rebuildOffer, setRebuildOffer] = useState<"same-mint" | "new-mint" | null>(null);
-  const preparedRef = useRef<PreparedLaunchTx | null>(null);
-  const sentRef = useRef(false);
+  const [rebuildOffer, setRebuildOffer] = useState(false);
+  const preparedRef = useRef<PreparedLaunch | null>(null);
 
-  const clusterMismatch = Boolean(healthCluster && healthCluster !== appConfig.cluster);
+  const chainMismatch = Boolean(healthChainId && healthChainId !== appConfig.chainId);
   const boundary = getTransactionBoundary({
-    walletConnected: wallet.connected,
-    walletConnecting: wallet.connecting,
+    walletConnected: Boolean(address) && onTargetChain,
+    walletConnecting: phase === "connecting",
+    walletRejected: phase === "rejected",
+    wrongNetwork: Boolean(address) && !onTargetChain,
     simulationOk,
-    allowlistOk,
-    clusterMismatch,
-    createV2Disabled,
+    contractOk,
     metadataUri: props.metadataUri,
   });
 
   const persist = useCallback(
-    (patch: Partial<{ mint: string | null; creator: string | null; signature: string | null; state: "prepared" | "submitted" | "confirmed" | "failed" | "unknown" }>) => {
+    (patch: Partial<{ token: string | null; creator: string | null; tx_hash: string | null; state: "prepared" | "submitted" | "confirmed" | "failed" | "unknown" }>) => {
       const current = readPendingLaunch();
       if (!current) return;
       writePendingLaunch({ ...current, ...patch });
@@ -161,78 +151,56 @@ export function LaunchReview(props: LaunchReviewProps) {
   );
 
   const prepare = useCallback(async () => {
-    if (!appConfig.enableNativeLaunch) return;
-    if (appConfig.cluster === "mainnet-beta" && !appConfig.enableMainnetLaunch) return;
-    if (!wallet.connected || !wallet.publicKey) return;
-    if (clusterMismatch || createV2Disabled) return;
-    setPhase("GENERATING_MINT");
+    if (!boundary.launchpadConfigured || !appConfig.enableNativeLaunch) return;
+    if (appConfig.mainnet && !appConfig.enableMainnetLaunch) return;
+    if (!address || !onTargetChain || chainMismatch) return;
+    setState("BUILDING_TRANSACTION");
     setError("");
-    setRebuildOffer(null);
+    setRebuildOffer(false);
     try {
-      const mint = mintKeypairForUri(props.metadataUri);
-      persist({ mint: mint.publicKey.toBase58(), creator: wallet.publicKey.toBase58(), state: "prepared" });
-      setPhase("BUILDING_TRANSACTION");
-      const global = await fetchLaunchGlobal(connection);
-      const lamports = solToLamports(props.initialBuy);
-      const instructions = await buildLaunchInstructions({
-        mint: mint.publicKey,
+      persist({ creator: address, state: "prepared" });
+      setState("SIMULATING");
+      const prepared = await simulateLaunch({
+        client: publicClient,
+        account: address,
         name: props.name,
         symbol: props.ticker,
-        uri: props.metadataUri,
-        user: wallet.publicKey,
-        initialBuyLamports: lamports,
-        global,
+        metadataUri: props.metadataUri,
+        initialBuyWei: ethToWei(props.initialBuy),
       });
-      const compiled = await compileLaunchTransaction({
-        connection,
-        instructions,
-        payer: wallet.publicKey,
-        mint,
-        uri: props.metadataUri,
-        initialBuyLamports: lamports,
-      });
-      setAllowlistOk(true);
-      setPhase("SIMULATING");
-      const simulated = await simulateAndEstimate(connection, compiled, wallet.publicKey);
-      preparedRef.current = simulated;
-      setEstimate(simulated.estimate);
+      preparedRef.current = prepared;
+      setEstimate(prepared.estimate);
+      setContractOk(true);
       setSimulationOk(true);
-      setPhase("READY_TO_SIGN");
+      setState("READY_TO_SIGN");
       track("launch_simulation_succeeded");
     } catch (err: unknown) {
       preparedRef.current = null;
       setEstimate(null);
+      const code = err instanceof LaunchError ? err.code : "";
+      if (code === "LAUNCHPAD_NOT_DEPLOYED" || code === "LAUNCHPAD_NOT_CONFIGURED") setContractOk(false);
       setSimulationOk(false);
-      if (err instanceof LaunchError && err.code === "UNEXPECTED_PROGRAM") {
-        setAllowlistOk(false);
-      }
-      if (err instanceof LaunchError && err.code === "CREATE_V2_DISABLED") {
-        setCreateV2Disabled(true);
-      }
-      if (err instanceof LaunchError && err.code === "SIMULATION_FAILED") {
-        setSimulationOk(false);
-      }
-      setPhase("RECOVERABLE_FAILURE");
-      setError(err instanceof LaunchError ? err.message : err instanceof Error ? err.message : "Launch preparation failed.");
+      setState("RECOVERABLE_FAILURE");
+      setError(err instanceof Error ? err.message : "Launch preparation failed.");
       track("launch_simulation_failed");
     }
   }, [
-    clusterMismatch,
-    connection,
-    createV2Disabled,
+    address,
+    boundary.launchpadConfigured,
+    chainMismatch,
+    onTargetChain,
     persist,
     props.initialBuy,
     props.metadataUri,
     props.name,
     props.ticker,
-    wallet.connected,
-    wallet.publicKey,
+    publicClient,
   ]);
 
   useEffect(() => {
     const controller = new AbortController();
     fetchLaunchHealth(controller.signal).then((health) => {
-      if (health?.cluster) setHealthCluster(health.cluster);
+      if (health?.chain_id) setHealthChainId(Number(health.chain_id));
     });
     return () => controller.abort();
   }, []);
@@ -242,79 +210,54 @@ export function LaunchReview(props: LaunchReviewProps) {
   }, [prepare]);
 
   async function onSign() {
-    if (!boundary.signEnabled || !wallet.publicKey) return;
+    if (!boundary.signEnabled || !address || !walletClient) return;
     if (!acquireLaunchSubmit()) return;
-    sentRef.current = false;
     const prepared = preparedRef.current;
     const pending = readPendingLaunch();
-    if (pending?.state === "submitted" && pending.signature) {
-      setPhase("RECONCILING");
+    if (pending?.state === "submitted" && pending.tx_hash) {
+      setState("RECONCILING");
       setError("A launch transaction was already submitted. Reconcile before sending again.");
       releaseLaunchSubmit();
       return;
     }
-    if (!prepared || !wallet.signTransaction) {
-      setError("Connect a wallet that can sign versioned transactions.");
+    if (!prepared) {
+      setError("Rebuild the transaction before signing.");
       releaseLaunchSubmit();
       return;
     }
-    setPhase("WALLET_OPEN");
+    setState("WALLET_OPEN");
     setError("");
     try {
-      const signed = await signLaunchTransaction(
-        {
-          publicKey: wallet.publicKey,
-          signTransaction: (tx) => wallet.signTransaction!(tx) as Promise<VersionedTransaction>,
-        },
-        prepared,
-      );
-      setPhase("SUBMITTING");
-      persist({ mint: prepared.mint.toBase58(), creator: wallet.publicKey.toBase58(), state: "submitted" });
-      const signature = await submitLaunchTransaction(connection, signed);
-      sentRef.current = true;
-      persist({ signature, state: "submitted" });
+      const hash = await submitLaunch(walletClient, address, prepared);
+      persist({ creator: address, tx_hash: hash, state: "submitted" });
       track("launch_submitted");
-      setPhase("CONFIRMING");
+      setState("CONFIRMING");
       setError("Transaction sent. Waiting for confirmation.");
-      const confirmed = await confirmLaunch({
-        connection,
-        signature,
-        blockhash: prepared.blockhash,
-        lastValidBlockHeight: prepared.lastValidBlockHeight,
-        mint: prepared.mint,
-        user: wallet.publicKey,
-        uri: props.metadataUri,
-      });
-      persist({ signature: confirmed.signature, mint: confirmed.mint, state: "confirmed" });
-      wipeMintSecret();
-      setPhase("SUCCESS");
+      const confirmed = await confirmLaunch(publicClient, hash);
+      persist({ token: confirmed.token, tx_hash: confirmed.hash, state: "confirmed" });
+      setState("SUCCESS");
       track("launch_confirmed", { generated: props.generated });
-      navigate(`/app/launch/success?mint=${confirmed.mint}`);
+      navigate(`/app/launch/success?token=${confirmed.token}`);
     } catch (err: unknown) {
       const code = err instanceof LaunchError ? err.code : "";
       if (code === "WALLET_REJECTED") {
-        setPhase("READY_TO_SIGN");
+        setState("READY_TO_SIGN");
         setError("Wallet signature was rejected. Nothing was sent.");
         track("wallet_signature_rejected");
-      } else if (code === "TRANSACTION_EXPIRED") {
-        setPhase("RECOVERABLE_FAILURE");
-        setRebuildOffer("same-mint");
-        setError("The blockhash expired. Rebuild the same mint transaction.");
-      } else if (code === "TRANSACTION_UNKNOWN") {
-        setPhase("RECONCILING");
-        setRebuildOffer("new-mint");
-        setError("Send result is unknown. Reconcile before building a new mint.");
-        track("launch_reconciliation_needed");
       } else if (code === "INSUFFICIENT_BALANCE") {
-        setPhase("READY_TO_SIGN");
-        setError("This wallet does not have enough SOL for the review total.");
+        setState("READY_TO_SIGN");
+        setError("This wallet does not have enough ETH for the review total.");
         setSimulationOk(false);
-      } else if (code === "LAUNCH_NOT_CONFIRMED") {
-        setPhase("RECONCILING");
+      } else if (code === "TRANSACTION_UNKNOWN" || code === "TRANSACTION_REPLACED") {
+        setState("RECONCILING");
+        setError("Send result is unknown. Reconcile before building a new token.");
+        track("launch_reconciliation_needed");
+      } else if (code === "LAUNCH_REVERTED" || code === "LAUNCH_NOT_CONFIRMED") {
+        setState("RECONCILING");
         setError(err instanceof Error ? err.message : "Launch is not confirmed.");
         track("launch_reconciliation_needed");
       } else {
-        setPhase("RECOVERABLE_FAILURE");
+        setState("RECOVERABLE_FAILURE");
         setError(err instanceof Error ? err.message : "Launch failed.");
       }
     } finally {
@@ -324,71 +267,52 @@ export function LaunchReview(props: LaunchReviewProps) {
 
   async function onReconcile() {
     const pending = readPendingLaunch();
-    if (!pending?.mint || !wallet.publicKey) {
+    if (!pending?.tx_hash) {
       setError("Nothing to reconcile yet.");
       return;
     }
-    setPhase("RECONCILING");
+    setState("RECONCILING");
     try {
-      const { PublicKey } = await import("@solana/web3.js");
-      const mint = new PublicKey(pending.mint);
-      let signatureStatus: "confirmed" | "finalized" | "failed" | "pending" | "unknown" | null = null;
-      if (pending.signature) {
-        const statuses = await connection.getSignatureStatuses([pending.signature]);
-        const status = statuses.value[0];
-        if (!status) signatureStatus = "unknown";
-        else if (status.err) signatureStatus = "failed";
-        else if (status.confirmationStatus === "finalized") signatureStatus = "finalized";
-        else if (status.confirmationStatus === "confirmed") signatureStatus = "confirmed";
-        else signatureStatus = "pending";
+      let receiptStatus: "success" | "reverted" | "pending" | "unknown" | null = null;
+      let token: string | null = pending.token;
+      try {
+        const receipt = await publicClient.getTransactionReceipt({ hash: pending.tx_hash as `0x${string}` });
+        receiptStatus = receipt.status === "success" ? "success" : "reverted";
+        const created = receipt.logs.find(
+          (log) => log.address.toLowerCase() === launchpadAddress()?.toLowerCase(),
+        );
+        if (created?.topics?.[1]) token = `0x${created.topics[1].slice(-40)}`;
+      } catch {
+        receiptStatus = "pending";
       }
-      const verified = await verifyOnchainLaunch(connection, mint, wallet.publicKey, props.metadataUri);
-      const decision = reconcileLaunch({
-        signature: pending.signature,
-        signatureStatus,
-        mintExists: verified.ok || Boolean((await connection.getAccountInfo(mint, "confirmed"))),
-        bondingCurveOk: verified.ok,
-        creatorMatches: verified.ok,
-        uriMatches: verified.ok,
-        blockhashExpired: !pending.signature,
-      });
-      if (decision === "confirmed" && verified.ok) {
-        persist({ state: "confirmed" });
-        wipeMintSecret();
+      const tokenExists = Boolean(
+        token && (await publicClient.getCode({ address: token as Address })) !== "0x",
+      );
+      const decision = reconcileLaunch({ hash: pending.tx_hash, receiptStatus, tokenExists });
+      if (decision === "confirmed" && token) {
+        persist({ token, state: "confirmed" });
         track("launch_confirmed", { generated: props.generated });
-        navigate(`/app/launch/success?mint=${mint.toBase58()}`);
+        navigate(`/app/launch/success?token=${token}`);
         return;
       }
       if (decision === "wait") {
-        setError("Transaction is still unknown. Wait, then reconcile again. A new mint is not created automatically.");
+        setError("The transaction is still pending. Wait, then reconcile again. A new token is not created automatically.");
         track("launch_reconciliation_needed");
         return;
       }
-      if (decision === "rebuild") {
-        setRebuildOffer(pending.signature ? "new-mint" : "same-mint");
-        setError("Transaction did not land. Rebuild requires an explicit confirm.");
-        return;
-      }
-      setRebuildOffer("new-mint");
-      setError("Launch is not confirmed. Do not assume success.");
+      setRebuildOffer(true);
+      setError("The transaction did not land. Rebuilding requires an explicit confirm.");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Reconciliation failed.");
     }
   }
 
-  function onRebuildSameMint() {
-    setSimulationOk(undefined);
-    setAllowlistOk(undefined);
-    void prepare();
-  }
-
-  function onRebuildNewMint() {
-    const ok = window.confirm("Build a new launch transaction with a new mint? The previous mint secret will be destroyed.");
+  function onRebuild() {
+    const ok = window.confirm("Build a new launch transaction? Only do this once you are sure the previous one did not land.");
     if (!ok) return;
-    wipeMintSecret();
-    persist({ mint: null, signature: null, state: "prepared" });
+    persist({ token: null, tx_hash: null, state: "prepared" });
     setSimulationOk(undefined);
-    setAllowlistOk(undefined);
+    setContractOk(undefined);
     void prepare();
   }
 
@@ -397,7 +321,8 @@ export function LaunchReview(props: LaunchReviewProps) {
   const matches = check?.check_available
     ? `Exact name matches: ${check.name_matches}. Exact ticker matches: ${check.ticker_matches}.`
     : NAME_CHECK_UNAVAILABLE;
-  const signDisabled = !boundary.signEnabled || phase === "SUBMITTING" || phase === "WALLET_OPEN" || phase === "CONFIRMING";
+  const signDisabled =
+    !boundary.signEnabled || state === "SUBMITTING" || state === "WALLET_OPEN" || state === "CONFIRMING";
 
   return (
     <section className="page launch-review">
@@ -406,12 +331,12 @@ export function LaunchReview(props: LaunchReviewProps) {
           <p className="eyebrow">Review launch</p>
           <h1>
             {boundary.signEnabled
-              ? "Review the debit, then approve in your wallet"
-              : "Nothing is signed until the Pump path is ready"}
+              ? "Review the debit, then approve in MetaMask"
+              : "Nothing is signed until the launchpad is connected"}
           </h1>
         </div>
         <GlassMark
-          state={phase === "WALLET_OPEN" ? "wallet" : error ? "warning" : "idle"}
+          state={state === "WALLET_OPEN" ? "wallet" : error ? "warning" : "idle"}
           quiet
           className="sz-sm"
         />
@@ -423,14 +348,12 @@ export function LaunchReview(props: LaunchReviewProps) {
         <div className="panel stack">
           <p className="eyebrow">Token</p>
           <div className="review-token">
-            {props.avatarSrc ? (
-              <img className="avatar" src={props.avatarSrc} alt="" width={96} height={96} />
-            ) : null}
+            {props.avatarSrc ? <img className="avatar" src={props.avatarSrc} alt="" width={96} height={96} /> : null}
             <div className="stack sm">
               <strong className="review-token-name">
                 {props.name} <span className="metric-label">${props.ticker}</span>
               </strong>
-              {props.generated ? <span className="chip copper">Generated with FONS</span> : null}
+              {props.generated ? <span className="chip sun">Generated with FONS</span> : null}
             </div>
           </div>
           <dl className="facts">
@@ -448,7 +371,7 @@ export function LaunchReview(props: LaunchReviewProps) {
         <div className="panel stack">
           <p className="eyebrow">Cost</p>
           <CostSummary initialBuy={props.initialBuy} estimate={estimate} />
-<p className="metric-label">Costs come from simulation, not marketing constants</p>
+          <p className="metric-label">Gas comes from the node estimate, not a marketing constant</p>
         </div>
 
         <div className="panel stack">
@@ -459,21 +382,27 @@ export function LaunchReview(props: LaunchReviewProps) {
 
         <div className="panel stack">
           <p className="eyebrow">Network</p>
-          <p className="body-copy">{clusterLabel(appConfig.cluster)}</p>
-          {clusterMismatch ? (
-            <p className="note error">RPC cluster does not match the UI network badge.</p>
+          <p className="body-copy">{networkLabel()}</p>
+          {chainMismatch ? <p className="note error">The API is on a different chain than this build expects</p> : null}
+          {address && !onTargetChain ? (
+            <div className="btn-row">
+              <Button type="button" variant="secondary" size="sm" onClick={() => void switchNetwork()}>
+                Switch to Robinhood Chain
+              </Button>
+            </div>
           ) : null}
         </div>
 
         <div className="panel stack">
           <p className="eyebrow">Mechanics</p>
-          <p className="body-copy">Pump bonding curve → automatic PumpSwap migration</p>
-          <p className="metric-label">Mayhem off. Cashback off. SOL quote. FONS launch fee 0.</p>
+          <p className="body-copy">Fons launchpad on Robinhood Chain, then trading wherever the token is listed</p>
+          <p className="metric-label">Gas in ETH. FONS launch fee 0</p>
         </div>
 
         <div className="panel stack">
-          <p className="eyebrow">Authorities / programs</p>
-          <p className="metric-label">{expectedProgramsNote()}</p>
+          <p className="eyebrow">Contract</p>
+          <p className="metric-label">{expectedContractNote()}</p>
+          <p className="metric-label">{launchpadAddress() ?? "Not configured"}</p>
         </div>
 
         {props.twitter || props.telegram || props.website ? (
@@ -489,28 +418,19 @@ export function LaunchReview(props: LaunchReviewProps) {
       <div className="stack sm">
         <p className={boundary.signEnabled ? "metric-label" : "note warn"}>{boundary.reason}</p>
         {error ? <p className="note error">{error}</p> : null}
-        {phase === "WALLET_OPEN" ? <p className="metric-label">Approve the transaction in your wallet.</p> : null}
-        {phase === "SUBMITTING" || phase === "CONFIRMING" ? (
-          <p className="metric-label">Transaction sent. Waiting for on-chain confirmation.</p>
-        ) : null}
-        {phase === "RECONCILING" ? (
+        {state === "WALLET_OPEN" ? <p className="metric-label">Approve the transaction in MetaMask</p> : null}
+        {state === "CONFIRMING" ? <p className="metric-label">Transaction sent. Waiting for on-chain confirmation</p> : null}
+        {state === "RECONCILING" ? (
           <div className="btn-row">
             <Button type="button" variant="secondary" onClick={() => void onReconcile()}>
               Reconcile launch
             </Button>
           </div>
         ) : null}
-        {rebuildOffer === "same-mint" ? (
+        {rebuildOffer ? (
           <div className="btn-row">
-            <Button type="button" variant="secondary" onClick={onRebuildSameMint}>
-              Rebuild same mint transaction
-            </Button>
-          </div>
-        ) : null}
-        {rebuildOffer === "new-mint" ? (
-          <div className="btn-row">
-            <Button type="button" variant="ghost" onClick={onRebuildNewMint}>
-              Build new launch transaction
+            <Button type="button" variant="ghost" onClick={onRebuild}>
+              Build a new launch transaction
             </Button>
           </div>
         ) : null}
@@ -520,13 +440,13 @@ export function LaunchReview(props: LaunchReviewProps) {
         <Button type="button" variant="ghost" onClick={props.onBack}>
           Back to edit
         </Button>
-        {!wallet.connected ? (
+        {!address ? (
           <Button
             type="button"
             variant="secondary"
             onClick={() => {
               track("wallet_connect_requested");
-              setVisible(true);
+              void connect();
             }}
           >
             Connect wallet
@@ -545,7 +465,7 @@ export function LaunchReview(props: LaunchReviewProps) {
         </Button>
       </div>
       <p className="metric-label">
-        Success requires on-chain confirmation. Duplicate clicks are ignored while a send is in flight.
+        Success requires an on-chain receipt. Duplicate clicks are ignored while a send is in flight
       </p>
     </section>
   );

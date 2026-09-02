@@ -30,7 +30,7 @@ from axiom_scanner.pipeline import scan_once, resolve_cached_token_image
 from vercel_api.security_headers import apply_security_headers
 
 
-ALLOWED_CHAINS = ["solana"]
+ALLOWED_CHAINS = ["robinhood"]
 
 
 def configure_runtime() -> None:
@@ -116,7 +116,7 @@ def fallback_scan_rows(limit: int) -> list[dict[str, Any]]:
                 "rank": index,
                 "token": symbol,
                 "name": item.get("name") or symbol,
-                "chain": "solana",
+                "chain": "robinhood",
                 "address": "",
                 "image_url": public_image,
                 "score": None,

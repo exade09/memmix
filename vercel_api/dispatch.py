@@ -17,7 +17,7 @@ from vercel_api.routes.health import health_payload
 from vercel_api.routes.launch import name_check_route
 from vercel_api.routes.metadata import metadata_pin_route
 from vercel_api.routes.mix import mix_concepts_route
-from vercel_api.routes.rpc import solana_rpc_route
+from vercel_api.routes.rpc import chain_rpc_route
 from vercel_api.routes.search import search_tokens
 from vercel_api.routes.token import token_detail
 from vercel_api.shared import runtime_config
@@ -62,8 +62,8 @@ def handle_api_post(
         return _avatar_start(read_multipart, client_ip)
     if path == "/api/metadata/pin":
         return _metadata_pin(read_multipart, client_ip)
-    if path == "/api/solana/rpc":
-        return _solana_rpc(reader, client_ip, origin, host)
+    if path == "/api/chain/rpc":
+        return _chain_rpc(reader, client_ip, origin, host)
     if path != "/api/mix/concepts":
         return None
     try:
@@ -123,7 +123,7 @@ def _metadata_pin(read_multipart, client_ip: str) -> tuple[int, dict]:
     return 200, envelope(success=True, data=data)
 
 
-def _solana_rpc(reader, client_ip: str, origin: str, host: str) -> tuple[int, dict]:
+def _chain_rpc(reader, client_ip: str, origin: str, host: str) -> tuple[int, dict]:
     if reader is None:
         return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON-RPC.")
     try:
@@ -132,7 +132,7 @@ def _solana_rpc(reader, client_ip: str, origin: str, host: str) -> tuple[int, di
         message = "RPC body is too large." if "too large" in str(exc) else "Request body must be JSON-RPC."
         status = 413 if "too large" in str(exc) else 400
         return status, envelope(success=False, code="INVALID_INPUT", message=message)
-    return solana_rpc_route(body, client_ip=client_ip, origin=origin, host=host)
+    return chain_rpc_route(body, client_ip=client_ip, origin=origin, host=host)
 
 
 def _name_check(params: dict[str, list[str]]) -> tuple[int, dict]:

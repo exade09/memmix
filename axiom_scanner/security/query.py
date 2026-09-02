@@ -8,15 +8,18 @@ from axiom_scanner.models import TokenSnapshot
 
 
 ALLOWED_SEARCH_HOSTS = {
-    "pump.fun",
-    "www.pump.fun",
     "dexscreener.com",
     "www.dexscreener.com",
+    "robinhoodchain.blockscout.com",
 }
-BASE58_RE = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$")
-LOOKS_LIKE_MINT_RE = re.compile(r"^[1-9A-HJ-NP-Za-km-z0OIl]{32,44}$")
-LOOKS_LIKE_SHORT_MINT_RE = re.compile(r"^[1-9A-HJ-NP-Za-km-z0OIl]{20,31}$")
-LOOKS_LIKE_LONG_MINT_RE = re.compile(r"^[1-9A-HJ-NP-Za-km-z0OIl]{45,64}$")
+# Token identity on Robinhood Chain is a 20-byte contract address.
+# BASE58_RE keeps its name so callers stay unchanged; only the shape moved.
+BASE58_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+# Near misses: hex that is almost, but not quite, an address. Caught so the
+# user is told the address is wrong rather than shown an empty name search.
+LOOKS_LIKE_MINT_RE = re.compile(r"^0x[0-9a-fA-F]{30,39}$")
+LOOKS_LIKE_SHORT_MINT_RE = re.compile(r"^[0-9a-fA-F]{40}$")
+LOOKS_LIKE_LONG_MINT_RE = re.compile(r"^0x[0-9a-fA-F]{41,64}$")
 TAG_RE = re.compile(r"<[^>]*>")
 CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
@@ -47,16 +50,16 @@ def parse_search_query(raw: str) -> tuple[str, str | None]:
     if BASE58_RE.fullmatch(query):
         return query, query
     if LOOKS_LIKE_MINT_RE.fullmatch(query) or LOOKS_LIKE_SHORT_MINT_RE.fullmatch(query) or LOOKS_LIKE_LONG_MINT_RE.fullmatch(query):
-        raise QueryError("That mint address is not valid.", "INVALID_MINT")
+        raise QueryError("That contract address is not valid.", "INVALID_MINT")
 
     if "://" in query or query.startswith("www."):
         mint = mint_from_url(query)
         if not mint:
-            raise QueryError("Only Pump.fun and DexScreener token URLs are accepted.")
+            raise QueryError("Only DexScreener and Blockscout token URLs are accepted.")
         return mint, mint
 
     if len(query) < 2:
-        raise QueryError("Type at least two characters, a mint, or a token URL.")
+        raise QueryError("Type at least two characters, a contract address, or a token URL.")
     return query, None
 
 
@@ -66,14 +69,13 @@ def mint_from_url(raw: str) -> str | None:
     if host not in ALLOWED_SEARCH_HOSTS:
         return None
     parts = [part for part in parsed.path.split("/") if part]
-    if host.endswith("pump.fun"):
-        if parts and parts[0] == "coin" and len(parts) >= 2 and BASE58_RE.fullmatch(parts[1]):
+    if host.endswith("blockscout.com"):
+        # /token/0x... and /address/0x... both identify a contract
+        if len(parts) >= 2 and parts[0] in {"token", "address"} and BASE58_RE.fullmatch(parts[1]):
             return parts[1]
-        if parts and BASE58_RE.fullmatch(parts[0]):
-            return parts[0]
         return None
     if host.endswith("dexscreener.com"):
-        if len(parts) >= 2 and parts[0] == "solana" and BASE58_RE.fullmatch(parts[1]):
+        if len(parts) >= 2 and parts[0] == "robinhood" and BASE58_RE.fullmatch(parts[1]):
             return parts[1]
     return None
 

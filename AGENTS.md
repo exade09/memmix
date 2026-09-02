@@ -1,16 +1,20 @@
-# MIXBORN — agent briefing
+# FONS — agent briefing
 
 Read this file before changing the repo. It is the working brief for coding agents. The product specification remains the source of truth:
 
-- Product / brand / launch / security / Definition of Done: [`docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md`](docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md)
+- Product / brand / launch / security / Definition of Done: [`docs/FONS_PRODUCT_IMPLEMENTATION_SPEC.md`](docs/FONS_PRODUCT_IMPLEMENTATION_SPEC.md)
 - Reused UI licenses: [`docs/THIRD_PARTY_UI.md`](docs/THIRD_PARTY_UI.md)
 - Human README: [`README.md`](README.md)
 
-If implementation diverges from the specification, the specification wins — except confirmed Pump SDK / Solana protocol / security constraints and explicit owner instructions.
+If implementation diverges from the specification, the specification wins — except confirmed protocol / security constraints and explicit owner instructions.
+
+**The spec predates two owner-directed changes and is not authoritative on them.** The product was renamed MIXBORN → **FONS**, and the chain was migrated Solana/Pump → **Robinhood Chain** (Arbitrum Orbit L2, EVM) with **MetaMask** replacing Phantom. Read the spec for product intent, mix logic, security and Definition of Done; read this file for the chain, wallet and naming. Where they conflict on those three, this file wins.
 
 **Do not add large product features, providers, tokenomics, or third-party services unless the owner asked.** Build with: minimum surface, maximum clarity, character, and reliability.
 
-Owner: Clark79. Repo folder name is historical (`axiom_ai_scanner`). The product is **MIXBORN**. Product ticker is **`$MIXBRN`**. Those are different fields.
+Owner: Clark79. Repo folder name is historical (`axiom_ai_scanner`). The product is **FONS**. Product ticker is **`$FONS`**. Those are different fields.
+
+FONS is not affiliated with, endorsed by, or a partner of Robinhood Markets. It builds on the public Robinhood Chain network. Never write copy that implies otherwise.
 
 ---
 
@@ -20,15 +24,16 @@ Owner: Clark79. Repo folder name is historical (`axiom_ai_scanner`). The product
 - Do not deploy, commit, or push unless the owner explicitly asked.
 - Do not `git reset` / `checkout` / `clean` / `stash` unrelated user work.
 - Do not add Tailwind, GSAP, Three.js, Spline, P256K, Redux, a database, auth, or an embedded swap.
-- Do not add Raydium, Meteora, Jupiter Studio, or a custom bonding-curve program. Pump `create_v2` is the MVP launch path. Bags Launch Intent is a hidden emergency flag only.
+- Do not add a DEX router, an aggregator, or a bonding-curve program of your own. The MVP launch path is a single `createToken` call on the Fons launchpad contract.
 - Do not treat a disabled placeholder, visual mock, or mocked success as a finished feature.
 - Do not delete, skip, or weaken tests. Do not replace a real error with fake success.
-- Do not invent Pump program IDs from social posts. Use the pinned SDK and official docs.
+- Do not invent contract addresses, chain ids, or RPC endpoints. Robinhood Chain: mainnet **4663** (`https://rpc.mainnet.chain.robinhood.com`), testnet **46630**, gas in **ETH**, explorer `https://robinhoodchain.blockscout.com`.
+- The launchpad ABI in `web/src/chain/launchpad.ts` is the shape this client expects, **not** a verified deployed contract. Bytecode is checked with `eth_getCode` before any signature is requested.
 - Do not prefix server secrets with `VITE_` or `NEXT_PUBLIC_`.
 - Windows PowerShell: use `;`, not `&&`. `$pid` is reserved.
 - UI changes: verify behavior in the browser, not a single screenshot.
 
-Status at Stage 10 (2026-08-25): **RELEASE CANDIDATE READY** for preview / devnet acceptance. Native launch is off. Mainnet is off. That is intentional.
+Status: migrated to Robinhood Chain (2026-08-30). Native launch is off, mainnet launch is off, and **no launchpad contract address exists yet** — so signing is honestly disabled and says why. That is intentional, not an unfinished feature.
 
 ---
 
@@ -36,17 +41,17 @@ Status at Stage 10 (2026-08-25): **RELEASE CANDIDATE READY** for preview / devne
 
 Tagline: **Two tokens in. One born.** / **Mix the logic. Launch what is born.**
 
-MIXBORN is an AI-native lab and Solana launch interface. A user:
+FONS is an AI-native lab and Robinhood Chain launch interface. A user:
 
-1. Picks two existing Solana tokens.
+1. Picks two existing Robinhood Chain tokens.
 2. Gets a *logically new* meme character (not a name concat).
 3. Gets name, ticker (1–6), description, and one square avatar.
 4. Edits everything.
 5. Hands the draft to launch without a wallet prompt.
-6. Signs Pump `create_v2` in their own wallet.
-7. Gets a token on the Pump bonding curve.
+6. Signs `createToken` on the Fons launchpad in MetaMask.
+7. Gets an ERC-20 on Robinhood Chain.
 
-MIXBORN is non-custodial. No MIXBORN platform launch fee in MVP. Do not market it as “free launch” without saying Solana fees / rent / optional initial buy still cost SOL. Do not promise profit.
+FONS is non-custodial. No FONS platform launch fee in MVP. Do not market it as “free launch” without saying gas and the optional initial buy still cost ETH. Do not promise profit.
 
 AI produces **exactly four** outputs: name, ticker, description, one avatar. Not banners, token sites, stickers, X threads, video, or tokenomics.
 
@@ -93,7 +98,7 @@ restyle — `mixborn.pendingLaunch` in particular is the launch reconciliation r
 ```text
 axiom_ai_scanner/
   AGENTS.md                          ← this file
-  docs/MIXBORN_PRODUCT_IMPLEMENTATION_SPEC.md
+  docs/FONS_PRODUCT_IMPLEMENTATION_SPEC.md
   docs/THIRD_PARTY_UI.md
   main.py                            local CLI + dashboard on :8080
   api/index.py                       Vercel Python entry (imports routes, does not duplicate logic)
@@ -106,8 +111,8 @@ axiom_ai_scanner/
     src/routes/                      landing, mix, launch, explore, token, legal
     src/components/                  brand, layout, mix, launch, token, wallet, ui
     src/domain/                      validation, draft, handoff, pendingLaunch
-    src/services/                    api client, pumpBoundary, analytics
-    src/solana/                      Pump SDK launch, allowlists, mint memory
+    src/services/                    api client, launchBoundary, analytics
+    src/chain/                       viem clients, MetaMask (EIP-1193), launchpad, units, errors
     src/styles/                      tokens, base, layout, ui, parts, mascot (glass mark), landing, app (no Tailwind)
 ```
 
@@ -146,7 +151,7 @@ npm run build
 
 `npm run lint` is a Vitest source/secret scan, not ESLint.
 
-Git: large uncommitted MIXBORN rewrite may sit on `main` on top of the old Axiom Meme Lab. Preserve unrelated diffs (for example scoring / wavespeed / http_client). `web/app.js` and `web/styles.css` are retired.
+Git: large uncommitted FONS rewrite may sit on `main` on top of the old Axiom Meme Lab. Preserve unrelated diffs (for example scoring / wavespeed / http_client). `web/app.js` and `web/styles.css` are retired.
 
 ---
 
@@ -155,14 +160,14 @@ Git: large uncommitted MIXBORN rewrite may sit on `main` on top of the old Axiom
 ### Discovery
 
 - DexScreener adapter (`axiom_scanner/sources/dexscreener.py`).
-- Search by name, ticker, mint, Pump URL, DexScreener URL.
+- Search by name, ticker, contract address, DexScreener URL, Blockscout URL.
 - Feed filters: trending, new, mixable. Score clamped 0–100, separate from risk.
 - Missing metrics render **Unknown**. No fake volume/usage counters.
 - Global search: mouse, `/`, Ctrl/Cmd+K.
 
 ### AI Mix
 
-- Two different parent mints required.
+- Two different parent addresses required.
 - `POST /api/mix/concepts` → OpenAI Structured Outputs, else a **labeled** deterministic fallback (“Basic mix mode”). Never silent fake AI.
 - Three concepts, one `recommended`. User selects a concept **before** avatar generation.
 - One generate action → one avatar job. Start + status polling. Survives >60s. HMAC job token (`MIXBORN_JOB_HMAC` or alias `JOB_TOKEN_HMAC_SECRET`).
@@ -174,24 +179,26 @@ Git: large uncommitted MIXBORN rewrite may sit on `main` on top of the old Axiom
 - Works without AI keys.
 - Avatar crop → 1024×1024 PNG (client + server re-encode).
 - Name 2–32, ticker 1–6 alphanumeric, description 1–500, https-only socials.
-- Initial buy default `0`. Presets. Cap from env (`INITIAL_BUY_MAX_SOL` / `VITE_INITIAL_BUY_MAX_SOL`).
+- Initial buy default `0`. Presets. Cap from env (`INITIAL_BUY_MAX_ETH` / `VITE_INITIAL_BUY_MAX_ETH`).
 - Rights and risk checkboxes are not pre-checked.
 - Review shows cost and mechanics. Until native launch is on, sign stays disabled with an honest reason.
 
-### Solana launch (wired, flag off)
+### Robinhood Chain launch (wired, no contract yet)
 
-- Official `@pump-fun/pump-sdk@1.36.0`, `create_v2`, quote SOL, Mayhem false, Cashback false.
-- Mint keypair created in the browser. Never sent to the server. Never logged.
-- Program allowlist **before** wallet prompt. Simulation required. No hidden MIXBORN fee instruction.
-- RPC only through `/api/solana/rpc` with an allowlist. `sendTransaction` is blocked while native launch is off; mainnet also needs `ENABLE_MAINNET_LAUNCH`.
+- `viem` + MetaMask over raw EIP-1193. No wallet-adapter package: the browser already exposes the interface.
+- Never eager-connects. `eth_accounts` only reflects a grant the user already gave; `eth_requestAccounts` runs on click.
+- Wrong network is offered `wallet_switchEthereumChain`, falling back to `wallet_addEthereumChain` on code 4902.
+- `eth_getCode` **before** the wallet prompt. Simulation required. No hidden FONS fee argument.
+- RPC only through `/api/chain/rpc` with an allowlist that contains **no write method** — `eth_sendRawTransaction` is absent, so no flag can enable a server-side send. Signing happens in the wallet and never touches the server.
 - Pending launch reconciliation on reload — do not auto-duplicate a launch.
-- Success page waits for on-chain mint, not a toast.
+- Success page waits for the receipt and for the token bytecode to exist, not a toast.
+- Sign stays disabled until `FONS_LAUNCHPAD_ADDRESS` is set, `ENABLE_NATIVE_LAUNCH` is on, and (on mainnet) `ENABLE_MAINNET_LAUNCH` is on.
 
 ### Token page
 
 - No database. Compose DexScreener + RPC + metadata.
-- An account is a mint only if owner is Token Program or Token-2022. System Program `11111111…` is **not** a token. Do not say “live on-chain” for a non-mint account.
-- External trade link to Pump. No embedded swap.
+- An address is a token only if it has bytecode **and** answers `symbol()` and `decimals()`. An EOA is not a token. When the node cannot answer, say unknown — that is not the same as absent.
+- External trade link to DexScreener. No embedded swap.
 
 ### Security (do not weaken)
 
@@ -205,7 +212,7 @@ Git: large uncommitted MIXBORN rewrite may sit on `main` on top of the old Axiom
 
 ### Third-party UI
 
-Documented in `docs/THIRD_PARTY_UI.md`: wallet-adapter-react-ui (Apache-2.0), motion (MIT), Fontsource fonts (OFL). Everything else is local MIXBORN CSS/React.
+Documented in `docs/THIRD_PARTY_UI.md`: wallet-adapter-react-ui (Apache-2.0), motion (MIT), Fontsource fonts (OFL). Everything else is local FONS CSS/React.
 
 ---
 
@@ -218,17 +225,17 @@ Dispatcher: `vercel_api/dispatch.py`. Same handlers from `main.py` locally and `
 | GET | `/api/health` | Pinned SDK version, cluster, flags; must not echo secrets |
 | GET | `/api/search` | Token search |
 | GET | `/api/feed` | Trending / new / mixable |
-| GET | `/api/token/:mint` | Public token composition |
+| GET | `/api/token/:address` | Public token composition |
 | POST | `/api/mix/concepts` | Logical mix |
 | POST | `/api/mix/avatar/start` | Multipart parent images + fields |
 | GET | `/api/mix/avatar/status?job=` | Poll HMAC job token |
 | POST | `/api/metadata/pin` | Pinata image + JSON |
 | GET | `/api/launch/name-check` | Informational similar-name notice; does not block |
-| POST | `/api/solana/rpc` | Allowlisted JSON-RPC |
+| POST | `/api/chain/rpc` | Allowlisted read-only JSON-RPC |
 
-Legacy Meme Mixer paths still exist (`/api/scan`, `/api/hybrid-image`, `/api/narratives`). Do not treat them as the MIXBORN product path. New mix is `/api/mix/concepts` + avatar jobs.
+Legacy Meme Mixer paths still exist (`/api/scan`, `/api/hybrid-image`, `/api/narratives`). Do not treat them as the FONS product path. New mix is `/api/mix/concepts` + avatar jobs.
 
-Vercel: `outputDirectory` is `web/dist`. `/api/:path*` rewrites to `api/index.py`. SPA fallback is `index.html`.
+Vercel: `outputDirectory` is `web/dist`. **`vercel.json` carries no rewrites** — the platform now routes internal rewrites in backend-framework projects by the rewritten destination path, which silently broke every route. `api/index.py` serves both the API and the static SPA.
 
 ---
 
@@ -237,14 +244,13 @@ Vercel: `outputDirectory` is `web/dist`. `/api/:path*` rewrites to `api/index.py
 Safe defaults — keep them unless the owner explicitly enables launch:
 
 ```text
-SOLANA_CLUSTER=devnet
-SOLANA_RPC_URL=https://api.devnet.solana.com
+ROBINHOOD_RPC_URL=https://rpc.mainnet.chain.robinhood.com
+FONS_LAUNCHPAD_ADDRESS=            # empty: nothing can be signed
 ENABLE_NATIVE_LAUNCH=false
 ENABLE_MAINNET_LAUNCH=false
-VITE_SOLANA_CLUSTER=devnet
+VITE_FONS_LAUNCHPAD_ADDRESS=
 VITE_ENABLE_NATIVE_LAUNCH=false    # only "true" turns it on
 VITE_ENABLE_MAINNET_LAUNCH=false
-VITE_ENABLE_BAGS_INTENT_FALLBACK=false
 ```
 
 Frontend flags live in `web/src/app/config.ts`. Server flags live in `vercel_api/launch_config.py`. A public Vite flag is **not** a security boundary; the server must enforce the same kill switches.
@@ -253,7 +259,7 @@ Server-only secrets (never `VITE_`): `OPENAI_API_KEY`, `WAVESPEED_API_KEY`, `PIN
 
 Without secrets: mix uses labeled fallback, avatar/metadata report unavailable, Direct Launch still works. That is correct.
 
-Pinned launch SDK version must stay `1.36.0` in both `web/package.json` and `vercel_api/launch_config.py` until the owner retraces official Pump docs.
+Mainnet (4663) is the default because it is the only published RPC. Safety does not rest on the network default: it rests on three independent switches, all off — a configured launchpad address, `ENABLE_NATIVE_LAUNCH`, and `ENABLE_MAINNET_LAUNCH`.
 
 ---
 
@@ -266,13 +272,13 @@ Pinned launch SDK version must stay `1.36.0` in both `web/package.json` and `ver
 | Mix UI | `web/src/routes/mix/MixPage.tsx` |
 | Avatar jobs | `axiom_scanner/analysis/avatar_job.py`, `vercel_api/routes/avatar.py` |
 | Launch form | `web/src/routes/launch/LaunchPage.tsx` |
-| Review / sign gate | `web/src/components/launch/LaunchReview.tsx`, `web/src/services/pumpBoundary.ts` |
-| Pump transaction | `web/src/solana/pumpLaunch.ts`, `programAllowlist.ts`, `mintMemory.ts` |
+| Review / sign gate | `web/src/components/launch/LaunchReview.tsx`, `web/src/services/launchBoundary.ts` |
+| Launch transaction | `web/src/chain/launchpad.ts`, `wallet.tsx`, `robinhood.ts`, `errors.ts` |
 | Draft / handoff | `web/src/domain/draft.ts`, `handoff.ts`, `pendingLaunch.ts`, `avatarMemory.ts` |
 | Validation | `web/src/domain/validation.ts` (zod), `axiom_scanner/security/fields.py` |
 | SSRF / images | `axiom_scanner/security/fetch.py`, `images.py` |
 | RPC proxy | `vercel_api/routes/rpc.py` |
-| Token honesty | `vercel_api/routes/token.py`, `web/src/solana/tokenOnchain.ts` |
+| Token honesty | `vercel_api/routes/token.py`, `web/src/chain/tokenOnchain.ts` |
 | Brand motion | `Wordmark.tsx`, `GlassMark.tsx`, `Atmosphere.tsx`, `PageShell.tsx` |
 | API envelope | `vercel_api/envelope.py`, `web/src/services/api.ts` |
 | Security headers | `vercel_api/security_headers.py`, `vercel.json` |
@@ -283,20 +289,21 @@ Pinned launch SDK version must stay `1.36.0` in both `web/package.json` and `ver
 
 Mark these MANUAL. Do not fake a passing E2E.
 
-- Devnet signed launch: Phantom + a second wallet, simulation, confirm, reconciliation
+- Signed launch: MetaMask + a deployed launchpad contract, simulation, confirm, reconciliation
 - Live OpenAI / WaveSpeed / Pinata
 - Production domain, social handles, legal review
 - Final mascot restyle assets
-- Enabling `ENABLE_NATIVE_LAUNCH` / `VITE_ENABLE_NATIVE_LAUNCH` (owner only, after devnet acceptance)
+- Enabling `ENABLE_NATIVE_LAUNCH` / `VITE_ENABLE_NATIVE_LAUNCH` (owner only, after a deployed and audited launchpad)
 - Production Lighthouse LCP/CLS
 - `npm audit` findings — do not `audit fix --force` without review
 
 ---
 
-## 9. Launch provider facts (do not “simplify”)
+## 9. Chain facts (do not “simplify”)
 
-- Official package: https://www.npmjs.com/package/@pump-fun/pump-sdk
-- Docs: https://github.com/pump-fun/pump-public-docs
-- `create_v2` 0 SOL creation fee ≠ 0 wallet debit (network fee, rent, optional buy).
-- Undocumented Pump frontend HTTP APIs are not a supported architecture.
+- Robinhood Chain is an Arbitrum Orbit L2 on Arbitrum Nitro, EVM-equivalent. Gas is paid in **ETH**, not in a Robinhood token.
+- Mainnet `4663` · RPC `https://rpc.mainnet.chain.robinhood.com` · explorer `https://robinhoodchain.blockscout.com`. Testnet is `46630`; no public testnet RPC is published, which is why mainnet is the read default.
+- DexScreener indexes the network under the slug `robinhood`. That is what makes two-parent discovery work.
+- **There is no deployed Fons launchpad yet.** Until the owner supplies an address and a verified ABI, do not present launching as available.
+- A zero platform fee is not a zero wallet debit — gas and the optional initial buy still cost ETH.
 - Mainnet integration tests must never run automatically in CI.

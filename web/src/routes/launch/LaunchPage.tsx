@@ -36,9 +36,8 @@ import {
   type MetadataPinResult,
   type NameCheckResult,
 } from "../../services/api";
-import { getTransactionBoundary, type LaunchState } from "../../services/pumpBoundary";
+import { getTransactionBoundary, type LaunchState } from "../../services/launchBoundary";
 import { track } from "../../services/analytics";
-import { wipeMintSecret } from "../../solana/mintMemory";
 
 export function LaunchPage() {
   const [params] = useSearchParams();
@@ -91,7 +90,7 @@ export function LaunchPage() {
   }, [fromMix]);
 
   const tickerValue = normalizeTicker(ticker);
-  const buyError = initialBuyError(initialBuy, appConfig.initialBuyMaxSol);
+  const buyError = initialBuyError(initialBuy, appConfig.initialBuyMaxEth);
   const socialError = twitterError(twitter) || telegramError(telegram) || websiteError(website);
   const generated = Boolean(fromMix && restored?.generated);
   useEffect(() => {
@@ -219,14 +218,14 @@ export function LaunchPage() {
       const pinned = await pinMetadata(form);
       const mixDraft = readDraftMix();
       const record: PendingLaunch = {
-        mint: null,
+        token: null,
         creator: null,
         metadata_uri: pinned.metadata_uri,
         image_uri: pinned.image_uri,
         image_cid: pinned.image_cid,
         metadata_cid: pinned.metadata_cid,
         image_hash: pinned.image_sha256,
-        signature: null,
+        tx_hash: null,
         created_at: new Date().toISOString(),
         state: "prepared",
         name: pinned.name,
@@ -266,7 +265,6 @@ export function LaunchPage() {
   }
 
   function discardPending() {
-    wipeMintSecret();
     clearPendingLaunch();
     setPending(null);
     setPinResult(null);
@@ -339,7 +337,7 @@ export function LaunchPage() {
           }}
         >
           <div className="note-stack">
-            {appConfig.cluster !== "mainnet-beta" ? <p className="note warn">{DEVNET_LAUNCH_NOTICE}</p> : null}
+            {!appConfig.mainnet ? <p className="note warn">{DEVNET_LAUNCH_NOTICE}</p> : null}
             <p className="note warn">{boundary.reason}</p>
             <SafetyBanner showFee />
             {fromMix ? <p className="metric-label">Fields came from Mix. Edit anything before review</p> : null}

@@ -1,74 +1,69 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { appConfig } from "../../app/config";
 import { GlassMark } from "../../components/brand/GlassMark";
 import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { Button, ButtonAnchor, ButtonLink } from "../../components/ui/Button";
 import { setDraftParent } from "../../domain/draft";
-import {
-  pumpCoinUrl,
-  shareLaunchCopy,
-  solscanAccountUrl,
-  solscanTxUrl,
-} from "../../domain/legalCopy";
-import { isPublicSignature, readPendingLaunch } from "../../domain/pendingLaunch";
+import { explorerTokenUrl, explorerTxUrl, marketUrl, shareLaunchCopy } from "../../domain/legalCopy";
+import { isPublicTxHash, readPendingLaunch } from "../../domain/pendingLaunch";
+import { shortenAddress } from "../../chain/address";
 import { track } from "../../services/analytics";
 
 export function LaunchSuccessPage() {
   const [params] = useSearchParams();
-  const mint = params.get("mint") || "";
+  const token = params.get("token") || "";
   const pending = readPendingLaunch();
   const [copied, setCopied] = useState(false);
-  const matchesPending = Boolean(pending?.mint && pending.mint === mint);
+  const matchesPending = Boolean(pending?.token && pending.token.toLowerCase() === token.toLowerCase());
   const locallyConfirmed = matchesPending && pending?.state === "confirmed";
-  const signature = matchesPending && isPublicSignature(pending?.signature) ? pending.signature : null;
+  const txHash = matchesPending && isPublicTxHash(pending?.tx_hash) ? pending.tx_hash : null;
   const name = (matchesPending && pending?.name) || "Unknown";
   const ticker = (matchesPending && pending?.ticker) || "Unknown";
   const avatar = (matchesPending && pending?.image_uri) || "/assets/brand/token-fallback.webp";
-  const pumpUrl = mint ? pumpCoinUrl(mint) : "";
+  const tradeUrl = token ? marketUrl(token) : "";
   const share = useMemo(
     () =>
-      mint
+      token
         ? shareLaunchCopy({
             name,
             ticker,
-            pumpUrl,
+            tradeUrl,
             parentA: matchesPending ? pending?.parent_a : undefined,
             parentB: matchesPending ? pending?.parent_b : undefined,
           })
         : "",
-    [matchesPending, mint, name, pending?.parent_a, pending?.parent_b, pumpUrl, ticker],
+    [matchesPending, token, name, pending?.parent_a, pending?.parent_b, tradeUrl, ticker],
   );
 
-  function copyMint() {
-    if (!mint) return;
-    void navigator.clipboard.writeText(mint);
+  function copyAddress() {
+    if (!token) return;
+    void navigator.clipboard.writeText(token);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1200);
   }
 
   function useAs(side: "a" | "b") {
-    if (!mint) return;
+    if (!token) return;
     setDraftParent(side, {
-      mint,
-      name: name === "Unknown" ? mint : name,
+      mint: token,
+      name: name === "Unknown" ? token : name,
       symbol: ticker === "Unknown" ? "" : ticker,
       image_url: matchesPending ? pending?.image_uri : undefined,
       source: "manual",
     });
   }
 
-  if (!mint) {
+  if (!token) {
     return (
       <section className="page success-page">
         <header className="page-head">
           <div className="stack sm">
             <p className="eyebrow">Launch</p>
-            <h1>Waiting for a confirmed mint</h1>
+            <h1>Waiting for a confirmed token</h1>
           </div>
           <GlassMark state="warning" quiet className="sz-sm" />
         </header>
-        <p className="empty-state">A launch is not confirmed until the mint exists on-chain.</p>
+        <p className="empty-state">A launch is not confirmed until the contract exists on-chain</p>
         <div className="btn-row">
           <ButtonLink to="/app/launch" variant="secondary">
             Back to launch
@@ -86,9 +81,9 @@ export function LaunchSuccessPage() {
     <section className="page success-page">
       <header className="page-head">
         <div className="stack sm">
-          <p className="eyebrow">{locallyConfirmed ? "Launch confirmed" : "Mint in URL"}</p>
+          <p className="eyebrow">{locallyConfirmed ? "Launch confirmed" : "Address in URL"}</p>
           <h1>
-            {locallyConfirmed ? "It is alive" : "Verify this mint on-chain before you treat it as launched"}
+            {locallyConfirmed ? "It is alive" : "Verify this address on-chain before you treat it as launched"}
           </h1>
         </div>
         <GlassMark state="launched" className="sz-md" />
@@ -100,25 +95,20 @@ export function LaunchSuccessPage() {
           <h2>
             {name} <span className="token-hero-ticker">${ticker}</span>
           </h2>
-          <p className="metric-label">{mint}</p>
+          <p className="metric-label">{token}</p>
           <p className="metric-label">
-            {locallyConfirmed ? "Bonding curve status: Live on curve" : "Bonding curve status: Unknown until verified"}
+            {locallyConfirmed ? "Receipt confirmed on Robinhood Chain" : "Status unknown until verified"}
           </p>
           <div className="btn-row tight">
-            <Button type="button" variant="outline" size="sm" onClick={copyMint}>
-              {copied ? "Copied" : "Copy mint"}
+            <Button type="button" variant="outline" size="sm" onClick={copyAddress}>
+              {copied ? "Copied" : "Copy address"}
             </Button>
-            {signature ? (
-              <a
-                className="chip live"
-                href={solscanTxUrl(signature, appConfig.cluster)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Confirmed transaction
+            {txHash ? (
+              <a className="chip live" href={explorerTxUrl(txHash)} target="_blank" rel="noreferrer">
+                Transaction {shortenAddress(txHash)}
               </a>
             ) : (
-              <span className="metric-label">Transaction link unavailable in this tab.</span>
+              <span className="metric-label">Transaction link unavailable in this tab</span>
             )}
           </div>
         </div>
@@ -128,22 +118,17 @@ export function LaunchSuccessPage() {
         <ButtonAnchor
           variant="primary"
           arrow
-          href={pumpUrl}
+          href={tradeUrl}
           target="_blank"
           rel="noreferrer"
-          onClick={() => track("external_pump_opened")}
+          onClick={() => track("external_market_opened")}
         >
-          View on Pump
+          View the market
         </ButtonAnchor>
-        <ButtonAnchor
-          variant="secondary"
-          href={solscanAccountUrl(mint, appConfig.cluster)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          View on Solscan
+        <ButtonAnchor variant="secondary" href={explorerTokenUrl(token)} target="_blank" rel="noreferrer">
+          View on Blockscout
         </ButtonAnchor>
-        <ButtonLink to={`/token/${mint}`} variant="outline">
+        <ButtonLink to={`/token/${token}`} variant="outline">
           Open FONS token page
         </ButtonLink>
         <ButtonAnchor
@@ -172,7 +157,7 @@ export function LaunchSuccessPage() {
       </div>
 
       <p className="metric-label">
-        DexScreener may take time to index this mint. On-chain confirmation is not undone by missing market data.
+        Indexers may take time to pick this token up. An on-chain receipt is not undone by missing market data
       </p>
       <SafetyBanner showFee />
     </section>

@@ -1,14 +1,14 @@
 export type PendingLaunchState = "prepared" | "submitted" | "confirmed" | "failed" | "unknown";
 
 export type PendingLaunch = {
-  mint: string | null;
+  token: string | null;
   creator: string | null;
   metadata_uri: string;
   image_uri?: string;
   image_cid?: string;
   metadata_cid?: string;
   image_hash: string;
-  signature: string | null;
+  tx_hash: string | null;
   created_at: string;
   state: PendingLaunchState;
   name?: string;
@@ -39,8 +39,9 @@ export function clearPendingLaunch(): void {
   localStorage.removeItem(PENDING_KEY);
 }
 
-export function isPublicSignature(value: unknown): value is string {
-  return typeof value === "string" && /^[1-9A-HJ-NP-Za-km-z]{64,88}$/.test(value);
+/** A transaction hash is 32 bytes of hex; anything else is not linkable. */
+export function isPublicTxHash(value: unknown): value is string {
+  return typeof value === "string" && /^0x[0-9a-fA-F]{64}$/.test(value);
 }
 
 export function stripPendingSecrets(raw: unknown): PendingLaunch | null {
@@ -55,14 +56,14 @@ export function stripPendingSecrets(raw: unknown): PendingLaunch | null {
   const state = String(input.state || "prepared");
   const allowed: PendingLaunchState[] = ["prepared", "submitted", "confirmed", "failed", "unknown"];
   return {
-    mint: typeof input.mint === "string" && input.mint ? input.mint : null,
+    token: typeof input.token === "string" && input.token ? input.token : null,
     creator: typeof input.creator === "string" && input.creator ? input.creator : null,
     metadata_uri: metadataUri,
     image_uri: typeof input.image_uri === "string" ? input.image_uri : undefined,
     image_cid: typeof input.image_cid === "string" ? input.image_cid : undefined,
     metadata_cid: typeof input.metadata_cid === "string" ? input.metadata_cid : undefined,
     image_hash: imageHash,
-    signature: isPublicSignature(input.signature) ? input.signature : null,
+    tx_hash: isPublicTxHash(input.tx_hash) ? input.tx_hash : null,
     created_at: typeof input.created_at === "string" ? input.created_at : new Date().toISOString(),
     state: allowed.includes(state as PendingLaunchState) ? (state as PendingLaunchState) : "prepared",
     name: typeof input.name === "string" ? input.name : undefined,

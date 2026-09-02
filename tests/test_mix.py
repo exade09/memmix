@@ -13,13 +13,13 @@ from vercel_api.routes.mix import reset_mix_limits
 
 
 PARENT_A = {
-    "mint": "So11111111111111111111111111111111111111112",
+    "mint": "0x0000000000000000000000000000000000001111",
     "name": "Bonk",
     "symbol": "BONK",
     "description": "chaotic Solana dog",
 }
 PARENT_B = {
-    "mint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+    "mint": "0x000000000000000000000000000000000000dddd",
     "name": "dogwifhat",
     "symbol": "WIF",
     "description": "a dog defined by a knitted hat",
