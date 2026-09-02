@@ -352,8 +352,10 @@ export type LaunchHealth = {
   image_ai: string;
   metadata: string;
   rpc: string;
-  launch_sdk_version: string;
-  cluster?: string;
+  images?: string;
+  image_jobs?: string;
+  launchpad?: string;
+  launchpad_address?: string;
   native_launch?: boolean;
   mainnet_launch?: boolean;
 };

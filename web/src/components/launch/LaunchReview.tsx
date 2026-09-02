@@ -435,7 +435,7 @@ export function LaunchReview(props: LaunchReviewProps) {
 
         <div className="panel stack">
           <p className="eyebrow">Mechanics</p>
-          <p className="body-copy">Fons launchpad on Robinhood Chain, then trading wherever the token is listed</p>
+          <p className="body-copy">Launch on Robinhood Chain, then trading wherever the token is listed</p>
           <p className="metric-label">Gas in ETH. FONS launch fee 0</p>
         </div>
 

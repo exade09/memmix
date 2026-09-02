@@ -22,7 +22,9 @@ class HealthEndpointTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertTrue(payload["success"])
         self.assertEqual(payload["data"]["chain"], "robinhood")
-        self.assertEqual(payload["data"]["launchpad"], "pons_v2")
+        # Readiness only: health names no launchpad.
+        self.assertEqual(payload["data"]["launchpad"], "configured")
+        self.assertNotIn("pons", json.dumps(payload).lower())
         self.assertEqual(payload["data"]["launchpad_address"], DEFAULT_PONS_FACTORY)
         self.assertEqual(payload["data"]["chain_id"], ROBINHOOD_MAINNET_ID)
         self.assertFalse(payload["data"]["native_launch"])

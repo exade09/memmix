@@ -39,8 +39,10 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
         "rpc": rpc_status,
         "chain": "robinhood",
         "chain_id": chain_id(),
-        # Which launchpad this build sends people to. The address is public.
-        "launchpad": "pons_v2",
+        # Readiness only. The address stays because it is real diagnostics and
+        # the wallet shows it at signing time anyway, but nothing here names
+        # the launchpad.
+        "launchpad": "configured" if launchpad_address() else "not_configured",
         "launchpad_address": launchpad_address(),
         "native_launch": native_launch_enabled(),
         "mainnet_launch": bool(mainnet_launch_enabled() and is_mainnet()),
@@ -60,7 +62,7 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
                 "rpc": "degraded",
                 "chain": "robinhood",
                 "chain_id": chain_id(),
-                "launchpad": "pons_v2",
+                "launchpad": "not_configured",
                 "native_launch": False,
                 "mainnet_launch": False,
             }
