@@ -5,7 +5,7 @@ import unittest
 from io import BytesIO
 
 from vercel_api.security_headers import SECURITY_HEADERS, apply_security_headers
-from vercel_api.shared import send_json
+from vercel_api.shared import content_type_for, send_json
 
 
 class DummyHandler:
@@ -45,3 +45,30 @@ class SecurityHeaderTests(unittest.TestCase):
         handler = DummyHandler()
         apply_security_headers(handler)
         self.assertEqual(dict(handler.headers), SECURITY_HEADERS)
+
+
+class StaticContentTypeTests(unittest.TestCase):
+    """
+    We send X-Content-Type-Options: nosniff, so a wrong type is not something a
+    browser will quietly correct. The runtime's mime registry knew neither .webp
+    nor .woff2 and served both as application/octet-stream.
+    """
+
+    def test_shipped_asset_types_are_declared_not_guessed(self) -> None:
+        expected = {
+            "brand/fons-mark.webp": "image/webp",
+            "geist-latin-wght-normal.woff2": "font/woff2",
+            "index.js": "text/javascript; charset=utf-8",
+            "index.css": "text/css; charset=utf-8",
+            "favicon.png": "image/png",
+            "token-fallback.webp": "image/webp",
+        }
+        for name, want in expected.items():
+            with self.subTest(name=name):
+                self.assertEqual(content_type_for(name), want)
+
+    def test_extension_case_is_ignored(self) -> None:
+        self.assertEqual(content_type_for("LOGO.WEBP"), "image/webp")
+
+    def test_unknown_extension_falls_back_to_bytes(self) -> None:
+        self.assertEqual(content_type_for("archive.unknownext"), "application/octet-stream")

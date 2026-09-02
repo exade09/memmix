@@ -28,7 +28,7 @@ from axiom_scanner.reporting import render_console_report
 from axiom_scanner.sources.dexscreener import resolve_token_image
 from vercel_api.dispatch import handle_api_get, handle_api_post
 from vercel_api.security_headers import apply_security_headers
-from vercel_api.shared import read_json_body, client_ip, send_json
+from vercel_api.shared import read_json_body, client_ip, send_json, content_type_for
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -293,7 +293,7 @@ def run_web(args: argparse.Namespace) -> int:
                 return
 
             body = full_path.read_bytes()
-            content_type = mimetypes.guess_type(str(full_path))[0] or "application/octet-stream"
+            content_type = content_type_for(full_path)
             self.send_response(200)
             self.send_header("Content-Type", content_type)
             apply_security_headers(self)

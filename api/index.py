@@ -9,6 +9,7 @@ from vercel_api.dispatch import handle_api_get, handle_api_post
 from vercel_api.security_headers import apply_security_headers
 from vercel_api.shared import (
     MAX_HYBRID_REQUEST_BYTES,
+    content_type_for,
     PROJECT_ROOT,
     WEB_ROOT,
     HybridImageError,
@@ -158,7 +159,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         body = full_path.read_bytes()
-        content_type = mimetypes.guess_type(str(full_path))[0] or "application/octet-stream"
+        content_type = content_type_for(full_path)
         self.send_response(200)
         self.send_header("Content-Type", content_type)
         apply_security_headers(self)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
 import sys
 import time
@@ -163,3 +164,39 @@ def _resolve_og_image(config: ScannerConfig, name: str, symbol: str) -> str:
 
 def _resolve_token_image(config: ScannerConfig, name: str, symbol: str) -> str:
     return resolve_cached_token_image(config, name=name, symbol=symbol)
+
+
+# mimetypes.guess_type() reads the host's mime registry, which on the serverless
+# runtime knows neither .webp nor .woff2 - both were going out as
+# application/octet-stream. The types we actually ship are declared here rather
+# than guessed.
+STATIC_CONTENT_TYPES = {
+    ".avif": "image/avif",
+    ".css": "text/css; charset=utf-8",
+    ".gif": "image/gif",
+    ".html": "text/html; charset=utf-8",
+    ".ico": "image/x-icon",
+    ".jpeg": "image/jpeg",
+    ".jpg": "image/jpeg",
+    ".js": "text/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".map": "application/json; charset=utf-8",
+    ".mjs": "text/javascript; charset=utf-8",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".txt": "text/plain; charset=utf-8",
+    ".webmanifest": "application/manifest+json",
+    ".webp": "image/webp",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".xml": "application/xml",
+}
+
+
+def content_type_for(path) -> str:
+    """Content type for a static file: declared first, guessed second, bytes last."""
+    suffix = os.path.splitext(str(path))[1].lower()
+    known = STATIC_CONTENT_TYPES.get(suffix)
+    if known:
+        return known
+    return mimetypes.guess_type(str(path))[0] or "application/octet-stream"
