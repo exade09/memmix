@@ -286,12 +286,22 @@ export async function confirmLaunch(
   );
 }
 
+/** How far the opening buy may slip before it reverts instead of filling. */
+export const OPENING_BUY_SLIPPAGE_PERCENT = 5n;
+
 /**
  * The optional opening buy, as its own transaction.
  *
  * It cannot be part of the launch: `_launchToken` requires msg.value to equal
  * launchFee exactly. The creator is auto-exempt from the snipe tax, so buying
  * in a second transaction costs them nothing extra beyond gas.
+ *
+ * The gap between the two transactions is real, though, so `minTokensOut` is
+ * not zero. The curve publishes no preview function, so rather than reimplement
+ * its bonding maths here and risk getting it wrong on a money path, we simulate
+ * the buy, take the number the curve itself returns, and floor the real call at
+ * that minus a stated slippage. If someone buys in between, this reverts rather
+ * than filling at whatever price they left behind.
  */
 export async function submitInitialBuy(
   wallet: WalletClient,
@@ -307,16 +317,14 @@ export async function submitInitialBuy(
     address: curve,
     abi: PONS_CURVE_ABI,
     functionName: "buy",
-    // minTokensOut 0 is safe here and only here: this is the creator's own
-    // opening buy on a curve that nobody else has traded yet, in the same
-    // block window, and they are exempt from the snipe tax.
-    args: [amountWei, 0n, account],
     value: amountWei,
     account,
   } as const;
   try {
-    await client.simulateContract(call);
-    return await wallet.writeContract({ ...call, chain: null });
+    const quoted = await client.simulateContract({ ...call, args: [amountWei, 0n, account] });
+    const expected = quoted.result as bigint;
+    const minTokensOut = (expected * (100n - OPENING_BUY_SLIPPAGE_PERCENT)) / 100n;
+    return await wallet.writeContract({ ...call, args: [amountWei, minTokensOut, account], chain: null });
   } catch (error: unknown) {
     throw mapSendFailure(error);
   }

@@ -5,10 +5,10 @@ export const RISK_DISCLOSURE =
   "Token creation and trading are risky. FONS does not guarantee value, liquidity, market integrity or profit. Review every transaction and every external link yourself.";
 
 export const FOOTER_DISCLAIMER =
-  "FONS is an independent interface using public Robinhood Chain contracts. It is not affiliated with, endorsed by, or a partner of Robinhood Markets, and it is not a promise of endorsement by any token shown in the feed. Nothing on this site is financial advice.";
+  "FONS is an independent interface that launches tokens through the public Pons v2 contracts on Robinhood Chain. It is not affiliated with, endorsed by, or a partner of Robinhood Markets or Pons, and it is not a promise of endorsement by any token shown in the feed. Nothing on this site is financial advice.";
 
 export const ZERO_PLATFORM_FEE =
-  "FONS adds no platform launch fee in this version. Robinhood Chain gas and any initial buy still cost ETH. The app shows an estimate from the node before you sign.";
+  "FONS adds no fee of its own. The launch still costs Pons's own launch fee, currently 0.0005 ETH and read live from the contract, plus Robinhood Chain gas and any opening buy. The app shows the whole estimate before you sign.";
 
 export const INDEXER_NOTICE =
   "The contract is live on-chain. Market data will appear after external indexers discover trading activity.";
@@ -17,13 +17,15 @@ export const DEVNET_LAUNCH_NOTICE =
   "Launch is in testnet mode. Tokens created here have no mainnet market value.";
 
 export const FAQ_ITEMS = [
-  ["What does FONS do?", "FONS combines the character logic of two existing Robinhood Chain tokens, generates one editable token concept and lets you launch it through the Fons launchpad. You can also skip AI and launch manually."],
-  ["Is token creation free?", ZERO_PLATFORM_FEE],
+  ["What does FONS do?", "FONS combines the character logic of two existing Robinhood Chain tokens, generates one editable token concept and launches it through the Pons launchpad. You can also skip AI and launch manually."],
+  ["What does a launch cost?", ZERO_PLATFORM_FEE],
+  ["Where does my token actually live?", "On Pons. Your token is created by the Pons v2 factory and trades on its own bonding curve until it graduates into a locked Uniswap v4 pool. FONS is the interface that builds the transaction; it never holds the token or the funds."],
+  ["Why does the opening buy need a second signature?", "The Pons factory requires the launch transaction to carry exactly the launch fee, so a buy cannot be bundled into it. Your token exists either way. If you skip or decline the second signature, the launch is still complete."],
   ["Does FONS hold my funds?", "No. FONS is non-custodial. Your wallet signs the transaction and remains in control of its funds."],
   ["Can AI launch a token without me?", "No. AI only produces editable creative fields. It cannot connect your wallet, sign a transaction or launch a token for you."],
   ["Can I launch without using AI?", "Yes. Direct Launch accepts your own name, ticker, description, image and links."],
   ["Can I edit the generated result?", "Yes. Every generated field is editable before metadata is pinned and the transaction is signed."],
-  ["Is a token launched here guaranteed to be safe?", "FONS protects the launch workflow by keeping keys in your wallet, checking expected program IDs and simulating the transaction. It cannot guarantee the future behaviour, market, holders, links or price of any token."],
+  ["Is a token launched here guaranteed to be safe?", "FONS protects the launch workflow by keeping keys in your wallet, checking the factory holds code and simulating the transaction before MetaMask opens. It cannot guarantee the future behaviour, market, holders, links or price of any token."],
   ["Does FONS guarantee profit?", "No. FONS does not provide investment advice or predict returns."],
   ["Can metadata be edited after launch?", "Treat submitted token data as permanent. Review the name, ticker, image, description and links before signing."],
   ["Who is responsible for uploaded and generated content?", "The launcher is responsible for having the right to use uploaded names, images and links. AI output must also be reviewed before launch."],
@@ -55,7 +57,7 @@ export const PRIVACY_COPY =
 
 export const SAFETY_PILLARS = [
   ["NON-CUSTODIAL", "We never receive your seed phrase or private key."],
-  ["VERIFIED PATH", "The launchpad contract is checked for bytecode before any signature is requested."],
+  ["VERIFIED PATH", "The Pons factory is checked for bytecode and the launch is simulated before any signature is requested."],
   ["COST BEFORE SIGN", "You see the estimated debit and optional buy before MetaMask opens."],
   ["MARKET REALITY", "We do not promise profit, liquidity or honest third parties."],
 ] as const;

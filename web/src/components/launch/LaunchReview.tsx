@@ -48,7 +48,7 @@ export function CostSummary({
   return (
     <dl className="facts strong">
       <div>
-        <dt>Launchpad fee</dt>
+        <dt>Pons launch fee</dt>
         <dd>{formatted.launchFee}</dd>
       </div>
       <div>
