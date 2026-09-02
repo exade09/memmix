@@ -560,7 +560,7 @@ function ParentSearch({
         <div className="slot-filled">
           <motion.img
             className="avatar"
-            src={selected.image_url || "/assets/brand/mark-merge-o.svg"}
+            src={selected.image_url || "/assets/brand/token-fallback.webp"}
             alt={`${selected.name} avatar`}
             width={44}
             height={44}

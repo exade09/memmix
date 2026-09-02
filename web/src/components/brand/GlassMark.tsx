@@ -58,6 +58,12 @@ function ringsFor(state: GlassState) {
   }
 }
 
+const MARK_SRC = "/assets/brand/fons-mark.webp";
+
+type ArtStatus = "loading" | "ok" | "failed";
+/** Load outcome, remembered so a second mark on the page never re-runs the swap. */
+let artStatus: ArtStatus = "loading";
+
 export function GlassMark({
   state = "idle",
   className = "",
@@ -88,6 +94,14 @@ export function GlassMark({
   // Looping motion stops off-viewport, in a hidden tab and under reduced motion.
   const animate = Boolean(!reduceMotion && inView && pageVisible && !quiet);
   const rings = ringsFor(state);
+  const [art, setArt] = useState<ArtStatus>(artStatus);
+  /*
+    The rendered logo is the real mark; the drawn rings below are the
+    fallback for when it cannot be fetched. Showing the drawing while the
+    image is still in flight would flash a different mark, so it only
+    appears once the image has actually failed.
+  */
+  const showDrawn = art === "failed";
 
   return (
     <div
@@ -101,7 +115,29 @@ export function GlassMark({
         animate={animate ? { y: [0, -6, 0] } : { y: 0 }}
         transition={animate ? { duration: 7, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
       >
-        <svg viewBox="0 0 200 200" role="img" aria-label={ALT[state]}>
+        <img
+          className={`glass-mark-art${art === "ok" ? " is-on" : ""}`}
+          src={MARK_SRC}
+          alt={ALT[state]}
+          decoding="async"
+          onLoad={(event) => {
+            const ok = event.currentTarget.naturalWidth > 8;
+            artStatus = ok ? "ok" : "failed";
+            setArt(artStatus);
+          }}
+          onError={() => {
+            artStatus = "failed";
+            setArt(artStatus);
+          }}
+        />
+        <svg
+          viewBox="0 0 200 200"
+          className="glass-mark-drawn"
+          role={showDrawn ? "img" : "presentation"}
+          aria-label={showDrawn ? ALT[state] : undefined}
+          aria-hidden={showDrawn ? undefined : true}
+          style={showDrawn ? undefined : { display: "none" }}
+        >
           <defs>
             <radialGradient id={`${id}-warm`} cx="34%" cy="28%" r="78%">
               <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />

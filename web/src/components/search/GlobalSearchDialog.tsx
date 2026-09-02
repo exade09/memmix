@@ -235,7 +235,7 @@ function ResultRow({
   return (
     <div className={`search-row${active ? " is-active" : ""}`}>
       <button type="button" className="search-result" onClick={onOpen}>
-        <img src={token.image_url || "/assets/brand/mark-merge-o.svg"} alt="" width={30} height={30} />
+        <img src={token.image_url || "/assets/brand/token-fallback.webp"} alt="" width={30} height={30} />
         <span>
           <strong>{token.name}</strong>
           <em>${token.symbol}</em>

@@ -101,7 +101,7 @@ export function TokenPage() {
   const notFound = !loading && errorCode === "TOKEN_NOT_FOUND" && !onchain?.exists;
   const name = onchain?.name || detail?.metadata.name || "Unknown";
   const symbol = onchain?.symbol || detail?.metadata.symbol || "Unknown";
-  const image = detail?.metadata.image_url || "/assets/brand/mark-merge-o.svg";
+  const image = detail?.metadata.image_url || "/assets/brand/token-fallback.webp";
   const creator = onchain?.creator || detail?.onchain.creator || "Unknown";
   const status = onchain?.status && onchain.status !== "unknown" ? onchain.status : detail?.onchain.status || "unknown";
   const lineage = onchain?.lineage || detail?.lineage;

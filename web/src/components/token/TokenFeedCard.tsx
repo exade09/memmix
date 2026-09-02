@@ -73,7 +73,7 @@ export function TokenFeedCard({
       <div className="token-card-head">
         <motion.img
           className="avatar"
-          src={token.image_url || "/assets/brand/mark-merge-o.svg"}
+          src={token.image_url || "/assets/brand/token-fallback.webp"}
           alt={`${token.name} avatar`}
           width={48}
           height={48}
@@ -164,7 +164,7 @@ export function SearchResultButton({
   return (
     <button type="button" className="search-result" onClick={() => onSelect(token)}>
       <motion.img
-        src={token.image_url || "/assets/brand/mark-merge-o.svg"}
+        src={token.image_url || "/assets/brand/token-fallback.webp"}
         alt=""
         width={30}
         height={30}

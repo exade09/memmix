@@ -20,9 +20,38 @@
   filter: drop-shadow(0 18px 26px rgba(34, 51, 31, 0.14));
 }
 
-.glass-mark svg {
+.glass-mark svg,
+.glass-mark-art {
   width: 100%;
   height: auto;
+}
+
+/*
+  The rendered mark is the real logo. It fades in rather than popping, and
+  sits a little quieter until both parents are in place -- the same signal
+  the drawn rings used to carry by dimming.
+*/
+.glass-mark-art {
+  opacity: 0;
+  transition: opacity var(--t-slow), filter var(--t-slow);
+  filter: saturate(0.72) opacity(0.62);
+}
+
+.glass-mark-art.is-on {
+  opacity: 1;
+}
+
+.glass-mark[data-state="ready"] .glass-mark-art,
+.glass-mark[data-state="mixing"] .glass-mark-art,
+.glass-mark[data-state="generating"] .glass-mark-art,
+.glass-mark[data-state="success"] .glass-mark-art,
+.glass-mark[data-state="launched"] .glass-mark-art,
+.glass-mark[data-state="wallet"] .glass-mark-art {
+  filter: none;
+}
+
+.glass-mark[data-state="searching"] .glass-mark-art {
+  filter: saturate(0.88) opacity(0.82);
 }
 
 /* a faint bloom behind the glass, warmed or cooled by state */

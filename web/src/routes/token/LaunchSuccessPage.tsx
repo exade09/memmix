@@ -24,7 +24,7 @@ export function LaunchSuccessPage() {
   const signature = matchesPending && isPublicSignature(pending?.signature) ? pending.signature : null;
   const name = (matchesPending && pending?.name) || "Unknown";
   const ticker = (matchesPending && pending?.ticker) || "Unknown";
-  const avatar = (matchesPending && pending?.image_uri) || "/assets/brand/mark-merge-o.svg";
+  const avatar = (matchesPending && pending?.image_uri) || "/assets/brand/token-fallback.webp";
   const pumpUrl = mint ? pumpCoinUrl(mint) : "";
   const share = useMemo(
     () =>

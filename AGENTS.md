@@ -72,7 +72,9 @@ MIXBORN system is preserved at tag `design-mixborn-dark` and branch
 - Type: Geist 700 for display and UI, IBM Plex Mono for wide-tracked micro labels (`--track-wide`). Headings are sentence case, never uppercase; **micro labels** carry the uppercase.
 - Surfaces: frosted glass with a hairline edge and an inner highlight (`--inner-glass`). Panels 26px, cards 20px, pills for every action. One solid forest-green primary per view.
 - Window chrome (`.chrome-bar` with `.chrome-lights` and `.chrome-glyphs`) frames the working parts, the way the reference frames its app.
-- **The mark**: `web/src/components/brand/GlassMark.tsx` — two glass rings and the bead born between them, driven by real state (`idle`, `searching`, `ready`, `mixing`, `generating`, `success`, `warning`, `wallet`, `launched`).
+- **The mark**: the owner's rendered logo, two interlocking glass rings, at `web/public/assets/brand/fons-mark.webp`. `GlassMark.tsx` loads it and drives state (`idle`, `searching`, `ready`, `mixing`, `generating`, `success`, `warning`, `wallet`, `launched`) through saturation and the halo; the drawn SVG rings inside it are only the fallback for when the image cannot be fetched.
+- Small sizes use vector, not the render: `MergeMark` in `Wordmark.tsx` is the same two rings on the same diagonal, because the photographic version turns to mush below about 40px. Keep the two in sync if the logo changes.
+- Token images that fail to load fall back to `assets/brand/token-fallback.webp`; the tab icon is `favicon.png` with `apple-touch-icon.png` alongside. The old `mark-merge-o.svg` and `favicon.svg` are retired.
 - The hooded **BORN** mascot is **parked, not deleted**: `BornMascot.tsx` and `web/public/assets/brand/born-portrait.png` are still in the repo and unused. He returns only with glass art — see `docs/FONS_VISUAL_ASSETS.md`.
 - Backgrounds are CSS gradients. `.scene` is where a photographic plate lands if one is added; the page must stay complete without it.
 - Looping decorative motion **must stop** off-viewport and in a background tab (`data-page-hidden`, `data-offscreen`). Reduced-motion must keep the same information.

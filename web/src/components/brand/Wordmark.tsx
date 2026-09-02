@@ -4,21 +4,25 @@ import { motion, useReducedMotion } from "motion/react";
 
 const SESSION_KEY = "mixborn.logoBirthPlayed"; // storage key kept: renaming it would replay the intro for everyone
 
-/** The O of FONS: two parent orbs locked into one glass ring. */
+/*
+  The O of FONS, at wordmark size.
+
+  This is the real logo simplified, not a different mark: the same two
+  interlocking rings on the same diagonal. The rendered glass version is
+  photographic and turns to mush below about 40px, so small sizes get the
+  vector and everything larger gets the render (see GlassMark).
+*/
 export function MergeMark({ className = "" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 32 32" aria-hidden="true">
-      <circle cx="12.5" cy="16" r="8.5" fill="none" stroke="var(--sun)" strokeWidth="2.4" />
-      <circle cx="19.5" cy="16" r="8.5" fill="none" stroke="var(--sky)" strokeWidth="2.4" />
-      <circle cx="16" cy="16" r="2.8" fill="var(--ink)" />
+    <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <g transform="rotate(-32 16 16)">
+        <ellipse cx="16" cy="11.4" rx="7.2" ry="9.4" stroke="var(--moss)" strokeWidth="2.5" />
+        <ellipse cx="16" cy="20.6" rx="7.2" ry="9.4" stroke="var(--sage)" strokeWidth="2.5" />
+      </g>
     </svg>
   );
 }
 
-/**
- * The wordmark plays the product in one glyph: the missing O is born from two
- * orbs. It runs once per session, then the mark is simply there.
- */
 export function Wordmark({ to = "/", sub }: { to?: string; sub?: string }) {
   const reduceMotion = useReducedMotion();
   const [born, setBorn] = useState(() => {

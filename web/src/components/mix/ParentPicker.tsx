@@ -100,7 +100,7 @@ export function ParentPicker({
         <p className="slot-label">Parent {side.toUpperCase()}</p>
         <img
           className="avatar picked-avatar"
-          src={selected.image_url || "/assets/brand/mark-merge-o.svg"}
+          src={selected.image_url || "/assets/brand/token-fallback.webp"}
           alt={`${selected.name} avatar`}
           width={96}
           height={96}
