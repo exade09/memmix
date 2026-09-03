@@ -213,8 +213,15 @@ class AvatarJobFlowTests(AvatarTestCase):
         self.assertEqual(result["poll_after_ms"], 1500)
         self.assertIn("job_token", result)
         self.assertEqual(len(provider.submits), 1)
-        self.assertIn("not a collage", provider.submits[0]["prompt"])
-        self.assertIn("one original square token-avatar character", provider.submits[0]["prompt"])
+        self.assertIn("not a collage", provider.submits[0]["prompt"].lower())
+        prompt = provider.submits[0]["prompt"].lower()
+        # The guarantees, not the phrasing: one avatar, original, square.
+        self.assertIn("one original square token avatar", prompt)
+        # The prompt described the retired MIXBORN palette for months after the
+        # site moved to Fons, so every generated avatar clashed with the page it
+        # appeared on. Guard the colours rather than trust a code review.
+        for dead in ("violet", "acid-green", "retro-wave", "lo-fi"):
+            self.assertNotIn(dead, prompt, f"{dead} belongs to the retired design")
         self.assertEqual(provider.submits[0]["size"], "1024*1024")
 
     def test_duplicate_click(self) -> None:
@@ -287,7 +294,7 @@ class AvatarJobFlowTests(AvatarTestCase):
         )
         self.assertNotIn("Ignore previous", prompt)
         self.assertNotIn("https://", prompt)
-        self.assertIn("not a collage", prompt)
+        self.assertIn("not a collage", prompt.lower())
 
 
 class ImageSecurityTests(unittest.TestCase):

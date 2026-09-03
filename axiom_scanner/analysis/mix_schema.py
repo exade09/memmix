@@ -121,17 +121,19 @@ FALLBACK_NOTICE = "Basic mix mode — AI logic is temporarily unavailable."
 
 AVATAR_STYLE = "mixborn_lofi_v1"
 
-AVATAR_PROMPT_TEMPLATE = """Create one original square token-avatar character derived from two reference images.
+AVATAR_PROMPT_TEMPLATE = """Create one original square token avatar derived from two reference images.
 
 Character concept: {character_hook}
-Trait inherited from Parent A: {parent_a_trait}
-Trait inherited from Parent B: {parent_b_trait}
+Trait inherited from Token A: {parent_a_trait}
+Trait inherited from Token B: {parent_b_trait}
 
-Combine the traits into one coherent being, not a collage and not two characters standing together. Keep the central silhouette readable at small icon size.
+Combine the two traits into a single coherent creature. Not a collage, not two characters side by side, not one character holding the other. One being that plausibly inherited from both.
 
-Visual treatment: hand-drawn lo-fi meme illustration, imperfect heavy black ink outline, muted black/white/gray base, controlled violet and acid-green accents, underground retro-wave mood, flat shapes, restrained detail, slightly awkward outsider energy.
+Visual treatment: clean modern character illustration with soft volume and gentle studio lighting. Confident tapered linework, never a heavy uniform outline. Colour is led by a calm sage and forest green palette with warm sand and cool slate as secondary accents; keep saturation moderate and the whole image bright and daylit. Subtle paper grain. No harsh black, no neon, no acid colours.
 
-Composition: one centered head or bust, square crop, safe margin around the silhouette, simple background, strong face or defining prop.
+Composition: one centred head or bust filling most of the frame, square crop, clear margin around the silhouette, plain uncluttered background in a pale warm off-white. The silhouette must stay readable at 48 pixels, so favour one strong shape and one memorable feature over fine detail.
 
-Do not add words, ticker letters, logos, UI, watermark, photorealism, glossy 3D rendering, gore or financial symbols. Do not reproduce either reference pixel-for-pixel.
+Quality: crisp edges, correct anatomy for whatever creature this is, no extra limbs, no duplicated features, no melted or smeared areas, no visible artefacts.
+
+Do not add words, letters, numbers, tickers, logos, interface elements, watermarks or signatures. No photorealism, no glossy 3D render, no gore, no financial or currency symbols. Do not reproduce either reference pixel for pixel.
 """

@@ -22,8 +22,16 @@ from urllib.request import Request, urlopen
 
 WAVESPEED_BASE_URL = "https://api.wavespeed.ai/api/v3"
 WAVESPEED_UPLOAD_URL = f"{WAVESPEED_BASE_URL}/media/upload/binary"
-WAVESPEED_PRIMARY_MODEL = "bytedance/seedream-v4.5/edit"
-WAVESPEED_FALLBACK_MODEL = "bytedance/seedream-v4/edit"
+# Seedream v5.0 Pro: $0.0405 an image against v4.5's $0.027, which buys a
+# generation of quality for a third more. The alternatives on WaveSpeed that
+# also take multiple references cost two to five times the current price
+# (nano-banana-2 $0.063, gpt-image-2 $0.0665, nano-banana-pro $0.126) and were
+# not worth it for a 1024px avatar. Same family as before, so the request shape
+# is unchanged. Override with WAVESPEED_MODEL without touching code.
+WAVESPEED_PRIMARY_MODEL = os.getenv("WAVESPEED_MODEL", "").strip() or "bytedance/seedream-v5.0-pro/edit"
+# One step down, not two: if the new model is rejected the fallback should still
+# be a current model rather than the two-generation-old one.
+WAVESPEED_FALLBACK_MODEL = "bytedance/seedream-v4.5/edit"
 
 MAX_IMAGE_BYTES = 20 * 1024 * 1024
 MAX_REQUEST_BYTES = 45 * 1024 * 1024
@@ -40,16 +48,19 @@ NORMALIZED_IMAGE_MIN_SIDE = 512
 NORMALIZED_IMAGE_MAX_SIDE = 1536
 DEFAULT_POLL_INTERVAL_SECONDS = 1.0
 DEFAULT_PROMPT = (
-    "Combine the two reference images into one coherent hybrid character or emblem. "
-    "Preserve recognizable visual traits from both inputs, match lighting and "
-    "perspective naturally, and make the result feel like one polished sticker-style artwork."
+    "Combine the two reference images into one coherent hybrid character. Inherit "
+    "recognisable traits from both inputs rather than placing them side by side. "
+    "Clean modern illustration, soft volume, gentle studio lighting, confident tapered "
+    "linework, calm sage and forest green palette with warm sand accents, bright and "
+    "daylit, moderate saturation, plain pale background, crisp edges, correct anatomy. "
+    "No text, no logos, no watermark, no neon, no harsh black outline."
 )
 SAFE_PROVIDER_PROMPT = (
-    "Create one polished family-friendly sticker-style character or emblem from the two "
-    "reference images. Combine the most recognizable colors, shapes, silhouettes, and "
-    "visual details from both references into a single original design. Use a centered "
-    "composition, clean background, crisp edges, soft studio lighting, no text, no logos, "
-    "no UI, no watermark."
+    "Create one polished family-friendly character from the two reference images. "
+    "Combine the most recognisable colours, shapes and silhouettes from both into a "
+    "single original design. Centred composition, plain pale background, crisp edges, "
+    "soft daylight, calm sage and forest green palette, moderate saturation. "
+    "No text, no logos, no interface, no watermark."
 )
 PROMPT_BLOCKLIST = (
     "crypto",
