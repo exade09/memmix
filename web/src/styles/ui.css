@@ -992,3 +992,77 @@ input[type="range"]::-moz-range-thumb {
   .anim-word { overflow: visible; }
   .anim-word-inner { transform: none !important; opacity: 1 !important; }
 }
+
+/* ---------------------------------------------------------------
+   Hover, and the feel of the thing
+
+   The site read as static because nothing answered the pointer. These
+   are small on purpose: a card that lifts a couple of pixels reads as
+   responsive, one that lifts ten reads as a toy.
+--------------------------------------------------------------- */
+.token-card {
+  transition:
+    transform var(--t-base),
+    box-shadow var(--t-base),
+    border-color var(--t-base);
+}
+
+.token-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--glass-line);
+  box-shadow:
+    0 1px 2px rgba(34, 51, 31, 0.05),
+    0 18px 34px -22px rgba(34, 51, 31, 0.42);
+}
+
+.token-card:active {
+  transform: translateY(-1px);
+}
+
+/* The tab that is on should feel switched, not merely coloured. */
+.segmented button {
+  transition:
+    background var(--t-micro),
+    color var(--t-micro),
+    transform var(--t-micro);
+}
+
+.segmented button:hover:not([aria-pressed="true"]) {
+  transform: translateY(-1px);
+}
+
+/* Rail links slide a hair toward the content they open. */
+.rail-link {
+  transition:
+    background var(--t-micro),
+    color var(--t-micro),
+    padding-left var(--t-base);
+}
+
+.rail-link:hover:not(.is-active) {
+  padding-left: 22px;
+}
+
+/* A panel the pointer is over lifts out of the page very slightly. */
+.slot,
+.concept-card {
+  transition: transform var(--t-base), box-shadow var(--t-base);
+}
+
+.slot:hover,
+.concept-card:hover {
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .token-card,
+  .token-card:hover,
+  .token-card:active,
+  .slot:hover,
+  .concept-card:hover,
+  .segmented button:hover,
+  .rail-link:hover:not(.is-active) {
+    transform: none;
+    padding-left: revert;
+  }
+}

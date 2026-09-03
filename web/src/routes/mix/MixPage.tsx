@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatedText } from "../../components/motion/AnimatedText";
 import { useNavigate } from "react-router-dom";
 import { appConfig } from "../../app/config";
 import { GlassMark, type GlassState } from "../../components/brand/GlassMark";
@@ -421,9 +422,11 @@ export function MixPage() {
         <div className="stack sm">
           <p className="eyebrow">Create a mutation</p>
           <h1>
-            Two tokens in
+            <AnimatedText lines={["Two tokens in"]} />
             <br />
-            <span className="hero-born">One born</span>
+            <span className="hero-born">
+              <AnimatedText lines={["One born"]} delay={0.2} />
+            </span>
           </h1>
         </div>
         <ol className="step-rail" aria-label="Progress">

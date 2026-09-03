@@ -6,6 +6,7 @@ import { GlassMark, type GlassState } from "../../components/brand/GlassMark";
 import { SiteFooter } from "../../components/layout/SiteFooter";
 import { SectionReveal } from "../../components/motion/SectionReveal";
 import { AnimatedText } from "../../components/motion/AnimatedText";
+import { CountUp } from "../../components/motion/CountUp";
 import { Stagger, StaggerItem } from "../../components/motion/Stagger";
 import { EASE } from "../../components/motion/motion";
 import { SearchResultButton, TokenFeedCard, TokenSkeleton, toParent } from "../../components/token/TokenFeedCard";
@@ -188,7 +189,14 @@ export function LandingPage() {
         <section className="hero">
           <div className="wrap hero-inner">
             <div className="hero-copy">
-              <p className="eyebrow">Launchpad · {networkLabel()}</p>
+              <motion.p
+                className="eyebrow"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: EASE }}
+              >
+                Launchpad · {networkLabel()}
+              </motion.p>
               <h1 className="hero-title">
                 <AnimatedText lines={["Two tokens in"]} delay={0.05} />
                 <br />
@@ -196,14 +204,12 @@ export function LandingPage() {
                   <AnimatedText lines={["One born"]} delay={0.24} />
                 </span>
               </h1>
-              <motion.p
+              <AnimatedText
                 className="lede"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: EASE, delay: 0.5 }}
-              >
-                Pick two tokens. Get one new character. Launch it on Robinhood Chain
-              </motion.p>
+                reveal="fade"
+                delay={0.78}
+                lines={["Pick two tokens. Get one new character. Launch it on Robinhood Chain"]}
+              />
             </div>
 
             <MixBench
@@ -233,12 +239,20 @@ export function LandingPage() {
           {/* fact strip */}
           <div className="wrap">
             <dl className="fact-strip">
-              {FACTS.map(([label, value, note]) => (
-                <div key={label}>
+              {FACTS.map(([label, value, note], index) => (
+                <motion.div
+                  key={label}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.4 }}
+                  transition={{ duration: 0.5, ease: EASE, delay: index * 0.08 }}
+                >
                   <dt>{label}</dt>
-                  <dd>{value}</dd>
+                  <dd>
+                    <CountUp value={value} />
+                  </dd>
                   <p>{note}</p>
-                </div>
+                </motion.div>
               ))}
             </dl>
           </div>

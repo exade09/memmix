@@ -33,10 +33,16 @@ export function SectionReveal({
       id={id}
       className={className}
       aria-label={ariaLabel}
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.16, margin: "0px" }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
+      /*
+        Lift only, no fade. This wrapper sits around headings that animate
+        themselves; fading the whole section at the same time washed the
+        heading's own reveal out, which is why the landing page looked static
+        while the app pages did not.
+      */
+      initial={{ y: 22 }}
+      whileInView={{ y: 0 }}
+      viewport={{ once: true, amount: 0.08, margin: "0px 0px -10% 0px" }}
+      transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
     >
       {children}
     </MotionTag>

@@ -3,44 +3,52 @@ import { motion, useReducedMotion } from "motion/react";
 import { EASE } from "./motion";
 
 /*
-  A heading that assembles a word at a time.
+  Text that arrives instead of appearing.
 
-  Each word rises inside its own clipping box, so the line builds itself
-  instead of fading in as a block. The text stays real text: it is split on
-  spaces and every word keeps its own element, so selection, find-in-page and
-  screen readers are unaffected.
+  Three treatments, because one repeated everywhere is what makes a page feel
+  mechanical:
 
-  Two deliberate choices here, both learned the hard way:
+    "words"  each word rises into its own clipped box. The strongest of the
+             three, kept for the hero and for section headings.
+    "lines"  the whole line is wiped upward behind a mask. Quieter and faster,
+             for headings that sit inside the app window where a per-word
+             stagger would be fussy next to a form.
+    "fade"   a plain lift, for body copy that should follow its heading rather
+             than compete with it.
 
-  1. Every value is passed explicitly rather than through variants. Variants
-     inherit their state from the nearest motion parent, and the route
-     transition wraps the whole page in <AnimatePresence initial={false}>,
-     which suppressed the first-load animation of everything inside it. That
-     is exactly why the hero sat still. Explicit props cannot be overridden by
-     an ancestor.
+  Two things are deliberate and should not be "tidied" away:
 
-  2. whileInView rather than animate. A heading above the fold is already in
-     view, so it plays on load; one further down waits until it is scrolled
-     to. `once` keeps it from replaying on the way back up.
+  1. Every value is passed explicitly rather than through variants. The route
+     transition wraps each page in <AnimatePresence initial={false}>, and that
+     suppresses the first-load animation of any descendant that inherits its
+     state. Explicit props cannot be overridden by an ancestor.
 
-     The threshold is deliberately low. These words start at opacity 0, so a
-     viewport rule that fails to fire leaves a heading permanently invisible.
-     A large heading can easily never reach 40% visibility on a short screen;
-     10% of any part of it entering is enough to be sure.
+  2. whileInView, not animate, with a low threshold. A heading above the fold
+     is already in view and plays on load; one further down waits to be
+     scrolled to. The words start at opacity 0, so a viewport rule that never
+     fires would leave a heading permanently invisible — 10% of any part
+     entering is a threshold a large heading on a short screen can still meet.
 */
 
-const WORD_STEP = 0.055;
-const LINE_STEP = 0.12;
+export type TextReveal = "words" | "lines" | "fade";
+
+const WORD_STEP = 0.06;
+const LINE_STEP = 0.14;
+
+/** Slow enough to be seen. The previous 0.5s read as a flicker on load. */
+const DURATION = { words: 0.66, lines: 0.72, fade: 0.6 } as const;
+
+const viewport = { once: true, amount: 0.1, margin: "0px 0px -6% 0px" } as const;
 
 function Word({ word, delay }: { word: string; delay: number }) {
   return (
     <span className="anim-word">
       <motion.span
         className="anim-word-inner"
-        initial={{ opacity: 0, y: "0.5em" }}
-        whileInView={{ opacity: 1, y: "0em" }}
-        viewport={{ once: true, amount: 0.1, margin: "0px 0px -8% 0px" }}
-        transition={{ duration: 0.5, ease: EASE, delay }}
+        initial={{ opacity: 0, y: "0.78em", rotate: 1.4 }}
+        whileInView={{ opacity: 1, y: "0em", rotate: 0 }}
+        viewport={viewport}
+        transition={{ duration: DURATION.words, ease: EASE, delay }}
       >
         {word}
       </motion.span>
@@ -48,23 +56,36 @@ function Word({ word, delay }: { word: string; delay: number }) {
   );
 }
 
-/**
- * @param lines     each string becomes its own line, staggered after the one above
- * @param as        the element to render, so a hero can still be an h1
- * @param separator rendered between lines; a <br /> for a headline that wraps
- */
+function Line({ line, delay }: { line: string; delay: number }) {
+  return (
+    <span className="anim-word">
+      <motion.span
+        className="anim-word-inner"
+        initial={{ opacity: 0, y: "0.6em" }}
+        whileInView={{ opacity: 1, y: "0em" }}
+        viewport={viewport}
+        transition={{ duration: DURATION.lines, ease: EASE, delay }}
+      >
+        {line}
+      </motion.span>
+    </span>
+  );
+}
+
 export function AnimatedText({
   lines,
   as: Tag = "span",
   className,
   delay = 0,
   separator,
+  reveal = "words",
 }: {
   lines: string[];
   as?: "h1" | "h2" | "h3" | "p" | "span";
   className?: string;
   delay?: number;
   separator?: ReactNode;
+  reveal?: TextReveal;
 }) {
   const reduceMotion = useReducedMotion();
 
@@ -81,7 +102,39 @@ export function AnimatedText({
     );
   }
 
-  // A running count so the stagger continues across line breaks rather than
+  if (reveal === "fade") {
+    return (
+      <motion.p
+        className={className}
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={viewport}
+        transition={{ duration: DURATION.fade, ease: EASE, delay }}
+      >
+        {lines.map((line, index) => (
+          <Fragment key={`${line}-${index}`}>
+            {index > 0 ? separator ?? " " : null}
+            {line}
+          </Fragment>
+        ))}
+      </motion.p>
+    );
+  }
+
+  if (reveal === "lines") {
+    return (
+      <Tag className={className}>
+        {lines.map((line, index) => (
+          <Fragment key={`${line}-${index}`}>
+            {index > 0 ? separator ?? " " : null}
+            <Line line={line} delay={delay + index * LINE_STEP} />
+          </Fragment>
+        ))}
+      </Tag>
+    );
+  }
+
+  // A running count so the stagger continues across a line break rather than
   // restarting, which would read as two separate animations.
   let wordIndex = 0;
 

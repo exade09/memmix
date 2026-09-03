@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { AnimatedText } from "../../components/motion/AnimatedText";
 import { useSearchParams } from "react-router-dom";
 import { appConfig } from "../../app/config";
 import { AvatarCropper } from "../../components/launch/AvatarCropper";
@@ -324,7 +325,11 @@ export function LaunchPage() {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">Launch a token</p>
-          <h1>{fromMix ? "Review before anything is signed" : "Direct launch does not wait for AI"}</h1>
+          <AnimatedText
+            as="h1"
+            reveal="lines"
+            lines={[fromMix ? "Review before anything is signed" : "Direct launch does not wait for AI"]}
+          />
         </div>
       </header>
 

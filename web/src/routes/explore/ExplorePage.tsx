@@ -106,7 +106,7 @@ export function ExplorePage() {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">Discovery</p>
-          <AnimatedText as="h1" lines={["Explore what is already alive"]} />
+          <AnimatedText as="h1" reveal="lines" lines={["Explore what is already alive"]} />
         </div>
         <div className="segmented" role="group" aria-label="Feed filter">
           {(["trending", "new", "graduated", "mixable"] as const).map((item) => (
