@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { AnimatedText } from "../../components/motion/AnimatedText";
 import { useSearchParams } from "react-router-dom";
 import { TokenFeedCard, TokenSkeleton } from "../../components/token/TokenFeedCard";
 import { Stagger, StaggerItem } from "../../components/motion/Stagger";
@@ -105,7 +106,7 @@ export function ExplorePage() {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">Discovery</p>
-          <h1>Explore what is already alive</h1>
+          <AnimatedText as="h1" lines={["Explore what is already alive"]} />
         </div>
         <div className="segmented" role="group" aria-label="Feed filter">
           {(["trending", "new", "graduated", "mixable"] as const).map((item) => (

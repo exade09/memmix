@@ -250,7 +250,7 @@ export function LandingPage() {
             <div className="panel-head">
               <div>
                 <p className="eyebrow">Process</p>
-                <h2>From two memes to one mint</h2>
+                <AnimatedText as="h2" lines={["From two memes to one mint"]} />
               </div>
               <p className="body-copy">The lab does not predict the market. It makes new things for it</p>
             </div>
@@ -296,7 +296,7 @@ export function LandingPage() {
             <div className="panel-head">
               <div>
                 <p className="eyebrow">Live scan</p>
-                <h2>Pick something alive</h2>
+                <AnimatedText as="h2" lines={["Pick something alive"]} />
               </div>
               <div className="btn-row">
                 <div className="segmented" role="group" aria-label="Feed filter">
@@ -347,7 +347,7 @@ export function LandingPage() {
             </div>
             <div className="stack">
               <p className="eyebrow">What is born</p>
-              <h2>Two rings of glass, and the bead between them</h2>
+              <AnimatedText as="h2" lines={["Two rings of glass, and the bead between them"]} />
               <p className="body-copy">
                 One parent arrives warm, one arrives cold. Where they overlap, something clear forms that was in
                 neither of them. That is the whole product, and it is the whole mark
@@ -368,7 +368,7 @@ export function LandingPage() {
             <div className="panel-head">
               <div>
                 <p className="eyebrow">Safety</p>
-                <h2>Safe to sign. Never safe to assume</h2>
+                <AnimatedText as="h2" lines={["Safe to sign. Never safe to assume"]} />
               </div>
             </div>
             <div className="safety-layout">
@@ -390,7 +390,7 @@ export function LandingPage() {
           <div className="wrap faq-layout">
             <div className="stack sm faq-head">
               <p className="eyebrow">FAQ</p>
-              <h2>Before you sign</h2>
+              <AnimatedText as="h2" lines={["Before you sign"]} />
 <p className="body-copy">What {appConfig.productName} can and cannot do</p>
             </div>
             <div className="faq-list">

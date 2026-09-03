@@ -6,6 +6,7 @@ import { Atmosphere } from "../brand/Atmosphere";
 import { GlobalSearchDialog } from "../search/GlobalSearchDialog";
 import { AppSidebar, MobileBottomNav } from "./AppNav";
 import { SiteHeader } from "./SiteHeader";
+import { AppWindow } from "./AppWindow";
 
 export function PageShell() {
   const location = useLocation();
@@ -13,6 +14,23 @@ export function PageShell() {
   const reduceMotion = useReducedMotion();
   const [searchOpen, setSearchOpen] = useState(false);
   const isApp = location.pathname.startsWith("/app") || location.pathname.startsWith("/token/");
+
+  /*
+    Which ground this route stands on. Same palette throughout; what changes is
+    where the light falls, so moving between pages does not feel like scrolling
+    one endless surface.
+  */
+  useEffect(() => {
+    const path = location.pathname;
+    const surface = path === "/"
+      ? "landing"
+      : path.startsWith("/app")
+        ? "app"
+        : path.startsWith("/token/")
+          ? "token"
+          : "plain";
+    document.body.dataset.surface = surface;
+  }, [location.pathname]);
 
   useEffect(() => {
     const sync = () => {
@@ -51,9 +69,11 @@ export function PageShell() {
         <div className="app-frame">
           <AppSidebar />
           <main id="main-content" className="app-main" tabIndex={-1}>
-            <RouteTransition>
-              <Outlet />
-            </RouteTransition>
+            <AppWindow>
+              <RouteTransition>
+                <Outlet />
+              </RouteTransition>
+            </AppWindow>
           </main>
         </div>
       ) : (

@@ -570,3 +570,116 @@ body[data-page-hidden="true"] .grain {
     gap: 28px;
   }
 }
+
+/* ---------------------------------------------------------------
+   Grounds
+
+   One palette, four grounds. Moving between routes should feel like
+   walking into a different room of the same building, not like
+   scrolling one endless surface. Only the light moves; no new hues.
+--------------------------------------------------------------- */
+
+/* Landing keeps the open meadow: bloom overhead, warmth to the right. */
+body[data-surface="landing"] {
+  background-image:
+    radial-gradient(120% 70% at 50% -10%, rgba(255, 255, 255, 0.95), transparent 62%),
+    radial-gradient(90% 60% at 12% 8%, rgba(214, 232, 205, 0.6), transparent 60%),
+    radial-gradient(80% 55% at 88% 4%, rgba(238, 228, 202, 0.55), transparent 58%),
+    linear-gradient(180deg, var(--haze) 0%, var(--paper) 38%, var(--paper-2) 100%);
+}
+
+/*
+  The app stands on a workbench, not a meadow: cooler, flatter, the light
+  low and even so nothing competes with the form the user is filling in.
+*/
+body[data-surface="app"] {
+  background-image:
+    radial-gradient(140% 80% at 50% 120%, rgba(214, 232, 205, 0.42), transparent 58%),
+    radial-gradient(90% 50% at 50% -8%, rgba(255, 255, 255, 0.7), transparent 70%),
+    linear-gradient(180deg, var(--paper-2) 0%, var(--paper) 45%, var(--paper-2) 100%);
+}
+
+/* A token page looks out at a horizon: light gathered low and central. */
+body[data-surface="token"] {
+  background-image:
+    radial-gradient(70% 42% at 50% 46%, rgba(255, 255, 255, 0.85), transparent 72%),
+    radial-gradient(120% 60% at 50% 110%, rgba(206, 226, 198, 0.5), transparent 62%),
+    linear-gradient(180deg, var(--haze) 0%, var(--paper) 52%, var(--paper-2) 100%);
+}
+
+/* Legal and anything else: the quietest ground in the set. */
+body[data-surface="plain"] {
+  background-image:
+    radial-gradient(100% 46% at 50% -6%, rgba(255, 255, 255, 0.72), transparent 68%),
+    linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+}
+
+/* ---------------------------------------------------------------
+   The app window
+
+   Everything under /app is a tool, so it gets an edge. The window has
+   its own ground, its own chrome and a visible boundary against the
+   page, which is what makes the creation flow read as an application
+   rather than as another section to scroll past.
+--------------------------------------------------------------- */
+.app-window {
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius-panel);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(var(--blur-lg));
+  box-shadow:
+    0 1px 2px rgba(34, 51, 31, 0.05),
+    0 28px 60px -34px rgba(34, 51, 31, 0.34),
+    var(--inner-glass);
+  overflow: hidden;
+  /* The open animation scales the window; without this the text shimmers. */
+  will-change: transform, opacity;
+}
+
+.app-window-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--glass-line);
+  background: rgba(255, 255, 255, 0.38);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--track-mid);
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.app-window-bar > span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.app-window-path {
+  text-transform: none;
+  opacity: 0.62;
+}
+
+.app-window-body {
+  padding: clamp(20px, 3vw, 34px);
+}
+
+@media (max-width: 720px) {
+  /* On a phone the window is the whole viewport, so the frame is just noise. */
+  .app-window {
+    border-inline: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .app-window-bar {
+    display: none;
+  }
+
+  .app-window-body {
+    padding: 0;
+  }
+}
