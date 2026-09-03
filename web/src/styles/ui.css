@@ -965,3 +965,30 @@ input[type="range"]::-moz-range-thumb {
   max-width: 320px;
 }
 
+/* ---------------------------------------------------------------
+   Animated headings
+   Each word rises inside its own clipped box, so the movement reads
+   as the line assembling rather than as text sliding around.
+--------------------------------------------------------------- */
+.anim-line {
+  display: inline;
+}
+
+.anim-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* Descenders would be clipped without this small allowance. */
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.anim-word-inner {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-word { overflow: visible; }
+  .anim-word-inner { transform: none !important; opacity: 1 !important; }
+}

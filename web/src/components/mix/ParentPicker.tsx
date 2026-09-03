@@ -42,7 +42,7 @@ export function ParentPicker({
   const [error, setError] = useState("");
   const timer = useRef(0);
   const abort = useRef<AbortController | null>(null);
-  const label = side === "a" ? "Parent A search" : "Parent B search";
+  const label = side === "a" ? "Token A search" : "Token B search";
 
   useEffect(() => {
     return () => {
@@ -87,7 +87,7 @@ export function ParentPicker({
   function choose(token: TokenSummary) {
     if (!token.mint) return;
     if (otherMint && token.mint.toLowerCase() === otherMint.toLowerCase()) {
-      setError("Parents must be different.");
+      setError("The two tokens must be different.");
       return;
     }
     onSelect(toParent(token));
@@ -99,7 +99,7 @@ export function ParentPicker({
   if (selected) {
     return (
       <article className="slot is-picked" data-side={side}>
-        <p className="slot-label">Parent {side.toUpperCase()}</p>
+        <p className="slot-label">Token {side.toUpperCase()}</p>
         <TokenAvatar
           className="picked-avatar"
           src={selected.image_url}
@@ -147,7 +147,7 @@ export function ParentPicker({
 
   return (
     <div className="slot" data-side={side}>
-      <p className="slot-label">Parent {side.toUpperCase()}</p>
+      <p className="slot-label">Token {side.toUpperCase()}</p>
       <label>
         <span className="sr-only">{label}</span>
         <input

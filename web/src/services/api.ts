@@ -23,6 +23,7 @@ export type TokenSummary = {
   pair_address?: string;
   dex_id?: string;
   liquidity_usd?: number | null;
+  market_cap?: number | null;
   volume_24h_usd?: number | null;
   price_change_1h?: number | null;
   created_at?: number | null;

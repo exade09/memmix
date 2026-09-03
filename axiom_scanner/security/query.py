@@ -195,6 +195,7 @@ def scan_row_to_summary(row: dict[str, object]) -> dict[str, object]:
         "pair_address": row.get("pair_address") or None,
         "dex_id": None,
         "liquidity_usd": optional_number(row.get("liquidity_usd")),
+        "market_cap": optional_number(row.get("market_cap") or row.get("fdv")),
         "volume_24h_usd": optional_number(row.get("volume_24h") if row.get("volume_24h") not in (None, "") else row.get("volume_1h")),
         "price_change_1h": optional_number(row.get("price_change_1h")),
         "created_at": row.get("pair_created_at"),

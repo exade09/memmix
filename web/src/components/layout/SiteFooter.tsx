@@ -10,7 +10,7 @@ export function SiteFooter() {
         <div className="footer-top">
           <div className="footer-brand stack sm">
             <Wordmark />
-            <p>Two tokens in. One born</p>
+            <p>Two tokens in One born</p>
             <p className="metric-label">
               ${appConfig.tokenSymbol} is the project&apos;s own ticker, not a promise about any token you launch
             </p>

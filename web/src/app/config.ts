@@ -5,7 +5,7 @@ const mainnet = import.meta.env.VITE_ROBINHOOD_TESTNET !== "true";
 export const appConfig = {
   productName: "FONS",
   tokenSymbol: "FONS",
-  primaryTagline: "Two tokens in. One born.",
+  primaryTagline: "Two tokens in One born",
   secondaryTagline: "Mix two. Launch one.",
   canonicalUrl: import.meta.env.VITE_CANONICAL_URL ?? "",
   /** Mainnet by default: it is the only published RPC. Launching stays gated. */

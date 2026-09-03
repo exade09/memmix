@@ -1,6 +1,7 @@
 import { Outlet, useLocation, useSearchParams } from "react-router-dom";
-import { useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { pageVariants } from "../motion/motion";
+import { useEffect, useState, type ReactNode } from "react";
 import { Atmosphere } from "../brand/Atmosphere";
 import { GlobalSearchDialog } from "../search/GlobalSearchDialog";
 import { AppSidebar, MobileBottomNav } from "./AppNav";
@@ -50,15 +51,47 @@ export function PageShell() {
         <div className="app-frame">
           <AppSidebar />
           <main id="main-content" className="app-main" tabIndex={-1}>
-            <Outlet />
+            <RouteTransition>
+              <Outlet />
+            </RouteTransition>
           </main>
         </div>
       ) : (
         <main id="main-content" tabIndex={-1}>
-          <Outlet />
+          <RouteTransition>
+            <Outlet />
+          </RouteTransition>
         </main>
       )}
       {isApp ? <MobileBottomNav /> : null}
     </div>
+  );
+}
+
+/*
+  Route changes fade and lift rather than snapping.
+
+  `mode="wait"` lets the outgoing page finish before the next one starts, which
+  keeps two pages from being stacked mid-scroll. The key is the pathname only:
+  a query string change is the same page and must not replay the animation.
+*/
+function RouteTransition({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  const reduceMotion = useReducedMotion();
+
+  if (reduceMotion) return <>{children}</>;
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={location.pathname}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
   );
 }

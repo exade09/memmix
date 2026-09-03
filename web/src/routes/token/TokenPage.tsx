@@ -128,8 +128,8 @@ export function TokenPage() {
   }
 
   function remixParents() {
-    if (lineage?.parent_a) setDraftParent("a", parentCard(lineage.parent_a, "Parent A"));
-    if (lineage?.parent_b) setDraftParent("b", parentCard(lineage.parent_b, "Parent B"));
+    if (lineage?.parent_a) setDraftParent("a", parentCard(lineage.parent_a, "Token A"));
+    if (lineage?.parent_b) setDraftParent("b", parentCard(lineage.parent_b, "Token B"));
     navigate("/app/mix");
   }
 
@@ -187,10 +187,10 @@ export function TokenPage() {
                   {copied ? "Copied" : "Copy address"}
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => useAs("a")}>
-                  Use as Parent A
+                  Use as Token A
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => useAs("b")}>
-                  Use as Parent B
+                  Use as Token B
                 </Button>
               </div>
             </div>

@@ -3,6 +3,9 @@ from __future__ import annotations
 from axiom_scanner.security.query import scan_row_to_summary
 from vercel_api.shared import scan_payload
 
+# Everything at or above this shows in the graduated tab.
+GRADUATED_MIN_MARKET_CAP = 20_000.0
+
 
 def feed_tokens(
     tab: str,
@@ -13,12 +16,18 @@ def feed_tokens(
     max_age_hours: float | None = None,
     has_image: bool | None = None,
 ) -> dict:
-    payload = scan_payload(limit=max(limit, 24))
+    payload = scan_payload(limit=max(limit, 60))
     rows = [scan_row_to_summary(row) for row in payload.get("tokens", []) if isinstance(row, dict)]
     if tab == "new":
         floor = min_liquidity if min_liquidity is not None else 1000.0
         rows = [item for item in rows if _num(item.get("liquidity_usd")) >= floor]
         rows.sort(key=lambda item: _age(item))
+    elif tab == "graduated":
+        # Tokens that already have a market, ranked by size. The floor is
+        # deliberately low: below it a "market cap" is noise, above it the
+        # ordering does the work of choosing.
+        rows = [item for item in rows if _num(item.get("market_cap")) >= GRADUATED_MIN_MARKET_CAP]
+        rows.sort(key=lambda item: _num(item.get("market_cap")), reverse=True)
     elif tab == "mixable":
         rows = [
             item

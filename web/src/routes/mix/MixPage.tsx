@@ -26,7 +26,7 @@ import {
 import { MixApiError, avatarJobStatus, mixConcepts, startAvatarJob } from "../../services/api";
 import { track } from "../../services/analytics";
 
-const ANALYZE_LABELS = ["Reading Parent A", "Reading Parent B", "Finding the mutation"];
+const ANALYZE_LABELS = ["Reading Token A", "Reading Token B", "Finding the mutation"];
 const DRAW_LABELS = ["Drawing the avatar", "Cleaning the result"];
 
 function usableReference(token: ParentToken | null, file: File | null): boolean {
@@ -189,7 +189,7 @@ export function MixPage() {
   function onSelectParent(side: "a" | "b", token: ParentToken) {
     const other = side === "a" ? parentB : parentA;
     if (other && other.mint.toLowerCase() === token.mint.toLowerCase()) {
-      setError("Parents must be different.");
+      setError("The two tokens must be different.");
       return;
     }
     setError("");
@@ -420,10 +420,14 @@ export function MixPage() {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">Create a mutation</p>
-          <h1>Two tokens in. One born</h1>
+          <h1>
+            Two tokens in
+            <br />
+            <span className="hero-born">One born</span>
+          </h1>
         </div>
         <ol className="step-rail" aria-label="Progress">
-          {["Parents", "Concept", "Avatar"].map((label, index) => (
+          {["Tokens", "Concept", "Avatar"].map((label, index) => (
             <li key={label} className={index + 1 <= stepIndex ? "is-done" : ""}>
               <span>{String(index + 1).padStart(2, "0")}</span>
               {label}
@@ -436,7 +440,7 @@ export function MixPage() {
         {!appConfig.enableAiText ? (
           <p className="note error">The logic mixer is offline. Direct Launch is still available.</p>
         ) : null}
-        {duplicate ? <p className="note error">Parents must be different.</p> : null}
+        {duplicate ? <p className="note error">The two tokens must be different.</p> : null}
         {error ? (
           <p className="note error">
             {error}

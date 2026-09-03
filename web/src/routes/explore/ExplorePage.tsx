@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TokenFeedCard, TokenSkeleton } from "../../components/token/TokenFeedCard";
+import { Stagger, StaggerItem } from "../../components/motion/Stagger";
 import { Button } from "../../components/ui/Button";
 import { rememberSearch } from "../../domain/recent";
 import { fetchFeedResult, searchTokensResult, type TokenSummary } from "../../services/api";
@@ -14,7 +15,7 @@ const AGE_OPTIONS = [
 
 export function ExplorePage() {
   const [params, setParams] = useSearchParams();
-  const [tab, setTab] = useState<"trending" | "new" | "mixable">("trending");
+  const [tab, setTab] = useState<"trending" | "new" | "graduated" | "mixable">("trending");
   const [tokens, setTokens] = useState<TokenSummary[]>([]);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
@@ -33,7 +34,7 @@ export function ExplorePage() {
   const feedQuery = useMemo(
     () => ({
       tab,
-      limit: 24,
+      limit: 50,
       min_liquidity: minLiquidity ? Number(minLiquidity) : undefined,
       min_volume: minVolume ? Number(minVolume) : undefined,
       max_age_hours: age ? Number(age) : undefined,
@@ -107,7 +108,7 @@ export function ExplorePage() {
           <h1>Explore what is already alive</h1>
         </div>
         <div className="segmented" role="group" aria-label="Feed filter">
-          {(["trending", "new", "mixable"] as const).map((item) => (
+          {(["trending", "new", "graduated", "mixable"] as const).map((item) => (
             <button key={item} type="button" aria-pressed={tab === item} onClick={() => setTab(item)}>
               {item}
             </button>
@@ -183,12 +184,16 @@ export function ExplorePage() {
         </p>
       ) : null}
 
-      <div className="feed-grid" aria-busy={loading || undefined}>
-        {loading
-          ? Array.from({ length: 6 }, (_, index) => <TokenSkeleton key={index} />)
-          : tokens.map((token, index) => (
-              <TokenFeedCard key={token.mint || `${token.symbol}-${index}`} token={token} />
-            ))}
+      <div aria-busy={loading || undefined}>
+        <Stagger className="feed-grid" step={0.03}>
+          {loading
+            ? Array.from({ length: 12 }, (_, index) => <TokenSkeleton key={index} />)
+            : tokens.map((token, index) => (
+                <StaggerItem key={token.mint || `${token.symbol}-${index}`}>
+                  <TokenFeedCard token={token} />
+                </StaggerItem>
+              ))}
+        </Stagger>
       </div>
     </section>
   );

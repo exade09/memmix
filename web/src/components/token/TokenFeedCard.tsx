@@ -69,7 +69,7 @@ export function TokenFeedCard({
       transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
     >
       {consumed ? (
-        <span className={`token-card-flag ${assignedSide}`}>Parent {assignedSide?.toUpperCase()}</span>
+        <span className={`token-card-flag ${assignedSide}`}>Token {assignedSide?.toUpperCase()}</span>
       ) : null}
       <div className="token-card-head">
         <TokenAvatar
@@ -91,6 +91,10 @@ export function TokenFeedCard({
       </div>
 
       <dl className="token-card-metrics">
+        <div>
+          <dt>Mcap</dt>
+          <dd>{money(token.market_cap)}</dd>
+        </div>
         <div>
           <dt>Liq</dt>
           <dd>{money(token.liquidity_usd)}</dd>

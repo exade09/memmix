@@ -152,10 +152,10 @@ export function LaunchSuccessPage() {
           Explore
         </ButtonLink>
         <ButtonLink to="/app/mix" variant="ghost" onClick={() => useAs("a")}>
-          Use as Parent A
+          Use as Token A
         </ButtonLink>
         <ButtonLink to="/app/mix" variant="ghost" onClick={() => useAs("b")}>
-          Use as Parent B
+          Use as Token B
         </ButtonLink>
       </div>
 

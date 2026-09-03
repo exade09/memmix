@@ -30,7 +30,6 @@ import {
 } from "../../chain/launchpad";
 import { Button } from "../ui/Button";
 import { GlassMark } from "../brand/GlassMark";
-import { SafetyBanner } from "../layout/SafetyBanner";
 import { track } from "../../services/analytics";
 
 export function CostSummary({
@@ -381,8 +380,6 @@ export function LaunchReview(props: LaunchReviewProps) {
           className="sz-sm"
         />
       </header>
-
-      <SafetyBanner showFee />
 
       <div className="review-grid">
         <div className="panel stack">

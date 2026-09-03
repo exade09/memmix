@@ -3,9 +3,11 @@ import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { isTokenAddress } from "../../chain/address";
 import { appConfig, networkLabel } from "../../app/config";
 import { GlassMark, type GlassState } from "../../components/brand/GlassMark";
-import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { SiteFooter } from "../../components/layout/SiteFooter";
 import { SectionReveal } from "../../components/motion/SectionReveal";
+import { AnimatedText } from "../../components/motion/AnimatedText";
+import { Stagger, StaggerItem } from "../../components/motion/Stagger";
+import { EASE } from "../../components/motion/motion";
 import { SearchResultButton, TokenFeedCard, TokenSkeleton, toParent } from "../../components/token/TokenFeedCard";
 import { Button, ButtonLink } from "../../components/ui/Button";
 import { FAQ_ITEMS, SAFETY_PILLARS } from "../../domain/legalCopy";
@@ -26,7 +28,7 @@ const HOW = [
   actually stand behind.
 */
 const FACTS = [
-  ["Parents in", "2", "Never one"],
+  ["Tokens in", "2", "Never one"],
   ["AI outputs", "4", "Name, ticker, description, avatar"],
   ["Platform fee", "0 ETH", "Gas still costs ETH"],
   ["Custody", "None", "Keys stay in your wallet"],
@@ -55,7 +57,7 @@ export function LandingPage() {
   const [feedLoading, setFeedLoading] = useState(true);
   const [feedUpdatedAt, setFeedUpdatedAt] = useState("");
   const [feedCached, setFeedCached] = useState(false);
-  const [feedTab, setFeedTab] = useState<"trending" | "new" | "mixable">("trending");
+  const [feedTab, setFeedTab] = useState<"trending" | "new" | "graduated" | "mixable">("trending");
   const abortA = useRef<AbortController | null>(null);
   const abortB = useRef<AbortController | null>(null);
   const timerA = useRef(0);
@@ -77,7 +79,7 @@ export function LandingPage() {
   useEffect(() => {
     let cancelled = false;
     setFeedLoading(true);
-    fetchFeedResult({ tab: feedTab, limit: 6 })
+    fetchFeedResult({ tab: feedTab, limit: 24 })
       .then((result) => {
         if (!cancelled) {
           setFeed(result.tokens);
@@ -139,7 +141,7 @@ export function LandingPage() {
     if (!token.mint) return;
     const other = side === "a" ? parentB : parentA;
     if (other && other.mint === token.mint) {
-      setDuplicateError("Parents must be different.");
+      setDuplicateError("The two tokens must be different.");
       return;
     }
     const parent = toParent(token);
@@ -187,12 +189,21 @@ export function LandingPage() {
           <div className="wrap hero-inner">
             <div className="hero-copy">
               <p className="eyebrow">Launchpad · {networkLabel()}</p>
-              <h1>
-                Two tokens in.
+              <h1 className="hero-title">
+                <AnimatedText lines={["Two tokens in"]} delay={0.05} />
                 <br />
-                <span className="hero-born">One born</span>
+                <span className="hero-born">
+                  <AnimatedText lines={["One born"]} delay={0.24} />
+                </span>
               </h1>
-              <p className="lede">Pick two tokens. Get one new character. Launch it on Robinhood Chain</p>
+              <motion.p
+                className="lede"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: EASE, delay: 0.5 }}
+              >
+                Pick two tokens. Get one new character. Launch it on Robinhood Chain
+              </motion.p>
             </div>
 
             <MixBench
@@ -262,7 +273,7 @@ export function LandingPage() {
               <article className="path-card is-a">
                 <p className="eyebrow">AI Mix</p>
                 <h2>I have two tokens. Make the third</h2>
-<p className="body-copy">Two parents in, one editable character out</p>
+<p className="body-copy">Two tokens in, one editable character out</p>
                 <ButtonLink to="/app/mix" variant="primary" arrow onClick={() => track("landing_primary_cta")}>
                   Open the mixer
                 </ButtonLink>
@@ -289,7 +300,7 @@ export function LandingPage() {
               </div>
               <div className="btn-row">
                 <div className="segmented" role="group" aria-label="Feed filter">
-                  {(["trending", "new", "mixable"] as const).map((tab) => (
+                  {(["trending", "new", "graduated", "mixable"] as const).map((tab) => (
                     <button key={tab} type="button" aria-pressed={feedTab === tab} onClick={() => setFeedTab(tab)}>
                       {tab}
                     </button>
@@ -312,18 +323,19 @@ export function LandingPage() {
             {!feedLoading && !feedError && feed.length === 0 ? (
               <p className="empty-state">Nothing matched those filters. Loosen them a little.</p>
             ) : null}
-            <div className="feed-grid">
+            <Stagger className="feed-grid">
               {feedLoading
-                ? Array.from({ length: 6 }, (_, index) => <TokenSkeleton key={index} />)
+                ? Array.from({ length: 8 }, (_, index) => <TokenSkeleton key={index} />)
                 : feed.map((token) => (
-                    <TokenFeedCard
-                      key={token.mint}
-                      token={token}
-                      assignedSide={assignedSide(token)}
-                      onAssign={selectParent}
-                    />
+                    <StaggerItem key={token.mint}>
+                      <TokenFeedCard
+                        token={token}
+                        assignedSide={assignedSide(token)}
+                        onAssign={selectParent}
+                      />
+                    </StaggerItem>
                   ))}
-            </div>
+            </Stagger>
           </div>
         </SectionReveal>
 
@@ -369,7 +381,6 @@ export function LandingPage() {
                   </li>
                 ))}
               </ol>
-              <SafetyBanner showFee />
             </div>
           </div>
         </SectionReveal>
@@ -550,10 +561,10 @@ function ParentSearch({
   onSelect: (token: TokenSummary) => void;
   onClear: () => void;
 }) {
-  const label = side === "a" ? "Parent A search" : "Parent B search";
+  const label = side === "a" ? "Token A search" : "Token B search";
   return (
     <div className="slot" data-side={side}>
-      <p className="slot-label">Parent {side.toUpperCase()}</p>
+      <p className="slot-label">Token {side.toUpperCase()}</p>
       {selected ? (
         <div className="slot-filled">
           <TokenAvatar

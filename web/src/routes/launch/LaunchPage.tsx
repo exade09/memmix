@@ -3,7 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import { appConfig } from "../../app/config";
 import { AvatarCropper } from "../../components/launch/AvatarCropper";
 import { CostSummary, LaunchReview, LivePreview } from "../../components/launch/LaunchReview";
-import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { Button, FileButton } from "../../components/ui/Button";
 import { getMemoryAvatar, hasMemoryAvatar, setMemoryAvatar } from "../../domain/avatarMemory";
 import { readDraftMix, readDraftToken, writeDraftToken } from "../../domain/draft";
@@ -340,7 +339,6 @@ export function LaunchPage() {
           <div className="note-stack">
             {!appConfig.mainnet ? <p className="note warn">{DEVNET_LAUNCH_NOTICE}</p> : null}
             <p className="note warn">{boundary.reason}</p>
-            <SafetyBanner showFee />
             {fromMix ? <p className="metric-label">Fields came from Mix. Edit anything before review</p> : null}
             {!appConfig.enableAiText || !appConfig.enableAiImage ? (
               <p className="metric-label">AI tools can be offline. Direct Launch still works</p>

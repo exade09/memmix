@@ -250,7 +250,7 @@ def _search(params: dict[str, list[str]]) -> tuple[int, dict]:
 
 def _feed(params: dict[str, list[str]]) -> tuple[int, dict]:
     tab = params.get("tab", ["trending"])[0]
-    if tab not in {"trending", "new", "mixable"}:
+    if tab not in {"trending", "new", "graduated", "mixable"}:
         tab = "trending"
     limit = _bounded_int(params.get("limit", ["24"])[0], 24, 1, 50)
     try:

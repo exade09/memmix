@@ -21,9 +21,6 @@ export function AppSidebar() {
           {link.label}
         </NavLink>
       ))}
-      <div className="rail-foot">
-        <p className="metric-label">Keys stay in your wallet</p>
-      </div>
     </aside>
   );
 }
