@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { isTokenAddress } from "../../chain/address";
 import { appConfig, networkLabel } from "../../app/config";
 import { GlassMark, type GlassState } from "../../components/brand/GlassMark";
 import { SiteFooter } from "../../components/layout/SiteFooter";
+import { LandingIntro } from "../../components/layout/LandingIntro";
 import { SectionReveal } from "../../components/motion/SectionReveal";
 import { AnimatedText } from "../../components/motion/AnimatedText";
 import { CountUp } from "../../components/motion/CountUp";
@@ -44,6 +45,8 @@ const SAFETY_INDEXED = SAFETY_PILLARS.map(([title, copy], index) => [
 
 export function LandingPage() {
   const reduceMotion = useReducedMotion();
+  const [introVisible, setIntroVisible] = useState(true);
+  const [heroReady, setHeroReady] = useState(false);
   const [parentA, setParentA] = useState<ParentToken | null>(null);
   const [parentB, setParentB] = useState<ParentToken | null>(null);
   const [queryA, setQueryA] = useState("");
@@ -178,6 +181,13 @@ export function LandingPage() {
 
   return (
     <LayoutGroup>
+      <AnimatePresence
+        onExitComplete={() => setHeroReady(true)}
+      >
+        {introVisible ? (
+          <LandingIntro onStart={() => setIntroVisible(false)} />
+        ) : null}
+      </AnimatePresence>
       <div className="landing">
         {/* ---------------------------------------------------------- hero */}
         {/*
@@ -187,26 +197,31 @@ export function LandingPage() {
         */}
         <section className="hero">
           <div className="wrap hero-inner">
-            <div className="hero-copy">
+            <div className="hero-copy" data-ready={heroReady ? "true" : "false"}>
               <motion.p
                 className="eyebrow"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                animate={
+                  heroReady || reduceMotion
+                    ? { opacity: 1, y: 0 }
+                    : { opacity: 0, y: 6 }
+                }
                 transition={{ duration: 0.5, ease: EASE }}
               >
                 Launchpad · {networkLabel()}
               </motion.p>
               <h1 className="hero-title">
-                <AnimatedText lines={["Two tokens in"]} delay={0.05} />
+                <AnimatedText lines={["Two tokens in"]} delay={0.05} active={heroReady} />
                 <br />
                 <span className="hero-born">
-                  <AnimatedText lines={["One born"]} delay={0.24} />
+                  <AnimatedText lines={["One born"]} delay={0.24} active={heroReady} />
                 </span>
               </h1>
               <AnimatedText
                 className="lede"
                 reveal="fade"
                 delay={0.78}
+                active={heroReady}
                 lines={["Pick two tokens. Get one new character. Launch it on Robinhood Chain"]}
               />
             </div>

@@ -23,11 +23,13 @@ import { EASE } from "./motion";
      suppresses the first-load animation of any descendant that inherits its
      state. Explicit props cannot be overridden by an ancestor.
 
-  2. whileInView, not animate, with a low threshold. A heading above the fold
+  2. Viewport reveal is the default, with a low threshold. A heading above the fold
      is already in view and plays on load; one further down waits to be
      scrolled to. The words start at opacity 0, so a viewport rule that never
      fires would leave a heading permanently invisible — 10% of any part
      entering is a threshold a large heading on a short screen can still meet.
+     The landing hero opts into an explicit active gate so it begins only
+     after the intro exits, then stays complete while the visitor scrolls.
 */
 
 export type TextReveal = "words" | "lines" | "fade";
@@ -40,14 +42,32 @@ const DURATION = { words: 0.82, lines: 0.86, fade: 0.72 } as const;
 
 const viewport = { once: true, amount: 0.1, margin: "0px 0px -6% 0px" } as const;
 
-function Word({ word, delay }: { word: string; delay: number }) {
+const WORD_HIDDEN = {
+  opacity: 0,
+  y: "0.96em",
+  rotate: 1.6,
+  scale: 0.975,
+  filter: "blur(8px)",
+} as const;
+const WORD_VISIBLE = {
+  opacity: 1,
+  y: "0em",
+  rotate: 0,
+  scale: 1,
+  filter: "blur(0px)",
+} as const;
+const LINE_HIDDEN = { opacity: 0, y: "0.76em", filter: "blur(6px)" } as const;
+const LINE_VISIBLE = { opacity: 1, y: "0em", filter: "blur(0px)" } as const;
+
+function Word({ word, delay, active }: { word: string; delay: number; active?: boolean }) {
   return (
     <span className="anim-word">
       <motion.span
         className="anim-word-inner"
-        initial={{ opacity: 0, y: "0.96em", rotate: 1.6, scale: 0.975, filter: "blur(8px)" }}
-        whileInView={{ opacity: 1, y: "0em", rotate: 0, scale: 1, filter: "blur(0px)" }}
-        viewport={viewport}
+        initial={WORD_HIDDEN}
+        animate={active === undefined ? undefined : active ? WORD_VISIBLE : WORD_HIDDEN}
+        whileInView={active === undefined ? WORD_VISIBLE : undefined}
+        viewport={active === undefined ? viewport : undefined}
         transition={{ duration: DURATION.words, ease: EASE, delay }}
       >
         {word}
@@ -56,7 +76,7 @@ function Word({ word, delay }: { word: string; delay: number }) {
   );
 }
 
-function Line({ line, delay }: { line: string; delay: number }) {
+function Line({ line, delay, active }: { line: string; delay: number; active?: boolean }) {
   const words = line.split(" ").filter(Boolean);
 
   return (
@@ -66,9 +86,10 @@ function Line({ line, delay }: { line: string; delay: number }) {
           <span className="anim-word">
             <motion.span
               className="anim-word-inner"
-              initial={{ opacity: 0, y: "0.76em", filter: "blur(6px)" }}
-              whileInView={{ opacity: 1, y: "0em", filter: "blur(0px)" }}
-              viewport={viewport}
+              initial={LINE_HIDDEN}
+              animate={active === undefined ? undefined : active ? LINE_VISIBLE : LINE_HIDDEN}
+              whileInView={active === undefined ? LINE_VISIBLE : undefined}
+              viewport={active === undefined ? viewport : undefined}
               transition={{ duration: DURATION.lines, ease: EASE, delay }}
             >
               {word}
@@ -88,6 +109,7 @@ export function AnimatedText({
   delay = 0,
   separator,
   reveal = "words",
+  active,
 }: {
   lines: string[];
   as?: "h1" | "h2" | "h3" | "p" | "span";
@@ -95,6 +117,8 @@ export function AnimatedText({
   delay?: number;
   separator?: ReactNode;
   reveal?: TextReveal;
+  /** Control a reveal explicitly. Omit to keep the normal one-shot viewport behavior. */
+  active?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
 
@@ -116,8 +140,15 @@ export function AnimatedText({
       <motion.p
         className={className}
         initial={{ opacity: 0, y: 22, filter: "blur(5px)" }}
-        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        viewport={viewport}
+        animate={
+          active === undefined
+            ? undefined
+            : active
+              ? { opacity: 1, y: 0, filter: "blur(0px)" }
+              : { opacity: 0, y: 22, filter: "blur(5px)" }
+        }
+        whileInView={active === undefined ? { opacity: 1, y: 0, filter: "blur(0px)" } : undefined}
+        viewport={active === undefined ? viewport : undefined}
         transition={{ duration: DURATION.fade, ease: EASE, delay }}
       >
         {lines.map((line, index) => (
@@ -136,7 +167,7 @@ export function AnimatedText({
         {lines.map((line, index) => (
           <Fragment key={`${line}-${index}`}>
             {index > 0 ? separator ?? " " : null}
-            <Line line={line} delay={delay + index * LINE_STEP} />
+            <Line line={line} delay={delay + index * LINE_STEP} active={active} />
           </Fragment>
         ))}
       </Tag>
@@ -160,7 +191,7 @@ export function AnimatedText({
                 wordIndex += 1;
                 return (
                   <Fragment key={`${word}-${index}`}>
-                    <Word word={word} delay={wordDelay} />
+                    <Word word={word} delay={wordDelay} active={active} />
                     {index < words.length - 1 ? " " : null}
                   </Fragment>
                 );
