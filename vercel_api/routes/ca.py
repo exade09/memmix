@@ -14,7 +14,11 @@ from urllib.request import Request, urlopen
 from vercel_api.shared import PROJECT_ROOT
 
 CA_FILE = PROJECT_ROOT / "data" / "ca.json"
-CA_MAX_LENGTH = 128
+# Generous on purpose: "TBA", a full address, a short note before launch, a
+# link — whatever the header needs to say at the time. The cap exists only to
+# stop a pathological paste from bloating the stored file, not to police
+# format or intent.
+CA_MAX_LENGTH = 256
 GITHUB_API = "https://api.github.com"
 DEFAULT_REPO = "exade09/memmix"
 DEFAULT_BRANCH = "main"

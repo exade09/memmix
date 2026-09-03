@@ -63,8 +63,16 @@ class CaTests(unittest.TestCase):
 
     def test_overlong_value_is_rejected(self) -> None:
         with self.assertRaises(CaError) as ctx:
-            update_ca(password="unit-test-password", ca="0x" + "a" * 200, client_ip="2.2.2.2")
+            update_ca(password="unit-test-password", ca="0x" + "a" * 300, client_ip="2.2.2.2")
         self.assertEqual(ctx.exception.code, "TOO_LONG")
+
+    def test_ordinary_placeholders_are_never_treated_as_a_format_error(self) -> None:
+        # No whitelist on shape: "TBA", a note, a link, whatever the header
+        # needs to say before a real address exists all save the same way.
+        for value in ("TBA", "tba soon", "https://x.com/fonsfamily", "coming at launch"):
+            with self.subTest(value=value):
+                result = update_ca(password="unit-test-password", ca=value, client_ip="2.2.2.2")
+                self.assertEqual(result["ca"], value)
 
     def test_rate_limit_stops_password_guessing(self) -> None:
         for _ in range(8):
