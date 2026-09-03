@@ -377,3 +377,46 @@ export async function fetchLaunchHealth(signal?: AbortSignal): Promise<LaunchHea
     return null;
   }
 }
+
+export type ContractAddressState = {
+  ca: string;
+  updated_at: string | null;
+};
+
+/** Public read. No auth: the value is displayed in the header for everyone. */
+export async function fetchContractAddress(signal?: AbortSignal): Promise<ContractAddressState> {
+  try {
+    const response = await fetch("/api/ca", {
+      cache: "no-store",
+      signal: signal ?? AbortSignal.timeout(8_000),
+    });
+    const payload = await readEnvelope<ContractAddressState>(response);
+    if (!payload.success || !payload.data) return { ca: "", updated_at: null };
+    return payload.data;
+  } catch {
+    return { ca: "", updated_at: null };
+  }
+}
+
+export async function updateContractAddress(
+  password: string,
+  ca: string,
+): Promise<{ ok: true; data: ContractAddressState & { live_in_seconds: number } } | { ok: false; error: ApiError }> {
+  try {
+    const response = await fetch("/api/admin/ca", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password, ca }),
+    });
+    const payload = await readEnvelope<ContractAddressState & { live_in_seconds: number }>(response);
+    if (!payload.success || !payload.data) {
+      return {
+        ok: false,
+        error: payload.error ?? ({ code: "UNKNOWN", message: "Something went wrong." } as ApiError),
+      };
+    }
+    return { ok: true, data: payload.data };
+  } catch {
+    return { ok: false, error: { code: "NETWORK", message: "Could not reach the server." } };
+  }
+}

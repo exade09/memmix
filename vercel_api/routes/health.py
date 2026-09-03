@@ -36,6 +36,10 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
         # without the secret they fail with a message that says nothing about
         # the cause. Reported separately so the missing half is obvious.
         "image_jobs": _probe_job_secret(),
+        # Whether the CA admin can actually save. On Vercel that also needs a
+        # GitHub token, since a production write goes through a commit rather
+        # than the filesystem.
+        "admin_ca": _probe_admin_ca(),
         "rpc": rpc_status,
         "chain": "robinhood",
         "chain_id": chain_id(),
@@ -48,7 +52,7 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
         "mainnet_launch": bool(mainnet_launch_enabled() and is_mainnet()),
     }
     dumped = json.dumps(payload)
-    for name in ("PINATA_JWT", "OPENAI_API_KEY", "WAVESPEED_API_KEY"):
+    for name in ("PINATA_JWT", "OPENAI_API_KEY", "WAVESPEED_API_KEY", "ADMIN_CA_PASSWORD", "GITHUB_TOKEN"):
         secret = os.getenv(name, "").strip()
         if secret and secret in dumped:
             return {
@@ -59,6 +63,7 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
                 "metadata": "disabled",
                 "images": _probe_pillow(),
                 "image_jobs": "unavailable",
+                "admin_ca": "unavailable",
                 "rpc": "degraded",
                 "chain": "robinhood",
                 "chain_id": chain_id(),
@@ -67,6 +72,17 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
                 "mainnet_launch": False,
             }
     return payload
+
+
+def _probe_admin_ca() -> str:
+    """State only, never the password or the deploy token."""
+    from vercel_api.routes.ca import _admin_password, _github_token, _is_local_dev
+
+    if not _admin_password():
+        return "no_password"
+    if not _is_local_dev() and not _github_token():
+        return "no_deploy_token"
+    return "ready"
 
 
 def _probe_job_secret() -> str:

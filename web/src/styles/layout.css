@@ -157,6 +157,31 @@ body[data-page-hidden="true"] .grain {
   gap: 8px;
 }
 
+.icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid var(--glass-line-2);
+  border-radius: var(--radius-pill);
+  background: var(--glass-2);
+  color: var(--ink-mute);
+  transition: background var(--t-micro), color var(--t-micro), border-color var(--t-micro);
+}
+
+.icon-chip:hover {
+  color: var(--ink);
+  background: var(--glass-3);
+  border-color: var(--glass-line);
+}
+
+.icon-chip svg {
+  width: 15px;
+  height: 15px;
+}
+
 .search-chip {
   display: inline-flex;
   align-items: center;
@@ -450,6 +475,63 @@ body[data-page-hidden="true"] .grain {
 }
 
 @media (max-width: 620px) {
+
+.site-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ca-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  color: var(--ink-mute);
+  cursor: pointer;
+  transition: color var(--t-micro);
+}
+
+.ca-badge:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.ca-badge:disabled {
+  cursor: default;
+}
+
+.ca-badge-label {
+  flex: none;
+  text-transform: uppercase;
+  letter-spacing: var(--track-mid);
+  color: var(--ink-faint);
+}
+
+.ca-badge-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 30ch;
+}
+
+.ca-badge.is-empty .ca-badge-value {
+  font-style: italic;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 720px) {
+  .ca-badge-value {
+    max-width: 12ch;
+  }
+}
+
   .site-header {
     height: var(--header-h-mobile);
     gap: 8px;

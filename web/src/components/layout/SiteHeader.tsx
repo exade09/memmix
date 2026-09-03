@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Wordmark } from "../brand/Wordmark";
+import { CaBadge } from "./CaBadge";
 import { WalletButton } from "../wallet/WalletButton";
 import { NetworkBadge } from "./NetworkBadge";
 
@@ -37,7 +38,10 @@ export function SiteHeader({ onOpenSearch }: { onOpenSearch: () => void }) {
 
   return (
     <header className="site-header">
-      <Wordmark />
+      <div className="site-header-brand">
+        <Wordmark />
+        <CaBadge />
+      </div>
       <nav className="header-nav" aria-label="FONS">
         {links.map((link) => {
           if (link.to.startsWith("/#")) {
@@ -78,6 +82,17 @@ export function SiteHeader({ onOpenSearch }: { onOpenSearch: () => void }) {
         })}
       </nav>
       <div className="header-tools">
+        <a
+          className="icon-chip"
+          href="https://x.com/fonsfamily"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Fons on X"
+        >
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M9.35 6.79 14.9 0h-1.31L8.77 5.9 4.71 0H0l5.83 8.49L0 15.6h1.31l5.1-6.24 4.07 6.24H15l-5.65-8.81Zm-1.8 2.21-.59-.86L1.78 1.04h2.01l3.79 5.5.59.86 4.93 7.16h-2.01L7.55 9Z" />
+          </svg>
+        </a>
         <button
           type="button"
           className="search-chip"

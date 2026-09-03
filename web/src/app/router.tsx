@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { PageShell } from "../components/layout/PageShell";
+import { CaAdminPage } from "../routes/admin/CaAdminPage";
 import { DocsPage } from "../routes/docs/DocsPage";
 import { ExplorePage } from "../routes/explore/ExplorePage";
 import { LandingPage } from "../routes/landing/LandingPage";
@@ -21,6 +22,7 @@ export function AppRouter() {
         <Route path="/app/explore" element={<ExplorePage />} />
         <Route path="/token/:mint" element={<TokenPage />} />
         <Route path="/docs" element={<DocsPage />} />
+        <Route path="/admin/ca" element={<CaAdminPage />} />
         <Route path="/legal" element={<LegalHubPage />} />
         <Route path="/safety" element={<SafetyPage />} />
         <Route path="/terms" element={<TermsPage />} />

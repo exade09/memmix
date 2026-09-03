@@ -68,7 +68,7 @@
 
 .fact-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--fact-count, 3), minmax(0, 1fr));
   gap: 1px;
   border: 1px solid var(--glass-line);
   border-radius: var(--radius-panel);
@@ -182,10 +182,6 @@
   border-top: 1px solid var(--glass-line);
   margin-top: 2px;
   padding-block-start: 20px;
-}
-
-.bench-note {
-  margin-left: auto;
 }
 
 /* ---------- paths ---------- */
@@ -381,11 +377,6 @@
 
   .bench-out .glass-mark {
     max-width: 128px;
-  }
-
-  .bench-note {
-    margin-left: 0;
-    flex-basis: 100%;
   }
 }
 

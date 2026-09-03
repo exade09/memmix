@@ -12,6 +12,7 @@ from axiom_scanner.storage.pinata import MetadataError
 from vercel_api.envelope import envelope
 from vercel_api.launch_config import RPC_MAX_BODY_BYTES
 from vercel_api.routes.avatar import avatar_start_route, avatar_status_route
+from vercel_api.routes.ca import CaError, read_ca, update_ca
 from vercel_api.routes.feed import feed_tokens
 from vercel_api.routes.health import health_payload
 from vercel_api.routes.launch import name_check_route
@@ -33,6 +34,8 @@ def handle_api_get(path: str, query: dict[str, list[str]] | str) -> tuple[int, d
         return _avatar_status(params)
     if path == "/api/launch/name-check":
         return _name_check(params)
+    if path == "/api/ca":
+        return 200, envelope(success=True, data=read_ca())
     if path == "/api/health":
         data = health_payload()
         dumped = json.dumps(data)
@@ -58,6 +61,8 @@ def handle_api_post(
     host: str = "",
 ) -> tuple[int, dict] | None:
     reader = read_json or read_body
+    if path == "/api/admin/ca":
+        return _ca_update(reader, client_ip)
     if path == "/api/mix/avatar/start":
         return _avatar_start(read_multipart, client_ip)
     if path == "/api/metadata/pin":
@@ -326,3 +331,30 @@ def _optional_bool(raw: str) -> bool | None:
     if value in {"0", "false", "no"}:
         return False
     return None
+
+
+def _ca_update(reader, client_ip: str) -> tuple[int, dict]:
+    try:
+        body = reader(max_bytes=4_000)
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON.")
+    if not isinstance(body, dict):
+        return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON.")
+    try:
+        data = update_ca(
+            password=str(body.get("password") or ""),
+            ca=str(body.get("ca") or ""),
+            client_ip=client_ip,
+        )
+    except CaError as exc:
+        status = (
+            429
+            if exc.code == "RATE_LIMITED"
+            else 401
+            if exc.code == "WRONG_PASSWORD"
+            else 400
+            if exc.code == "TOO_LONG"
+            else 503
+        )
+        return status, envelope(success=False, code=exc.code, message=str(exc))
+    return 200, envelope(success=True, data=data)

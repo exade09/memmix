@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { isTokenAddress } from "../../chain/address";
 import { appConfig, networkLabel } from "../../app/config";
@@ -32,7 +32,6 @@ const FACTS = [
   ["Tokens in", "2", "Never one"],
   ["AI outputs", "4", "Name, ticker, description, avatar"],
   ["Platform fee", "0 ETH", "Gas still costs ETH"],
-  ["Custody", "None", "You sign, we cannot"],
 ] as const;
 
 const SAFETY_INDEXED = SAFETY_PILLARS.map(([title, copy], index) => [
@@ -238,7 +237,7 @@ export function LandingPage() {
 
           {/* fact strip */}
           <div className="wrap">
-            <dl className="fact-strip">
+            <dl className="fact-strip" style={{ "--fact-count": FACTS.length } as CSSProperties}>
               {FACTS.map(([label, value, note], index) => (
                 <motion.div
                   key={label}
@@ -557,7 +556,6 @@ function MixBench({
           >
             Launch without AI
           </ButtonLink>
-          <span className="metric-label bench-note">No wallet opens until you sign</span>
         </div>
       </div>
     </motion.div>

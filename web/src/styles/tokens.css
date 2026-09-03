@@ -19,9 +19,15 @@
   /* ---- ink: deep forest, never black ---- */
   --ink: #22331f;
   --ink-2: #3d5535;
-  --ink-dim: rgba(34, 51, 31, 0.66);
-  --ink-mute: rgba(34, 51, 31, 0.46);
-  --ink-faint: rgba(34, 51, 31, 0.28);
+  /*
+    Raised from 0.66/0.46/0.28: at the old values --ink-faint composited to
+    roughly 1.7:1 against --paper, well under readable. These composite to
+    about 6.7:1 / 4.2:1 / 2.9:1, so the hierarchy is kept but every tier reads
+    as legible forest green rather than washed-out grey.
+  */
+  --ink-dim: rgba(34, 51, 31, 0.8);
+  --ink-mute: rgba(34, 51, 31, 0.64);
+  --ink-faint: rgba(34, 51, 31, 0.54);
 
   /* ---- glass ---- */
   --glass: rgba(255, 255, 255, 0.44);

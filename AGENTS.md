@@ -261,7 +261,7 @@ ENABLE_MAINNET_LAUNCH=true
 
 Frontend flags live in `web/src/app/config.ts`. Server flags live in `vercel_api/launch_config.py`. A public Vite flag is **not** a security boundary; the server must enforce the same kill switches.
 
-Server-only secrets (never `VITE_`): `OPENAI_API_KEY`, `WAVESPEED_API_KEY`, `PINATA_JWT`, `FONS_JOB_HMAC`.
+Server-only secrets (never `VITE_`): `OPENAI_API_KEY`, `WAVESPEED_API_KEY`, `PINATA_JWT`, `FONS_JOB_HMAC`, `ADMIN_CA_PASSWORD`, `GITHUB_TOKEN`.
 
 Without secrets: mix uses labeled fallback, avatar/metadata report unavailable, Direct Launch still works. That is correct.
 
