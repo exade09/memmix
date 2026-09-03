@@ -22,6 +22,11 @@ import { EASE } from "./motion";
   2. whileInView rather than animate. A heading above the fold is already in
      view, so it plays on load; one further down waits until it is scrolled
      to. `once` keeps it from replaying on the way back up.
+
+     The threshold is deliberately low. These words start at opacity 0, so a
+     viewport rule that fails to fire leaves a heading permanently invisible.
+     A large heading can easily never reach 40% visibility on a short screen;
+     10% of any part of it entering is enough to be sure.
 */
 
 const WORD_STEP = 0.055;
@@ -34,7 +39,7 @@ function Word({ word, delay }: { word: string; delay: number }) {
         className="anim-word-inner"
         initial={{ opacity: 0, y: "0.5em" }}
         whileInView={{ opacity: 1, y: "0em" }}
-        viewport={{ once: true, amount: 0.4 }}
+        viewport={{ once: true, amount: 0.1, margin: "0px 0px -8% 0px" }}
         transition={{ duration: 0.5, ease: EASE, delay }}
       >
         {word}
