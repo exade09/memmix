@@ -145,9 +145,11 @@ def _commit_to_github(payload: dict[str, Any], *, token: str) -> None:
         if exc.code == 404:
             sha = None
         else:
-            raise CaError("Could not reach the deploy target.", "DEPLOY_UNAVAILABLE") from exc
+            raise CaError(
+                f"Could not reach the deploy target ({_github_error_detail(exc)}).", "DEPLOY_UNAVAILABLE"
+            ) from exc
     except (URLError, TimeoutError, json.JSONDecodeError) as exc:
-        raise CaError("Could not reach the deploy target.", "DEPLOY_UNAVAILABLE") from exc
+        raise CaError(f"Could not reach the deploy target ({exc}).", "DEPLOY_UNAVAILABLE") from exc
 
     content = json.dumps(payload, indent=2) + "\n"
     body = {
@@ -167,5 +169,20 @@ def _commit_to_github(payload: dict[str, Any], *, token: str) -> None:
         )
         with urlopen(put_request, timeout=15):
             pass
-    except (HTTPError, URLError, TimeoutError) as exc:
-        raise CaError("Saving failed. Nothing was published.", "DEPLOY_FAILED") from exc
+    except HTTPError as exc:
+        # GitHub's own error body is safe to surface: it never echoes the
+        # token back, and it is the one thing that turns "saving failed"
+        # into something actually diagnosable.
+        raise CaError(f"Saving failed: {_github_error_detail(exc)}.", "DEPLOY_FAILED") from exc
+    except (URLError, TimeoutError) as exc:
+        raise CaError(f"Saving failed: {exc}.", "DEPLOY_FAILED") from exc
+
+
+def _github_error_detail(exc: HTTPError) -> str:
+    try:
+        raw = exc.read().decode("utf-8", errors="replace")
+        parsed = json.loads(raw)
+        message = str(parsed.get("message") or raw)
+    except (OSError, ValueError):
+        message = exc.reason or "unknown error"
+    return f"{exc.code} {message}"[:200]
