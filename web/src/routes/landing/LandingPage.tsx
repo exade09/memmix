@@ -31,7 +31,7 @@ const FACTS = [
   ["Tokens in", "2", "Never one"],
   ["AI outputs", "4", "Name, ticker, description, avatar"],
   ["Platform fee", "0 ETH", "Gas still costs ETH"],
-  ["Custody", "None", "Keys stay in your wallet"],
+  ["Custody", "None", "You sign, we cannot"],
 ] as const;
 
 const SAFETY_INDEXED = SAFETY_PILLARS.map(([title, copy], index) => [
