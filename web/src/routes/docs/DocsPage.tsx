@@ -18,29 +18,53 @@ import { DOC_META, DOC_SECTIONS, type DocBlock, type DocSection } from "./docsCo
   so this reads as part of Fons rather than as a manual bolted onto it.
 */
 
+/*
+  Which section you are reading.
+
+  Deliberately a scroll calculation rather than an IntersectionObserver. The
+  observer version picked the topmost intersecting section, which is the one
+  you have already scrolled past, not the one you are in; and with tall
+  sections two of them intersect at once, so the answer flickered.
+
+  This asks a simpler question with one right answer: which is the last
+  heading to have crossed the line just under the header.
+*/
 function useActiveSection(ids: string[]): string {
   const [active, setActive] = useState(ids[0] ?? "");
 
   useEffect(() => {
-    const targets = ids
-      .map((id) => document.getElementById(id))
-      .filter((node): node is HTMLElement => Boolean(node));
-    if (!targets.length) return;
+    let frame = 0;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // The heading nearest the top of the viewport wins, so the rail does
-        // not flicker between two sections that are both partly visible.
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible[0]?.target.id) setActive(visible[0].target.id);
-      },
-      { rootMargin: "-12% 0px -70% 0px", threshold: [0, 1] },
-    );
+    const measure = () => {
+      frame = 0;
+      // A third of the way down reads as "what I am looking at" better than
+      // the very top, where a heading is only just arriving.
+      const line = window.innerHeight * 0.34;
+      let current = ids[0] ?? "";
+      for (const id of ids) {
+        const node = document.getElementById(id);
+        if (!node) continue;
+        if (node.getBoundingClientRect().top <= line) current = id;
+      }
+      // At the very bottom the last section may never reach the line, so the
+      // rail would never mark it. Snap to it once the page cannot scroll on.
+      const atEnd = window.innerHeight + window.scrollY >= document.body.scrollHeight - 4;
+      setActive(atEnd ? ids[ids.length - 1] ?? current : current);
+    };
 
-    targets.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(measure);
+    };
+
+    measure();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, [ids]);
 
   return active;
