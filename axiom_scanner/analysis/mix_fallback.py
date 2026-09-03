@@ -14,12 +14,14 @@ from axiom_scanner.security.fields import (
 def build_fallback_concepts(parent_a: dict[str, str], parent_b: dict[str, str]) -> list[dict[str, object]]:
     a_core = _core_word(parent_a)
     b_core = _core_word(parent_b)
+    a_sym = normalize_ticker(parent_a.get("symbol") or a_core) or "TKA"
+    b_sym = normalize_ticker(parent_b.get("symbol") or b_core) or "TKB"
     a_prop = _signature(parent_a)
     b_prop = _signature(parent_b)
     names = [
-        _clip(f"{a_core} With {b_prop}", 32),
-        _clip(f"{b_core} {a_core} Role", 32),
-        _clip(f"The {a_core} {b_prop} Scene", 32),
+        _clip(_portmanteau(a_core, b_core), 32),
+        _clip(_portmanteau(b_core, a_core), 32),
+        _clip(_portmanteau(a_core, b_core, head_ratio=0.35), 32),
     ]
     hooks = [
         f"A {a_core} character defined by {b_prop.lower()}.",
@@ -29,9 +31,9 @@ def build_fallback_concepts(parent_a: dict[str, str], parent_b: dict[str, str]) 
     strategies = [STRATEGIES[0], STRATEGIES[1], STRATEGIES[3]]
     tickers = _unique_tickers(
         [
-            _ticker_bits(a_core, b_prop, "W"),
-            _ticker_bits(b_core, a_core, "R"),
-            _ticker_bits(a_core, b_core, "S"),
+            _ticker_blend(a_core, b_sym),
+            _ticker_blend(b_core, a_sym),
+            _ticker_blend(a_sym, b_sym),
         ]
     )
     concepts: list[dict[str, object]] = []
@@ -98,11 +100,30 @@ def _description(name: str, a_core: str, b_core: str, a_prop: str, b_prop: str, 
     return text[:DESCRIPTION_AI_MAX]
 
 
-def _ticker_bits(left: str, right: str, salt: str) -> str:
-    left_clean = normalize_ticker(left)
-    right_clean = normalize_ticker(right)
-    raw = (left_clean[:2] + salt + right_clean[:2]) or salt
-    return normalize_ticker(raw)[:6]
+def _portmanteau(head_word: str, tail_word: str, *, head_ratio: float = 0.55) -> str:
+    """Blend two words into one coined word, the way a real ticker or brand name is coined."""
+    head_alpha = "".join(ch for ch in head_word if ch.isalpha())
+    tail_alpha = "".join(ch for ch in tail_word if ch.isalpha())
+    if not head_alpha or not tail_alpha:
+        return (head_alpha or head_word) + (tail_alpha or tail_word)
+    head_lower, tail_lower = head_alpha.lower(), tail_alpha.lower()
+    max_overlap = min(4, len(head_lower), len(tail_lower))
+    for overlap in range(max_overlap, 1, -1):
+        if head_lower[-overlap:] == tail_lower[:overlap]:
+            return head_alpha[: len(head_alpha) - overlap] + tail_alpha
+    head_cut = len(head_alpha) if len(head_alpha) <= 2 else max(2, min(len(head_alpha) - 1, round(len(head_alpha) * head_ratio)))
+    tail_keep = min(len(tail_alpha), max(2, round(len(tail_alpha) * (1 - head_ratio))))
+    return head_alpha[:head_cut] + tail_alpha[-tail_keep:]
+
+
+def _ticker_blend(left: str, right: str) -> str:
+    """Splice the head of one identifier onto the tail of another, like a real coined ticker."""
+    left_clean = normalize_ticker(left) or "TK"
+    right_clean = normalize_ticker(right) or "MX"
+    head = left_clean[: min(3, len(left_clean))]
+    room = max(1, 6 - len(head))
+    tail = right_clean[-room:] if len(right_clean) > room else right_clean
+    return normalize_ticker(head + tail)[:6] or "MIX"
 
 
 def _unique_tickers(candidates: list[str]) -> list[str]:
