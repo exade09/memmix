@@ -52,6 +52,7 @@ export type DraftMix = {
   fallback_notice?: string | null;
   avatar_job_token?: string | null;
   avatar_result_url?: string | null;
+  avatar_next_base?: "a" | "b" | null;
 };
 
 export type DraftToken = {
@@ -84,6 +85,10 @@ export function readDraftMix(): DraftMix {
       fallback_notice: parsed.fallback_notice ?? null,
       avatar_job_token: parsed.avatar_job_token ?? null,
       avatar_result_url: parsed.avatar_result_url ?? null,
+      avatar_next_base:
+        parsed.avatar_next_base === "a" || parsed.avatar_next_base === "b"
+          ? parsed.avatar_next_base
+          : null,
     };
   } catch {
     return { parent_a: null, parent_b: null };
@@ -103,14 +108,33 @@ export function writeDraftMix(draft: DraftMix): void {
       fallback_notice: draft.fallback_notice ?? null,
       avatar_job_token: draft.avatar_job_token ?? null,
       avatar_result_url: avatarUrl,
+      avatar_next_base:
+        draft.avatar_next_base === "a" || draft.avatar_next_base === "b"
+          ? draft.avatar_next_base
+          : null,
     }),
   );
 }
 
 export function setDraftParent(side: "a" | "b", token: ParentToken | null): DraftMix {
   const current = readDraftMix();
-  const next =
+  const previous = side === "a" ? current.parent_a : current.parent_b;
+  const parentChanged =
+    (previous?.mint || "").toLowerCase() !== (token?.mint || "").toLowerCase();
+  const withParent =
     side === "a" ? { ...current, parent_a: token } : { ...current, parent_b: token };
+  const next = parentChanged
+    ? {
+        ...withParent,
+        concepts: [],
+        selected_concept_id: null,
+        fallback: false,
+        fallback_notice: null,
+        avatar_job_token: null,
+        avatar_result_url: null,
+        avatar_next_base: "a" as const,
+      }
+    : withParent;
   writeDraftMix(next);
   if (token) track(side === "a" ? "parent_selected_a" : "parent_selected_b");
   return next;

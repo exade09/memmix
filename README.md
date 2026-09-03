@@ -175,7 +175,7 @@ Tokens are grouped by signal:
 
 ## Image generation
 
-Mixer Studio uses WaveSpeed Seedream V4.5 Edit. Each narrative card has a
+FONS AI Mix uses WaveSpeed Nano Banana 2 Edit at 1K resolution. Each narrative card has a
 `Mixer studio` button that jumps to the studio section on the same `index.html`
 page with the trend token image, OG token image, and prompt already filled in.
 You can also scroll to the studio section and choose any two local images from
@@ -185,8 +185,10 @@ Before upload, the backend normalizes images with Pillow into RGB PNG files.
 This avoids common provider rejections caused by alpha channels, unusual image
 metadata, tiny inputs, or unsupported local formats.
 
-If Seedream V4.5 Edit rejects a specific image or prompt, the backend retries
-with a safer prompt on Seedream V4.5 Edit and then falls back to Seedream V4 Edit.
+The FONS avatar path submits exactly one billable provider job per user action.
+The first image is the dominant base and the second is the donor; an accepted
+regeneration reverses those roles. The retired hybrid endpoint keeps its older
+safe-prompt and Seedream fallback behavior for compatibility.
 
 Set a WaveSpeed API key before starting the web server:
 
@@ -205,7 +207,9 @@ python main.py web --port 8080 --limit 100
 Optional settings:
 
 ```powershell
+$env:WAVESPEED_AVATAR_MODEL="google/nano-banana-2/edit"
 $env:WAVESPEED_IMAGE_SIZE="1024*1024"
+$env:WAVESPEED_IMAGE_RESOLUTION="1k"
 $env:WAVESPEED_TIMEOUT_SECONDS="120"
 $env:WAVESPEED_SYNC_MODE="true"
 $env:WAVESPEED_POLL_INTERVAL_SECONDS="1.0"
@@ -220,10 +224,11 @@ Latency notes:
 - sync mode is enabled by default so completed results can come back directly,
 - if polling is needed, the default interval is 1 second.
 
-The image button uses the trend token image as the primary reference and the OG
-meme image as a secondary remix reference. This is designed for cases like
-keeping an `Aliens` mascot recognizable while adding an antivirus mask, floating
-virus particles, or a changed background from another coin's theme.
+The directed fusion prompt treats the first reference as the canvas: its main
+identity and silhouette stay dominant while two or three recognisable traits
+from the donor are rebuilt as native anatomy, material, clothing, or shape
+language. It explicitly rejects collages, split screens, pasted logos, and two
+separate characters.
 
 Set an API key before starting the web server:
 

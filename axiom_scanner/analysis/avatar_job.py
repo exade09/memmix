@@ -15,12 +15,12 @@ from axiom_scanner.analysis.mix_schema import AVATAR_PROMPT_TEMPLATE, AVATAR_STY
 from axiom_scanner.analysis.wavespeed_hybrid import (
     HybridImage,
     HybridImageError,
-    WAVESPEED_PRIMARY_MODEL,
+    FONS_AVATAR_MODEL,
     fetch_prediction_once,
     get_wavespeed_api_keys,
     log_hybrid_event,
     normalize_image_for_provider,
-    submit_seedream_edit,
+    submit_image_edit,
     upload_images,
 )
 from axiom_scanner.security.fields import (
@@ -90,14 +90,16 @@ def start_avatar_job(
             "IMAGE_UNAVAILABLE",
         )
 
+    base_parent = _avatar_base_parent(fields)
     image_a = _resolve_parent_image("parent_a", fields, files)
     image_b = _resolve_parent_image("parent_b", fields, files)
-    prompt = build_avatar_prompt(fields)
+    prompt = build_avatar_prompt(fields, base_parent=base_parent)
+    ordered_images = [image_a, image_b] if base_parent == "a" else [image_b, image_a]
     size = "1024*1024"
     client = provider or WaveSpeedAvatarProvider(api_keys[0])
 
     try:
-        urls = client.upload_images([image_a, image_b])
+        urls = client.upload_images(ordered_images)
         submitted = client.submit(urls, prompt, size)
     except HybridImageError as exc:
         log_hybrid_event("avatar_failed", code=exc.code, status=exc.status)
@@ -139,11 +141,19 @@ def start_avatar_job(
         "client_ip": ip,
         "prompt_hash": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
     }
-    log_hybrid_event("avatar_submitted", request_id=request_id, bytes_a=len(image_a.data), bytes_b=len(image_b.data))
+    log_hybrid_event(
+        "avatar_submitted",
+        request_id=request_id,
+        bytes_a=len(image_a.data),
+        bytes_b=len(image_b.data),
+        base_parent=base_parent,
+        model=FONS_AVATAR_MODEL,
+    )
     return {
         "job_token": token,
         "status": "queued",
         "poll_after_ms": POLL_AFTER_MS,
+        "base_parent": base_parent,
     }
 
 
@@ -287,18 +297,30 @@ def verify_job_token(
     return {"id": str(payload["id"]), "iat": iat, "n": nonce}
 
 
-def build_avatar_prompt(fields: dict[str, str]) -> str:
+def build_avatar_prompt(fields: dict[str, str], *, base_parent: str | None = None) -> str:
     hook = _clean_trait(fields.get("character_hook") or fields.get("name") or "one original mascot", HOOK_MAX)
     a_trait = _clean_trait(fields.get("parent_a_trait") or "a readable silhouette", TRAIT_MAX)
     b_trait = _clean_trait(fields.get("parent_b_trait") or "a signature prop", TRAIT_MAX)
     extra = _clean_trait(fields.get("visual_prompt") or "", VISUAL_PROMPT_MAX)
+    base = (
+        _avatar_base_parent({"base_parent": base_parent})
+        if base_parent is not None
+        else _avatar_base_parent(fields)
+    )
+    if base == "a":
+        base_label, donor_label = "Token A", "Token B"
+        base_trait, donor_trait = a_trait, b_trait
+    else:
+        base_label, donor_label = "Token B", "Token A"
+        base_trait, donor_trait = b_trait, a_trait
     prompt = AVATAR_PROMPT_TEMPLATE.format(
         character_hook=hook,
-        parent_a_trait=a_trait,
-        parent_b_trait=b_trait,
+        base_label=base_label,
+        donor_label=donor_label,
+        base_trait=base_trait,
+        donor_trait=donor_trait,
+        additional_direction=extra or "Derive the remaining design choices from the two references.",
     )
-    if extra:
-        prompt += f"\nAdditional silhouette direction: {extra}"
     return prompt.strip()
 
 
@@ -340,18 +362,25 @@ class WaveSpeedAvatarProvider:
         return upload_images(images, api_key=self.api_key)
 
     def submit(self, image_urls: list[str], prompt: str, size: str) -> dict[str, Any]:
-        return submit_seedream_edit(
+        return submit_image_edit(
             image_urls=image_urls,
             prompt=prompt,
             size=size,
             api_key=self.api_key,
-            model=WAVESPEED_PRIMARY_MODEL,
+            model=FONS_AVATAR_MODEL,
             sync_mode=False,
             timeout_seconds=25,
         )
 
     def poll_once(self, request_id: str) -> dict[str, Any]:
         return fetch_prediction_once(request_id, api_key=self.api_key)
+
+
+def _avatar_base_parent(fields: dict[str, str]) -> str:
+    value = (fields.get("base_parent") or "a").strip().lower()
+    if value not in {"a", "b"}:
+        raise MixError("Avatar base parent must be A or B.", "INVALID_INPUT")
+    return value
 
 
 def _resolve_parent_image(

@@ -21,7 +21,12 @@ from axiom_scanner.analysis.avatar_job import (
     start_avatar_job,
     verify_job_token,
 )
-from axiom_scanner.analysis.wavespeed_hybrid import HybridImage, HybridImageError
+from axiom_scanner.analysis.wavespeed_hybrid import (
+    HybridImage,
+    HybridImageError,
+    NANO_BANANA_2_EDIT_MODEL,
+    submit_image_edit,
+)
 from axiom_scanner.security.fetch import FetchError, assert_public_url, fetch_public_bytes
 from axiom_scanner.security.images import ImageError, normalize_reference_image, sniff_image_mime
 from vercel_api.dispatch import handle_api_get, handle_api_post
@@ -191,10 +196,16 @@ class JobTokenTests(AvatarTestCase):
 
 
 class AvatarJobFlowTests(AvatarTestCase):
-    def _start(self, provider: FakeProvider, ip: str = "203.0.113.9") -> dict:
+    def _start(
+        self,
+        provider: FakeProvider,
+        ip: str = "203.0.113.9",
+        base_parent: str = "a",
+    ) -> dict:
         return start_avatar_job(
             fields={
                 "style": "mixborn_lofi_v1",
+                "base_parent": base_parent,
                 "character_hook": "A bonk mascot defined by a knitted hat",
                 "parent_a_trait": "impact dog energy",
                 "parent_b_trait": "knitted hat",
@@ -211,18 +222,43 @@ class AvatarJobFlowTests(AvatarTestCase):
         result = self._start(provider)
         self.assertEqual(result["status"], "queued")
         self.assertEqual(result["poll_after_ms"], 1500)
+        self.assertEqual(result["base_parent"], "a")
         self.assertIn("job_token", result)
         self.assertEqual(len(provider.submits), 1)
+        self.assertEqual(
+            [image.field_name for image in provider.uploads[0]],
+            ["parent_a", "parent_b"],
+        )
         self.assertIn("not a collage", provider.submits[0]["prompt"].lower())
         prompt = provider.submits[0]["prompt"].lower()
-        # The guarantees, not the phrasing: one avatar, original, square.
-        self.assertIn("one original square token avatar", prompt)
+        # The guarantees, not an exact sentence: one avatar, original, square.
+        self.assertRegex(prompt, r"create one .*original square token avatar")
         # The prompt described the retired MIXBORN palette for months after the
         # site moved to Fons, so every generated avatar clashed with the page it
         # appeared on. Guard the colours rather than trust a code review.
         for dead in ("violet", "acid-green", "retro-wave", "lo-fi"):
             self.assertNotIn(dead, prompt, f"{dead} belongs to the retired design")
+        self.assertIn("image 1 is the base project (token a)", prompt)
+        self.assertIn("roughly 65% base and 35% donor", prompt)
         self.assertEqual(provider.submits[0]["size"], "1024*1024")
+
+    def test_regeneration_can_reverse_base_and_donor(self) -> None:
+        provider = FakeProvider()
+        result = self._start(provider, base_parent="b")
+        self.assertEqual(result["base_parent"], "b")
+        self.assertEqual(
+            [image.field_name for image in provider.uploads[0]],
+            ["parent_b", "parent_a"],
+        )
+        prompt = provider.submits[0]["prompt"].lower()
+        self.assertIn("image 1 is the base project (token b)", prompt)
+        self.assertIn("important base trait to preserve: knitted hat", prompt)
+        self.assertIn("important donor trait to integrate: impact dog energy", prompt)
+
+    def test_invalid_base_parent_is_rejected(self) -> None:
+        with self.assertRaises(MixError) as raised:
+            self._start(FakeProvider(), base_parent="sideways")
+        self.assertEqual(raised.exception.code, "INVALID_INPUT")
 
     def test_duplicate_click(self) -> None:
         provider = FakeProvider()
@@ -295,6 +331,55 @@ class AvatarJobFlowTests(AvatarTestCase):
         self.assertNotIn("Ignore previous", prompt)
         self.assertNotIn("https://", prompt)
         self.assertIn("not a collage", prompt.lower())
+
+
+class WaveSpeedPayloadTests(unittest.TestCase):
+    def test_nano_banana_2_uses_its_native_payload(self) -> None:
+        with patch.dict(os.environ, {"WAVESPEED_IMAGE_RESOLUTION": "1k"}), patch(
+            "axiom_scanner.analysis.wavespeed_hybrid.request_json",
+            return_value={"data": {"id": "nano-job"}},
+        ) as request:
+            result = submit_image_edit(
+                image_urls=["https://cdn.example/base.png", "https://cdn.example/donor.png"],
+                prompt="Directed fusion",
+                size="1024*1024",
+                api_key="test-key",
+                model=NANO_BANANA_2_EDIT_MODEL,
+                sync_mode=False,
+            )
+
+        self.assertEqual(result["data"]["id"], "nano-job")
+        args, kwargs = request.call_args
+        self.assertEqual(
+            args[0],
+            "https://api.wavespeed.ai/api/v3/google/nano-banana-2/edit",
+        )
+        payload = kwargs["json_payload"]
+        self.assertEqual(payload["aspect_ratio"], "1:1")
+        self.assertEqual(payload["resolution"], "1k")
+        self.assertEqual(payload["output_format"], "png")
+        self.assertFalse(payload["enable_web_search"])
+        self.assertFalse(payload["enable_image_search"])
+        self.assertFalse(payload["enable_sync_mode"])
+        self.assertNotIn("size", payload)
+
+    def test_seedream_fallback_keeps_legacy_size_payload(self) -> None:
+        with patch(
+            "axiom_scanner.analysis.wavespeed_hybrid.request_json",
+            return_value={"data": {"id": "legacy-job"}},
+        ) as request:
+            submit_image_edit(
+                image_urls=["https://cdn.example/a.png", "https://cdn.example/b.png"],
+                prompt="Legacy hybrid",
+                size="1024*1024",
+                api_key="test-key",
+                model="bytedance/seedream-v4.5/edit",
+                sync_mode=False,
+            )
+
+        payload = request.call_args.kwargs["json_payload"]
+        self.assertEqual(payload["size"], "1024*1024")
+        self.assertNotIn("resolution", payload)
 
 
 class ImageSecurityTests(unittest.TestCase):

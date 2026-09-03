@@ -80,6 +80,13 @@ export function MixPage() {
   const [jobToken, setJobToken] = useState(stored.avatar_job_token ?? "");
   const [avatarUrl, setAvatarUrl] = useState(stored.avatar_result_url ?? "");
   const [lastGeneratedUrl, setLastGeneratedUrl] = useState(stored.avatar_result_url ?? "");
+  const [nextAvatarBase, setNextAvatarBase] = useState<"a" | "b">(
+    stored.avatar_next_base === "a" || stored.avatar_next_base === "b"
+      ? stored.avatar_next_base
+      : stored.avatar_result_url
+        ? "b"
+        : "a",
+  );
   const [replaced, setReplaced] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const drawAbort = useRef<AbortController | null>(null);
@@ -131,8 +138,9 @@ export function MixPage() {
       fallback_notice: fallbackNotice || null,
       avatar_job_token: jobToken || null,
       avatar_result_url: isPublicImageUrl(avatarUrl) ? avatarUrl : null,
+      avatar_next_base: nextAvatarBase,
     });
-  }, [parentA, parentB, concepts, selectedId, fallbackNotice, jobToken, avatarUrl]);
+  }, [parentA, parentB, concepts, selectedId, fallbackNotice, jobToken, avatarUrl, nextAvatarBase]);
 
   useEffect(() => {
     if (!analyzing) return;
@@ -198,7 +206,10 @@ export function MixPage() {
     setSelectedId(null);
     setFallbackNotice("");
     setAvatarUrl("");
+    setLastGeneratedUrl("");
     setJobToken("");
+    setNextAvatarBase("a");
+    setReplaced(false);
     if (side === "a") {
       setParentA(token);
       setRefA(null);
@@ -270,7 +281,8 @@ export function MixPage() {
     setDrawing(true);
     setAvatarError("");
     setReplaced(false);
-    track("avatar_requested");
+    const requestedBase = nextAvatarBase;
+    track("avatar_requested", { base_parent: requestedBase });
     try {
       const form = new FormData();
       form.append("style", "mixborn_lofi_v1");
@@ -281,12 +293,17 @@ export function MixPage() {
       form.append("parent_a_trait", selected.internal?.parent_a_trait || "");
       form.append("parent_b_trait", selected.internal?.parent_b_trait || "");
       form.append("visual_prompt", selected.internal?.visual_prompt || "");
+      form.append("base_parent", requestedBase);
       if (refA) form.append("parent_a_image", refA, "parent_a.png");
       else if (parentA.image_url && !parentA.image_url.startsWith("blob:")) form.append("parent_a_url", parentA.image_url);
       if (refB) form.append("parent_b_image", refB, "parent_b.png");
       else if (parentB.image_url && !parentB.image_url.startsWith("blob:")) form.append("parent_b_url", parentB.image_url);
       const started = await startAvatarJob(form, controller.signal);
       setJobToken(started.job_token);
+      const acceptedBase = started.base_parent === "a" || started.base_parent === "b"
+        ? started.base_parent
+        : requestedBase;
+      setNextAvatarBase(acceptedBase === "a" ? "b" : "a");
       await pollJob(started.job_token, controller.signal);
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === "AbortError") {
@@ -414,6 +431,10 @@ export function MixPage() {
     setSelectedId(null);
     setFallbackNotice("");
     setAvatarUrl("");
+    setLastGeneratedUrl("");
+    setJobToken("");
+    setNextAvatarBase("a");
+    setReplaced(false);
   };
 
   return (
@@ -614,7 +635,9 @@ export function MixPage() {
                 ) : null}
               </div>
               {previewSrc && !replaced ? (
-                <p className="metric-label">Regenerate starts one new billable drawing</p>
+                <p className="metric-label">
+                  Regenerate swaps which parent leads the fusion and starts one new billable drawing
+                </p>
               ) : null}
             </div>
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import math
 import mimetypes
 import os
 import re
@@ -22,15 +23,14 @@ from urllib.request import Request, urlopen
 
 WAVESPEED_BASE_URL = "https://api.wavespeed.ai/api/v3"
 WAVESPEED_UPLOAD_URL = f"{WAVESPEED_BASE_URL}/media/upload/binary"
-# Seedream v5.0 Pro: $0.0405 an image against v4.5's $0.027, which buys a
-# generation of quality for a third more. The alternatives on WaveSpeed that
-# also take multiple references cost two to five times the current price
-# (nano-banana-2 $0.063, gpt-image-2 $0.0665, nano-banana-pro $0.126) and were
-# not worth it for a 1024px avatar. Same family as before, so the request shape
-# is unchanged. Override with WAVESPEED_MODEL without touching code.
-WAVESPEED_PRIMARY_MODEL = os.getenv("WAVESPEED_MODEL", "").strip() or "bytedance/seedream-v5.0-pro/edit"
-# One step down, not two: if the new model is rejected the fallback should still
-# be a current model rather than the two-generation-old one.
+NANO_BANANA_2_EDIT_MODEL = "google/nano-banana-2/edit"
+# Nano Banana 2 is the owner-selected balance for multi-reference fidelity.
+# Give the FONS product path its own override so a stale legacy Mixer Studio
+# WAVESPEED_MODEL setting cannot silently put avatars back on Seedream.
+FONS_AVATAR_MODEL = os.getenv("WAVESPEED_AVATAR_MODEL", "").strip() or NANO_BANANA_2_EDIT_MODEL
+WAVESPEED_PRIMARY_MODEL = os.getenv("WAVESPEED_MODEL", "").strip() or FONS_AVATAR_MODEL
+# This fallback is used only by the retired /api/hybrid-image flow. FONS avatar
+# jobs submit exactly one generation to the primary model.
 WAVESPEED_FALLBACK_MODEL = "bytedance/seedream-v4.5/edit"
 
 MAX_IMAGE_BYTES = 20 * 1024 * 1024
@@ -48,19 +48,18 @@ NORMALIZED_IMAGE_MIN_SIDE = 512
 NORMALIZED_IMAGE_MAX_SIDE = 1536
 DEFAULT_POLL_INTERVAL_SECONDS = 1.0
 DEFAULT_PROMPT = (
-    "Combine the two reference images into one coherent hybrid character. Inherit "
-    "recognisable traits from both inputs rather than placing them side by side. "
-    "Clean modern illustration, soft volume, gentle studio lighting, confident tapered "
-    "linework, calm sage and forest green palette with warm sand accents, bright and "
-    "daylit, moderate saturation, plain pale background, crisp edges, correct anatomy. "
-    "No text, no logos, no watermark, no neon, no harsh black outline."
+    "Use IMAGE 1 as the dominant base design. Rebuild the two or three most recognisable "
+    "visual signatures from IMAGE 2 as native structural parts of that base. Create one "
+    "coherent subject, roughly 65% base and 35% donor, with a polished professional finish. "
+    "Not a collage, split screen, half-and-half seam, pasted logo, or two subjects. "
+    "No text, interface, watermark, duplicated features, or malformed anatomy."
 )
 SAFE_PROVIDER_PROMPT = (
-    "Create one polished family-friendly character from the two reference images. "
-    "Combine the most recognisable colours, shapes and silhouettes from both into a "
-    "single original design. Centred composition, plain pale background, crisp edges, "
-    "soft daylight, calm sage and forest green palette, moderate saturation. "
-    "No text, no logos, no interface, no watermark."
+    "Use IMAGE 1 as the base. Integrate the distinctive shape language, material and "
+    "colour accents of IMAGE 2 into it as one family-friendly unified subject. Keep the "
+    "base identity dominant and make the donor clearly recognisable without pasting its "
+    "logo. Centred square composition, simple background, crisp edges, coherent anatomy. "
+    "No text, interface, watermark, collage, split screen, or second subject."
 )
 PROMPT_BLOCKLIST = (
     "crypto",
@@ -197,7 +196,7 @@ def run_generation_attempt(
     attempt_index: int,
     model: str,
 ) -> dict[str, Any]:
-    submitted = submit_seedream_edit(
+    submitted = submit_image_edit(
         image_urls=image_urls,
         prompt=prompt,
         size=size,
@@ -542,6 +541,50 @@ def normalize_size(value: str) -> str:
     return f"{width}*{height}"
 
 
+NANO_BANANA_ASPECT_RATIOS = {
+    "1:1",
+    "3:2",
+    "2:3",
+    "3:4",
+    "4:3",
+    "4:5",
+    "5:4",
+    "9:16",
+    "16:9",
+    "21:9",
+    "1:4",
+    "4:1",
+    "1:8",
+    "8:1",
+}
+NANO_BANANA_RESOLUTIONS = {"0.5k", "1k", "2k", "4k"}
+
+
+def nano_banana_aspect_ratio(size: str) -> str:
+    normalized = normalize_size(size)
+    width_text, height_text = normalized.split("*", 1)
+    width = int(width_text)
+    height = int(height_text)
+    divisor = math.gcd(width, height)
+    ratio = f"{width // divisor}:{height // divisor}"
+    if ratio not in NANO_BANANA_ASPECT_RATIOS:
+        raise HybridImageError(
+            f"Nano Banana 2 does not support the {ratio} aspect ratio.",
+            code="bad_size",
+        )
+    return ratio
+
+
+def nano_banana_resolution() -> str:
+    value = os.getenv("WAVESPEED_IMAGE_RESOLUTION", "1k").strip().lower() or "1k"
+    if value not in NANO_BANANA_RESOLUTIONS:
+        raise HybridImageError(
+            "WAVESPEED_IMAGE_RESOLUTION must be 0.5k, 1k, 2k, or 4k.",
+            code="bad_size",
+        )
+    return value
+
+
 def upload_media(image: HybridImage, api_key: str) -> str:
     boundary = f"----wavespeed-upload-{uuid.uuid4().hex}"
     body = build_file_form_body(boundary, image)
@@ -565,7 +608,7 @@ def upload_images(images: list[HybridImage], api_key: str) -> list[str]:
         return list(executor.map(lambda image: upload_media(image, api_key), images))
 
 
-def submit_seedream_edit(
+def submit_image_edit(
     image_urls: list[str],
     prompt: str,
     size: str,
@@ -576,13 +619,26 @@ def submit_seedream_edit(
     timeout_seconds: int | None = None,
 ) -> dict[str, Any]:
     enabled_sync = wavespeed_sync_mode_enabled() if sync_mode is None else sync_mode
-    payload = {
-        "images": image_urls,
-        "prompt": prompt,
-        "size": size,
-        "enable_sync_mode": enabled_sync,
-        "enable_base64_output": False,
-    }
+    if model == NANO_BANANA_2_EDIT_MODEL:
+        payload = {
+            "images": image_urls,
+            "prompt": prompt,
+            "aspect_ratio": nano_banana_aspect_ratio(size),
+            "resolution": nano_banana_resolution(),
+            "enable_web_search": False,
+            "enable_image_search": False,
+            "output_format": "png",
+            "enable_sync_mode": enabled_sync,
+            "enable_base64_output": False,
+        }
+    else:
+        payload = {
+            "images": image_urls,
+            "prompt": prompt,
+            "size": size,
+            "enable_sync_mode": enabled_sync,
+            "enable_base64_output": False,
+        }
     return request_json(
         f"{WAVESPEED_BASE_URL}/{model}",
         method="POST",

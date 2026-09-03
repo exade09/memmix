@@ -121,19 +121,34 @@ FALLBACK_NOTICE = "Basic mix mode — AI logic is temporarily unavailable."
 
 AVATAR_STYLE = "mixborn_lofi_v1"
 
-AVATAR_PROMPT_TEMPLATE = """Create one original square token avatar derived from two reference images.
+AVATAR_PROMPT_TEMPLATE = """Create one premium, original square token avatar by performing a directed visual fusion of exactly two reference images.
+
+REFERENCE ORDER - FOLLOW IT EXACTLY:
+- IMAGE 1 is the BASE PROJECT ({base_label}). Keep its main subject, identity, silhouette, face or emblem structure, viewing angle, and overall composition dominant.
+- IMAGE 2 is the DONOR PROJECT ({donor_label}). Extract its two or three most recognisable visual signatures and rebuild them as native parts of the base design.
 
 Character concept: {character_hook}
-Trait inherited from Token A: {parent_a_trait}
-Trait inherited from Token B: {parent_b_trait}
+Important BASE trait to preserve: {base_trait}
+Important DONOR trait to integrate: {donor_trait}
+Additional concept direction: {additional_direction}
 
-Combine the two traits into a single coherent creature. Not a collage, not two characters side by side, not one character holding the other. One being that plausibly inherited from both.
+This is an edit of IMAGE 1, not an equal blend. The result should read at first glance as an evolved version of IMAGE 1, roughly 65% base and 35% donor, while still making IMAGE 2 unmistakably present.
 
-Visual treatment: clean modern character illustration with soft volume and gentle studio lighting. Confident tapered linework, never a heavy uniform outline. Colour is led by a calm sage and forest green palette with warm sand and cool slate as secondary accents; keep saturation moderate and the whole image bright and daylit. Subtle paper grain. No harsh black, no neon, no acid colours.
+FUSION METHOD:
+1. Preserve the core subject category and strongest identity cues of IMAGE 1.
+2. Identify distinctive shape language, colours, material, texture, anatomy, facial feature, clothing, or prop from IMAGE 2.
+3. Integrate those donor cues structurally into the base across two or three meaningful areas. They must look designed into the same body or emblem, not pasted on top.
+4. If IMAGE 2 is a logo or symbol, translate its geometry and colour language into anatomy, clothing, surface pattern, material, or silhouette. Do not paste the logo as a badge.
+5. Keep one unified subject with one clear silhouette. Preserve the base image's medium and rendering language where possible, then refine it to a polished professional finish.
 
-Composition: one centred head or bust filling most of the frame, square crop, clear margin around the silhouette, plain uncluttered background in a pale warm off-white. The silhouette must stay readable at 48 pixels, so favour one strong shape and one memorable feature over fine detail.
+COMPOSITION:
+- One centred head, bust, creature, object, or emblem filling most of a square frame.
+- Clear breathing room around the silhouette and a simple neutral background.
+- Strong readability at 48 pixels: bold silhouette, clean focal point, restrained micro-detail.
+- Preserve the base palette as the majority and use donor colours as deliberate secondary accents. Do not force an unrelated house palette over the references.
 
-Quality: crisp edges, correct anatomy for whatever creature this is, no extra limbs, no duplicated features, no melted or smeared areas, no visible artefacts.
+QUALITY:
+Crisp intentional edges, coherent lighting and perspective, correct anatomy, clean material transitions, high detail where it matters, and a finished production-quality avatar.
 
-Do not add words, letters, numbers, tickers, logos, interface elements, watermarks or signatures. No photorealism, no glossy 3D render, no gore, no financial or currency symbols. Do not reproduce either reference pixel for pixel.
+The result must be one fused design, not a collage, split screen, half-and-half seam, morphing transition, two characters, one character holding the other, a small donor logo pasted onto the base, or a generic average that loses either identity. No duplicated faces, extra limbs, melted details, smeared regions, text, letters, numbers, tickers, interface elements, watermarks, signatures, or financial symbols. Do not reproduce either input pixel for pixel.
 """

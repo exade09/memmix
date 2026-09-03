@@ -229,6 +229,7 @@ export type AvatarJobStart = {
   job_token: string;
   status: "queued";
   poll_after_ms: number;
+  base_parent?: "a" | "b";
 };
 
 export type AvatarJobStatus = {
