@@ -473,7 +473,6 @@ export function MixPage() {
             </Button>
           </p>
         ) : null}
-        {fallbackNotice ? <p className="note warn">{fallbackNotice}</p> : null}
       </div>
 
       {/* ------------------------------------------------------ the console */}
