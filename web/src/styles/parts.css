@@ -799,7 +799,7 @@
 
 .doc-facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
   margin: 0;
   border: 1px solid var(--glass-line);
@@ -813,6 +813,18 @@
   padding: 14px 18px;
   display: grid;
   gap: 3px;
+}
+
+/* An odd item count leaves the last entry alone in the final row — give it
+   the full row instead of leaving the other half of the grid empty. */
+.doc-facts > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .doc-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .doc-facts dt {

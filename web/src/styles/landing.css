@@ -98,8 +98,7 @@ body[data-intro-open="true"] {
   min-height: 55px;
   display: grid;
   place-items: center;
-  border-top: 1px solid var(--glass-line);
-  background: rgba(255, 255, 255, 0.22);
+  padding-bottom: 8px;
 }
 
 .landing-intro-progress {
@@ -121,42 +120,27 @@ body[data-intro-open="true"] {
 }
 
 .landing-intro-start {
-  width: 100%;
-  min-height: 54px;
   border: 0;
-  padding: 0 21px 0 24px;
-  display: flex;
+  padding: 8px 22px;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+  justify-content: center;
   background: transparent;
-  color: var(--ink);
+  color: var(--ink-mute);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
   line-height: 1.35;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  transition: color var(--t-base), background var(--t-base);
+  text-align: center;
+  border-radius: var(--radius-pill);
+  transition: color var(--t-base);
 }
 
 .landing-intro-start:hover,
 .landing-intro-start:focus-visible {
   color: var(--moss-deep);
-  background: rgba(147, 177, 131, 0.12);
-}
-
-.landing-intro-start i {
-  font-family: var(--font-ui);
-  font-size: 18px;
-  font-style: normal;
-  line-height: 1;
-  transition: transform var(--t-base);
-}
-
-.landing-intro-start:hover i,
-.landing-intro-start:focus-visible i {
-  transform: translateX(4px);
 }
 
 .hero {
@@ -589,14 +573,8 @@ body[data-intro-open="true"] {
 
 @media (prefers-reduced-motion: reduce) {
   .landing-intro-window,
-  .landing-intro-start,
-  .landing-intro-start i {
+  .landing-intro-start {
     transition: none;
-  }
-
-  .landing-intro-start:hover i,
-  .landing-intro-start:focus-visible i {
-    transform: none;
   }
 
   .fact-strip > div:hover,

@@ -97,7 +97,6 @@ export function LandingIntro({ onStart }: { onStart: () => void }) {
             : { opacity: 0, y: -10, scale: 0.98, filter: "blur(4px)" }
         }
         transition={{ duration: reduceMotion ? 0.08 : 0.58, ease: EASE }}
-        onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="landing-intro-glow" aria-hidden="true" />
         <div className="landing-intro-mark">
@@ -122,8 +121,7 @@ export function LandingIntro({ onStart }: { onStart: () => void }) {
                 transition={{ duration: reduceMotion ? 0.08 : 0.34, ease: EASE }}
                 onClick={start}
               >
-                <span>Press any button to start build</span>
-                <i aria-hidden="true">→</i>
+                Press any button to start build
               </motion.button>
             ) : (
               <motion.div

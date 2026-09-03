@@ -474,14 +474,10 @@ body[data-page-hidden="true"] .grain {
   }
 }
 
-@media (max-width: 620px) {
-
 .site-header-brand {
   display: flex;
   align-items: center;
-  /* Room enough that the badge reads as its own pill next to the wordmark,
-     not a label crowding it. */
-  gap: 20px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -490,32 +486,29 @@ body[data-page-hidden="true"] .grain {
     A native <button> keeps drawing its own chrome — the grey fill and hard
     border in the screenshot — until appearance is reset explicitly.
     border: 0 and background: none alone do not stop that; this is why the
-    badge rendered as a plain browser control instead of a pill.
+    badge rendered as a plain browser control instead of plain text.
   */
   appearance: none;
   -webkit-appearance: none;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 5px;
   min-width: 0;
-  height: 32px;
-  padding-inline: 12px;
-  margin-left: 4px;
-  border: 1px solid var(--glass-line-2);
-  border-radius: var(--radius-pill);
-  background: var(--glass-2);
+  height: auto;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.01em;
   color: var(--ink-mute);
   cursor: pointer;
-  transition: color var(--t-micro), background var(--t-micro), border-color var(--t-micro);
+  transition: color var(--t-micro);
 }
 
 .ca-badge:hover:not(:disabled) {
   color: var(--ink);
-  background: var(--glass-3);
-  border-color: var(--glass-line);
 }
 
 .ca-badge:disabled {
@@ -549,6 +542,8 @@ body[data-page-hidden="true"] .grain {
     max-width: 12ch;
   }
 }
+
+@media (max-width: 620px) {
 
   .site-header {
     height: var(--header-h-mobile);
