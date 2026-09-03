@@ -36,7 +36,7 @@ import {
   type MetadataPinResult,
   type NameCheckResult,
 } from "../../services/api";
-import { getTransactionBoundary, type LaunchState } from "../../services/launchBoundary";
+import type { LaunchState } from "../../services/launchBoundary";
 import { track } from "../../services/analytics";
 
 export function LaunchPage() {
@@ -66,7 +66,6 @@ export function LaunchPage() {
   const [pending, setPending] = useState<PendingLaunch | null>(() => readPendingLaunch());
   const [pinResult, setPinResult] = useState<MetadataPinResult | null>(null);
   const [nameCheck, setNameCheck] = useState<NameCheckResult | null>(null);
-  const boundary = getTransactionBoundary();
 
   useEffect(() => {
     if (!fromMix) return;
@@ -343,7 +342,6 @@ export function LaunchPage() {
         >
           <div className="note-stack">
             {!appConfig.mainnet ? <p className="note warn">{DEVNET_LAUNCH_NOTICE}</p> : null}
-            <p className="note warn">{boundary.reason}</p>
             {fromMix ? <p className="metric-label">Fields came from Mix. Edit anything before review</p> : null}
             {!appConfig.enableAiText || !appConfig.enableAiImage ? (
               <p className="metric-label">AI tools can be offline. Direct Launch still works</p>
@@ -534,10 +532,7 @@ export function LaunchPage() {
           >
             {phase === "PINNING_METADATA" ? "Pinning…" : "Review launch"}
           </Button>
-          <p className="metric-label">
-            Ticker must be 1–6 letters or numbers. SIGN &amp; LAUNCH stays off until wallet, simulation, and program
-            allowlist pass.
-          </p>
+          <p className="metric-label">Ticker must be 1–6 letters or numbers</p>
         </form>
 
         <aside className="launch-aside">

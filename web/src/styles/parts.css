@@ -701,7 +701,7 @@
   border-left: 1px solid var(--glass-line);
 }
 
-.doc-rail a {
+.doc-rail ul a {
   position: relative;
   display: block;
   padding: 7px 12px;
@@ -710,14 +710,18 @@
   transition: color var(--t-micro), padding-left var(--t-base);
 }
 
-.doc-rail a:hover {
+.doc-rail ul a:hover {
   color: var(--ink);
   padding-left: 16px;
 }
 
-.doc-rail a.is-active {
+.doc-rail ul a.is-active {
   color: var(--ink);
   font-weight: 600;
+}
+
+.doc-rail > .btn {
+  margin-top: 4px;
 }
 
 /* The marker slides between entries instead of blinking on and off. */

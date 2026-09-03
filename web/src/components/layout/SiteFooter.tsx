@@ -30,8 +30,9 @@ export function SiteFooter() {
             <Link to="/terms">Terms</Link>
             <Link to="/privacy">Privacy</Link>
             <Link to="/legal">Legal</Link>
-            <span title="Social links are not published yet">X, not published yet</span>
-            <span title="Docs are not published yet">Docs, not published yet</span>
+            <a href="https://x.com/fonsfamily" target="_blank" rel="noreferrer">
+              X
+            </a>
           </div>
         </div>
         <div className="footer-legal">
