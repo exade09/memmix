@@ -20,6 +20,7 @@ export function SiteFooter() {
             <Link to="/app/mix">AI Mix</Link>
             <Link to="/app/launch">Direct Launch</Link>
             <Link to="/app/explore">Explore</Link>
+            <Link to="/docs">Docs</Link>
             <Link to="/#mascot">The mark</Link>
           </div>
           <div className="footer-col">

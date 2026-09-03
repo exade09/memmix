@@ -9,6 +9,7 @@ const links = [
   { to: "/app/launch", label: "Launch" },
   { to: "/app/explore", label: "Explore" },
   { to: "/#mascot", label: "Mark" },
+  { to: "/docs", label: "Docs" },
   { to: "/safety", label: "Safety" },
 ];
 
