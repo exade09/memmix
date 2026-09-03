@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { SiteFooter } from "../../components/layout/SiteFooter";
 import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { ButtonLink } from "../../components/ui/Button";
+import { AnimatedText } from "../../components/motion/AnimatedText";
 import {
   CONTENT_POLICY,
   FAQ_ITEMS,
@@ -21,7 +22,7 @@ function LegalShell({ title, children }: { title: string; children: ReactNode })
       <div className="section">
         <div className="wrap legal-page">
           <p className="eyebrow">Legal</p>
-          <h1>{title}</h1>
+          <AnimatedText as="h1" reveal="lines" lines={[title]} />
           {children}
           <SafetyBanner showFee />
         </div>
@@ -154,7 +155,7 @@ export function NotFoundPage() {
     <div className="section">
       <div className="wrap stack lg not-found">
         <p className="eyebrow">404</p>
-        <h1>This mutation did not survive</h1>
+        <AnimatedText as="h1" reveal="lines" lines={["This mutation did not survive"]} />
         <p className="body-copy">Everything else is still on the bench</p>
         <div className="btn-row">
           <ButtonLink to="/" variant="primary" arrow>

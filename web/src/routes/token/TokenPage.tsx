@@ -10,6 +10,7 @@ import { track } from "../../services/analytics";
 import { fetchToken, TokenApiError, type TokenDetail } from "../../services/api";
 import { readOnchainToken, type OnchainTokenView } from "../../chain/tokenOnchain";
 import { TokenAvatar } from "../../components/token/TokenAvatar";
+import { AnimatedText } from "../../components/motion/AnimatedText";
 
 function metric(value?: number | null, kind: "money" | "percent" | "text" = "text"): string {
   if (value == null || Number.isNaN(value)) return "Unknown";
@@ -139,7 +140,7 @@ export function TokenPage() {
         <header className="page-head">
           <div className="stack sm">
             <p className="eyebrow">Public token</p>
-            <h1>Token not found</h1>
+            <AnimatedText as="h1" reveal="lines" lines={["Token not found"]} />
           </div>
         </header>
         <p className="empty-state">No contract was found at that address</p>
@@ -162,7 +163,7 @@ export function TokenPage() {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">Public token</p>
-          {loading ? <h1>Reading token data</h1> : null}
+          {loading ? <AnimatedText as="h1" reveal="lines" lines={["Reading token data"]} /> : null}
         </div>
       </header>
 

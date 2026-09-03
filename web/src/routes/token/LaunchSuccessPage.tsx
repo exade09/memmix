@@ -8,6 +8,7 @@ import { explorerTokenUrl, explorerTxUrl, marketUrl, ponsTokenUrl, shareLaunchCo
 import { isPublicTxHash, readPendingLaunch } from "../../domain/pendingLaunch";
 import { shortenAddress } from "../../chain/address";
 import { track } from "../../services/analytics";
+import { AnimatedText } from "../../components/motion/AnimatedText";
 
 export function LaunchSuccessPage() {
   const [params] = useSearchParams();
@@ -59,7 +60,7 @@ export function LaunchSuccessPage() {
         <header className="page-head">
           <div className="stack sm">
             <p className="eyebrow">Launch</p>
-            <h1>Waiting for a confirmed token</h1>
+            <AnimatedText as="h1" reveal="lines" lines={["Waiting for a confirmed token"]} />
           </div>
           <GlassMark state="warning" quiet className="sz-sm" />
         </header>
@@ -82,9 +83,11 @@ export function LaunchSuccessPage() {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">{locallyConfirmed ? "Launch confirmed" : "Address in URL"}</p>
-          <h1>
-            {locallyConfirmed ? "It is alive" : "Verify this address on-chain before you treat it as launched"}
-          </h1>
+          <AnimatedText
+            as="h1"
+            reveal="lines"
+            lines={[locallyConfirmed ? "It is alive" : "Verify this address on-chain before you treat it as launched"]}
+          />
         </div>
         <GlassMark state="launched" className="sz-md" />
       </header>

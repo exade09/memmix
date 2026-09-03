@@ -38,7 +38,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button className={classes(variant, size, className, block)} {...props}>
-      {children}
+      <span className="btn-label">{children}</span>
       {arrow ? <ArrowGlyph /> : null}
     </button>
   );
@@ -62,7 +62,7 @@ export function ButtonLink({
 }: ButtonLinkProps) {
   return (
     <Link className={classes(variant, size, className, block)} {...props}>
-      {children}
+      <span className="btn-label">{children}</span>
       {arrow ? <ArrowGlyph /> : null}
     </Link>
   );
@@ -86,7 +86,7 @@ export function ButtonAnchor({
 }: ExternalButtonProps) {
   return (
     <a className={classes(variant, size, className, block)} {...props}>
-      {children}
+      <span className="btn-label">{children}</span>
       {arrow ? <ArrowGlyph /> : null}
     </a>
   );
@@ -112,7 +112,7 @@ export function FileButton({
 }) {
   return (
     <label className={`${classes(variant, size, className)} btn-file${disabled ? " is-disabled" : ""}`}>
-      {children}
+      <span className="btn-label">{children}</span>
       <input
         type="file"
         accept={accept}

@@ -2,10 +2,11 @@ import { Link } from "react-router-dom";
 import { appConfig } from "../../app/config";
 import { FOOTER_DISCLAIMER } from "../../domain/legalCopy";
 import { Wordmark } from "../brand/Wordmark";
+import { SectionReveal } from "../motion/SectionReveal";
 
 export function SiteFooter() {
   return (
-    <footer className="site-footer">
+    <SectionReveal as="footer" className="site-footer" ariaLabel="Footer">
       <div className="wrap">
         <div className="footer-top">
           <div className="footer-brand stack sm">
@@ -41,6 +42,6 @@ export function SiteFooter() {
       <span className="footer-watermark" aria-hidden="true">
         FONS
       </span>
-    </footer>
+    </SectionReveal>
   );
 }

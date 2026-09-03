@@ -11,6 +11,8 @@
   --btn-fg: var(--ink);
   --btn-line: var(--glass-line-2);
   position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -30,17 +32,62 @@
   white-space: nowrap;
   backdrop-filter: blur(var(--blur));
   box-shadow: var(--inner-glass);
+  transform: translateZ(0);
   transition: background var(--t-micro), color var(--t-micro), border-color var(--t-micro),
-    transform var(--t-micro), box-shadow var(--t-micro), opacity var(--t-micro);
+    transform var(--t-base), box-shadow var(--t-base), opacity var(--t-micro);
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: -2px;
+  background: linear-gradient(
+    105deg,
+    transparent 22%,
+    rgba(255, 255, 255, 0.04) 37%,
+    rgba(255, 255, 255, 0.42) 49%,
+    rgba(255, 255, 255, 0.04) 61%,
+    transparent 76%
+  );
+  transform: translateX(-125%) skewX(-12deg);
+  transition: transform 680ms cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: none;
+}
+
+.btn-label,
+.btn-arrow {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-label {
+  display: inline-flex;
+  align-items: center;
+  transition: transform var(--t-base), letter-spacing var(--t-base);
 }
 
 .btn:hover:not(:disabled):not([aria-disabled="true"]) {
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.008);
   box-shadow: var(--inner-glass), var(--lift);
 }
 
-.btn:active:not(:disabled) {
-  transform: translateY(0);
+.btn:hover:not(:disabled):not([aria-disabled="true"])::before {
+  transform: translateX(125%) skewX(-12deg);
+}
+
+.btn:hover:not(:disabled):not([aria-disabled="true"]) .btn-label {
+  transform: translateY(-0.5px);
+}
+
+.btn:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(0) scale(0.975);
+  transition-duration: 90ms;
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--inner-glass), 0 0 0 3px rgba(92, 125, 80, 0.2), var(--lift);
 }
 
 .btn:disabled,
@@ -54,12 +101,12 @@
   --btn-bg: var(--ink);
   --btn-fg: var(--haze);
   --btn-line: var(--ink);
-  box-shadow: none;
+  box-shadow: 0 10px 28px -18px rgba(34, 51, 31, 0.78);
 }
 
 .btn.primary:hover:not(:disabled) {
   --btn-bg: #2c4227;
-  box-shadow: var(--lift);
+  box-shadow: 0 16px 36px -20px rgba(34, 51, 31, 0.82);
 }
 
 .btn.secondary {
@@ -141,7 +188,7 @@
 .btn-arrow svg {
   width: 12px;
   height: 12px;
-  transition: transform var(--t-base);
+  transition: transform var(--t-base), background var(--t-base), box-shadow var(--t-base);
 }
 
 .btn.primary .btn-arrow {
@@ -161,7 +208,28 @@
 }
 
 .btn:hover:not(:disabled) .btn-arrow svg {
-  transform: translateX(2px);
+  transform: translateX(3px);
+}
+
+.btn:hover:not(:disabled) .btn-arrow {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
+}
+
+@keyframes fons-button-busy {
+  from { transform: translateX(-125%) skewX(-12deg); }
+  to { transform: translateX(125%) skewX(-12deg); }
+}
+
+.btn[aria-busy="true"] {
+  opacity: 0.78;
+}
+
+.btn[aria-busy="true"]::before {
+  animation: fons-button-busy 1.25s ease-in-out infinite;
+}
+
+body[data-page-hidden="true"] .btn[aria-busy="true"]::before {
+  animation-play-state: paused;
 }
 
 .btn-file {
@@ -1064,5 +1132,292 @@ input[type="range"]::-moz-range-thumb {
   .rail-link:hover:not(.is-active) {
     transform: none;
     padding-left: revert;
+  }
+}
+
+.motion-overlay,
+.motion-overlay .dialog {
+  animation: none;
+}
+
+/* ---------------------------------------------------------------
+   Shared entrance language
+
+   App routes mount inside one persistent glass window. Their direct children
+   arrive in a short cascade so state changes read as a progression instead of
+   a hard DOM swap. Dynamic notices and results use the same curve.
+--------------------------------------------------------------- */
+
+@keyframes fons-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.992);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes fons-status-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fons-avatar-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) rotate(-1.5deg);
+    filter: saturate(0.65) blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+    filter: saturate(1) blur(0);
+  }
+}
+
+.page > * {
+  animation: fons-rise-in 620ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.page > :nth-child(2) { animation-delay: 55ms; }
+.page > :nth-child(3) { animation-delay: 100ms; }
+.page > :nth-child(4) { animation-delay: 145ms; }
+.page > :nth-child(5) { animation-delay: 190ms; }
+.page > :nth-child(n + 6) { animation-delay: 220ms; }
+
+.legal-page > * {
+  animation: fons-rise-in 600ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.legal-page > :nth-child(2) { animation-delay: 60ms; }
+.legal-page > :nth-child(3) { animation-delay: 105ms; }
+.legal-page > :nth-child(4) { animation-delay: 150ms; }
+.legal-page > :nth-child(n + 5) { animation-delay: 190ms; }
+
+.note,
+.empty-state,
+.slot-results,
+.search-dialog-body > section {
+  animation: fons-status-in 360ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.avatar-studio-frame > img,
+.token-hero > .avatar,
+.review-token > .avatar {
+  animation: fons-avatar-in 620ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.review-grid > .panel {
+  animation: fons-rise-in 560ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.review-grid > :nth-child(2) { animation-delay: 55ms; }
+.review-grid > :nth-child(3) { animation-delay: 110ms; }
+.review-grid > :nth-child(4) { animation-delay: 165ms; }
+.review-grid > :nth-child(5) { animation-delay: 220ms; }
+.review-grid > :nth-child(n + 6) { animation-delay: 275ms; }
+
+.facts > div {
+  transition: background var(--t-base), transform var(--t-base);
+}
+
+.facts > div:hover {
+  background: var(--glass-3);
+  transform: translateX(3px);
+}
+
+.step-rail li.is-done {
+  animation: fons-status-in 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.step-rail li.is-done span {
+  transform-origin: center;
+  animation: fons-check-in 480ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes fons-check-in {
+  0% { transform: scale(0.7); opacity: 0.35; }
+  70% { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Tactile glass surfaces. Nothing loops; motion only answers intent or state. */
+.panel:not(.flush),
+.filter-bar,
+.avatar-studio,
+.live-preview,
+.disclosure {
+  transition:
+    border-color var(--t-base),
+    box-shadow var(--t-base),
+    background var(--t-base),
+    transform var(--t-base);
+}
+
+.panel:not(.flush):hover,
+.filter-bar:focus-within,
+.avatar-studio:focus-within,
+.live-preview:hover {
+  border-color: rgba(34, 51, 31, 0.16);
+  box-shadow: var(--inner-glass), 0 22px 46px -34px rgba(34, 51, 31, 0.42);
+}
+
+.chip {
+  transition:
+    transform var(--t-micro),
+    border-color var(--t-micro),
+    background var(--t-micro),
+    color var(--t-micro);
+}
+
+a.chip:hover,
+button.chip:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 51, 31, 0.26);
+  background: var(--glass-3);
+}
+
+.search-result {
+  transition: background var(--t-micro), transform var(--t-micro), box-shadow var(--t-micro);
+}
+
+.search-result:hover,
+.search-row.is-active .search-result {
+  transform: translateX(3px);
+}
+
+.search-result img,
+.search-result-fallback {
+  transition: transform var(--t-base), box-shadow var(--t-base);
+}
+
+.search-result:hover img,
+.search-result:hover .search-result-fallback,
+.search-row.is-active .search-result img {
+  transform: scale(1.07) rotate(-1deg);
+  box-shadow: var(--inner-glass), var(--lift);
+}
+
+.segmented button {
+  position: relative;
+  overflow: hidden;
+}
+
+.segmented button::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  transform: translate(-50%, 5px) scale(0.5);
+  transition: opacity var(--t-base), transform var(--t-base);
+}
+
+.segmented button[aria-pressed="true"]::after {
+  opacity: 0.55;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.confirm-row input[type="checkbox"] {
+  transition:
+    transform var(--t-base),
+    background var(--t-micro),
+    border-color var(--t-micro),
+    box-shadow var(--t-base);
+}
+
+.confirm-row input[type="checkbox"]:checked {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 4px rgba(92, 125, 80, 0.12);
+}
+
+.disclosure[open] {
+  border-color: rgba(34, 51, 31, 0.16);
+  background: var(--glass-2);
+  box-shadow: var(--inner-glass), var(--lift);
+}
+
+.disclosure > summary::after {
+  transform-origin: center;
+}
+
+@supports (interpolate-size: allow-keywords) {
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  .disclosure::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow-y: clip;
+    transition:
+      block-size 420ms cubic-bezier(0.32, 0.72, 0, 1),
+      opacity 280ms ease;
+  }
+
+  .disclosure[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+}
+
+.chrome-lights i,
+.chrome-glyphs i {
+  transition: transform var(--t-base), background var(--t-base), border-color var(--t-base);
+}
+
+.panel:hover .chrome-lights i:nth-child(1),
+.app-window:hover .chrome-lights i:nth-child(1) {
+  transform: translateY(-1px);
+  background: rgba(181, 86, 63, 0.46);
+}
+
+.panel:hover .chrome-lights i:nth-child(2),
+.app-window:hover .chrome-lights i:nth-child(2) {
+  transform: translateY(-1px);
+  background: rgba(216, 168, 94, 0.62);
+}
+
+.panel:hover .chrome-lights i:nth-child(3),
+.app-window:hover .chrome-lights i:nth-child(3) {
+  transform: translateY(-1px);
+  background: rgba(95, 156, 87, 0.52);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page > *,
+  .legal-page > *,
+  .note,
+  .empty-state,
+  .slot-results,
+  .search-dialog-body > section,
+  .avatar-studio-frame > img,
+  .token-hero > .avatar,
+  .review-token > .avatar,
+  .review-grid > .panel,
+  .step-rail li.is-done,
+  .step-rail li.is-done span {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+
+  .btn::before {
+    display: none;
   }
 }

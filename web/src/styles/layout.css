@@ -661,6 +661,11 @@ body[data-surface="plain"] {
   opacity: 0.62;
 }
 
+.app-window-title {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .app-window-body {
   padding: clamp(20px, 3vw, 34px);
 }
@@ -681,5 +686,215 @@ body[data-surface="plain"] {
 
   .app-window-body {
     padding: 0;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Navigation and chrome motion
+--------------------------------------------------------------- */
+
+@keyframes fons-header-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    backdrop-filter: blur(var(--blur-lg)) saturate(120%);
+  }
+}
+
+.site-header {
+  animation: fons-header-in 620ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.nav-link {
+  position: relative;
+  overflow: hidden;
+  transition:
+    color var(--t-base),
+    background var(--t-base),
+    transform var(--t-base);
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 3px;
+  height: 1px;
+  border-radius: 999px;
+  background: var(--moss);
+  opacity: 0;
+  transform: scaleX(0.2);
+  transform-origin: center;
+  transition: opacity var(--t-base), transform var(--t-base);
+}
+
+.nav-link:hover {
+  transform: translateY(-1px);
+}
+
+.nav-link:hover::after {
+  opacity: 0.42;
+  transform: scaleX(0.7);
+}
+
+.nav-link.is-active::after {
+  opacity: 0.9;
+  transform: scaleX(1);
+}
+
+.search-chip {
+  transition:
+    color var(--t-base),
+    border-color var(--t-base),
+    background var(--t-base),
+    transform var(--t-base),
+    box-shadow var(--t-base);
+}
+
+.search-chip svg,
+.search-chip kbd {
+  transition: transform var(--t-base), color var(--t-base), border-color var(--t-base);
+}
+
+.search-chip:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 51, 31, 0.26);
+  box-shadow: var(--inner-glass), var(--lift);
+}
+
+.search-chip:hover svg {
+  transform: rotate(-8deg) scale(1.08);
+}
+
+.search-chip:hover kbd {
+  transform: translateY(-1px);
+  border-color: rgba(34, 51, 31, 0.28);
+}
+
+@keyframes fons-live-pip {
+  0%, 100% {
+    transform: scale(0.86);
+    box-shadow: 0 0 0 0 rgba(95, 156, 87, 0.24);
+  }
+  50% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(95, 156, 87, 0);
+  }
+}
+
+.network-badge[data-network="mainnet"] .pip,
+.wallet-status[data-wallet-phase="connected"] .pip {
+  animation: fons-live-pip 2.6s ease-in-out infinite;
+}
+
+body[data-page-hidden="true"] .network-badge .pip,
+body[data-page-hidden="true"] .wallet-status .pip {
+  animation-play-state: paused;
+}
+
+.app-window {
+  transition: border-color var(--t-slow), box-shadow var(--t-slow);
+}
+
+.app-window:hover {
+  border-color: rgba(34, 51, 31, 0.14);
+  box-shadow:
+    0 1px 2px rgba(34, 51, 31, 0.05),
+    0 34px 72px -38px rgba(34, 51, 31, 0.4),
+    var(--inner-glass);
+}
+
+.app-window-bar {
+  overflow: hidden;
+}
+
+.app-window-path {
+  transition: opacity var(--t-base), transform var(--t-base);
+}
+
+.app-window:hover .app-window-path {
+  opacity: 0.8;
+  transform: translateX(-3px);
+}
+
+.rail-link {
+  position: relative;
+}
+
+.rail-link::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--moss);
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity var(--t-base), transform var(--t-base);
+}
+
+.rail-link.is-active::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.bottom-nav a {
+  position: relative;
+  transition: color var(--t-base), background var(--t-base), transform var(--t-base);
+}
+
+.bottom-nav a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  transform: translate(-50%, 5px) scale(0.4);
+  transition: opacity var(--t-base), transform var(--t-base);
+}
+
+.bottom-nav a.active {
+  transform: translateY(-1px);
+}
+
+.bottom-nav a.active::after {
+  opacity: 0.72;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.footer-col a {
+  position: relative;
+  width: fit-content;
+  transition: color var(--t-base), transform var(--t-base);
+}
+
+.footer-col a:hover {
+  color: var(--ink);
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header,
+  .network-badge .pip,
+  .wallet-status .pip {
+    animation: none !important;
+  }
+
+  .nav-link:hover,
+  .search-chip:hover,
+  .bottom-nav a.active,
+  .footer-col a:hover {
+    transform: none;
   }
 }

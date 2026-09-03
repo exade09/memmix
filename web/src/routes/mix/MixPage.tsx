@@ -507,7 +507,14 @@ export function MixPage() {
             <ButtonLink to="/app/launch" variant="ghost">
               Direct Launch
             </ButtonLink>
-            <Button type="button" variant="primary" arrow disabled={mutateDisabled} onClick={() => void mutate()}>
+            <Button
+              type="button"
+              variant="primary"
+              arrow
+              disabled={mutateDisabled}
+              aria-busy={analyzing || undefined}
+              onClick={() => void mutate()}
+            >
               {analyzing ? "Mutating…" : cooldown > 0 ? `Mutate (${cooldown})` : "Mutate"}
             </Button>
           </div>
@@ -583,6 +590,7 @@ export function MixPage() {
                   type="button"
                   variant="secondary"
                   disabled={!canGenerate}
+                  aria-busy={drawing || undefined}
                   onClick={() => void generateAvatar()}
                 >
                   {previewSrc && !replaced ? "Regenerate avatar" : "Generate avatar"}

@@ -24,7 +24,7 @@ export function Stagger({
   children: ReactNode;
   className?: string;
   step?: number;
-  as?: "div" | "ul" | "section";
+  as?: "div" | "ul" | "ol" | "section" | "nav";
 }) {
   const Tag = as;
   const items = Children.toArray(children);
@@ -48,7 +48,7 @@ export function StaggerItem({
 }: {
   children: ReactNode;
   className?: string;
-  as?: "div" | "li";
+  as?: "div" | "li" | "article" | "aside" | "details";
   /** Injected by Stagger. */
   index?: number;
   step?: number;
@@ -68,10 +68,10 @@ export function StaggerItem({
   return (
     <MotionTag
       className={className}
-      initial={{ opacity: 0, y: 14 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 20, scale: 0.985, filter: "blur(3px)" }}
+      whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
       viewport={{ once: true, amount: 0.15 }}
-      transition={{ duration: 0.34, ease: EASE, delay }}
+      transition={{ duration: 0.52, ease: EASE, delay }}
     >
       {children}
     </MotionTag>

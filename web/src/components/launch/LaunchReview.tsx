@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Address } from "viem";
 import { appConfig, networkLabel } from "../../app/config";
+import { AnimatedText } from "../motion/AnimatedText";
 import { formatEth } from "../../domain/validation";
 import { readPendingLaunch, writePendingLaunch } from "../../domain/pendingLaunch";
 import { fetchLaunchHealth, type NameCheckResult } from "../../services/api";
@@ -368,11 +369,15 @@ export function LaunchReview(props: LaunchReviewProps) {
       <header className="page-head">
         <div className="stack sm">
           <p className="eyebrow">Review launch</p>
-          <h1>
-            {boundary.signEnabled
-              ? "Review the debit, then approve in MetaMask"
-              : "Nothing is signed until the launchpad is connected"}
-          </h1>
+          <AnimatedText
+            as="h1"
+            reveal="lines"
+            lines={[
+              boundary.signEnabled
+                ? "Review the debit, then approve in MetaMask"
+                : "Nothing is signed until the launchpad is connected",
+            ]}
+          />
         </div>
         <GlassMark
           state={state === "WALLET_OPEN" ? "wallet" : error ? "warning" : "idle"}
@@ -494,6 +499,9 @@ export function LaunchReview(props: LaunchReviewProps) {
           variant="primary"
           size="lg"
           disabled={signDisabled}
+          aria-busy={
+            state === "SUBMITTING" || state === "WALLET_OPEN" || state === "CONFIRMING" || undefined
+          }
           title={signDisabled ? boundary.reason : "Sign and launch"}
           aria-disabled={signDisabled}
           onClick={() => void onSign()}

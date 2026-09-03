@@ -107,6 +107,13 @@
 .token-card-metrics > div {
   padding: 9px 11px;
   background: var(--glass-2);
+  transition: background var(--t-base), transform var(--t-base);
+}
+
+.token-card-metrics > div:hover {
+  z-index: 1;
+  background: var(--glass-3);
+  transform: translateY(-2px);
 }
 
 .token-card-metrics dt {
@@ -183,6 +190,32 @@
   transition: border-color var(--t-base), background var(--t-base), box-shadow var(--t-base);
 }
 
+.slot::before {
+  content: "";
+  position: absolute;
+  inset: -1px 22px auto;
+  height: 2px;
+  border-radius: 999px;
+  opacity: 0;
+  transform: scaleX(0.25);
+  transition: opacity var(--t-slow), transform var(--t-slow);
+}
+
+.slot[data-side="a"]::before {
+  background: var(--sun);
+}
+
+.slot[data-side="b"]::before {
+  background: var(--sky);
+}
+
+.slot:focus-within::before,
+.slot:has(.slot-filled)::before,
+.slot.is-picked::before {
+  opacity: 0.78;
+  transform: scaleX(1);
+}
+
 .slot[data-side="a"]:focus-within,
 .slot[data-side="a"]:has(.slot-filled) {
   border-color: rgba(216, 168, 94, 0.5);
@@ -215,6 +248,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  animation: fons-avatar-in 540ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
 .slot-filled .avatar {
@@ -277,6 +311,15 @@
 .search-result:hover {
   background: var(--glass-2);
 }
+
+.slot-results .search-result {
+  animation: fons-status-in 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.slot-results .search-result:nth-child(2) { animation-delay: 25ms; }
+.slot-results .search-result:nth-child(3) { animation-delay: 50ms; }
+.slot-results .search-result:nth-child(4) { animation-delay: 75ms; }
+.slot-results .search-result:nth-child(n + 5) { animation-delay: 100ms; }
 
 .search-result img,
 .search-result-fallback {
@@ -491,6 +534,7 @@
   font-size: 10px;
   letter-spacing: var(--track-mid);
   color: var(--moss);
+  transition: transform var(--t-base), color var(--t-base);
 }
 
 .step-card,
@@ -544,6 +588,24 @@
   font-size: 14px;
   line-height: 1.6;
   color: var(--ink-dim);
+}
+
+.step-card:hover .step-index,
+.pillar-card:hover .step-index {
+  transform: translateX(3px);
+  color: var(--moss-deep);
+}
+
+.step-card h3,
+.pillar-card h3,
+.step-card p,
+.pillar-card p {
+  transition: transform var(--t-base), color var(--t-base);
+}
+
+.step-card:hover h3,
+.pillar-card:hover h3 {
+  transform: translateX(3px);
 }
 
 .step-grid,
@@ -839,5 +901,20 @@
     bottom: 0;
     width: auto;
     height: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-filled,
+  .slot-results .search-result {
+    animation: none !important;
+  }
+
+  .step-card:hover .step-index,
+  .pillar-card:hover .step-index,
+  .step-card:hover h3,
+  .pillar-card:hover h3,
+  .token-card-metrics > div:hover {
+    transform: none;
   }
 }

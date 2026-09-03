@@ -50,7 +50,7 @@ export function WalletButton() {
 
   if (phase === "connecting") {
     return (
-      <Button type="button" variant="secondary" size="sm" disabled data-wallet-phase={phase}>
+      <Button type="button" variant="secondary" size="sm" disabled aria-busy="true" data-wallet-phase={phase}>
         Connecting…
       </Button>
     );

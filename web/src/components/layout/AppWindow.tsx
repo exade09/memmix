@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 import { EASE } from "../motion/motion";
 
@@ -43,11 +43,29 @@ export function AppWindow({ children }: { children: ReactNode }) {
           <i />
           <i />
         </span>
-        {title}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={title}
+            className="app-window-title"
+            initial={reduceMotion ? false : { opacity: 0, y: 5, filter: "blur(2px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -4, filter: "blur(2px)" }}
+            transition={{ duration: reduceMotion ? 0 : 0.22, ease: EASE }}
+          >
+            {title}
+          </motion.span>
+        </AnimatePresence>
       </span>
-      <span className="app-window-path" aria-hidden="true">
+      <motion.span
+        key={location.pathname}
+        className="app-window-path"
+        aria-hidden="true"
+        initial={reduceMotion ? false : { opacity: 0, x: 6 }}
+        animate={{ opacity: 0.62, x: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.24, ease: EASE }}
+      >
         {location.pathname}
-      </span>
+      </motion.span>
     </div>
   );
 

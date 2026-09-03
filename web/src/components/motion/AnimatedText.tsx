@@ -45,8 +45,8 @@ function Word({ word, delay }: { word: string; delay: number }) {
     <span className="anim-word">
       <motion.span
         className="anim-word-inner"
-        initial={{ opacity: 0, y: "0.78em", rotate: 1.4 }}
-        whileInView={{ opacity: 1, y: "0em", rotate: 0 }}
+        initial={{ opacity: 0, y: "0.82em", rotate: 1.2, scale: 0.985, filter: "blur(5px)" }}
+        whileInView={{ opacity: 1, y: "0em", rotate: 0, scale: 1, filter: "blur(0px)" }}
         viewport={viewport}
         transition={{ duration: DURATION.words, ease: EASE, delay }}
       >
@@ -61,8 +61,8 @@ function Line({ line, delay }: { line: string; delay: number }) {
     <span className="anim-word">
       <motion.span
         className="anim-word-inner"
-        initial={{ opacity: 0, y: "0.6em" }}
-        whileInView={{ opacity: 1, y: "0em" }}
+        initial={{ opacity: 0, y: "0.64em", filter: "blur(4px)" }}
+        whileInView={{ opacity: 1, y: "0em", filter: "blur(0px)" }}
         viewport={viewport}
         transition={{ duration: DURATION.lines, ease: EASE, delay }}
       >
@@ -106,8 +106,8 @@ export function AnimatedText({
     return (
       <motion.p
         className={className}
-        initial={{ opacity: 0, y: 14 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 16, filter: "blur(3px)" }}
+        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={viewport}
         transition={{ duration: DURATION.fade, ease: EASE, delay }}
       >

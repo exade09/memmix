@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { setDraftParent } from "../../domain/draft";
 import { rememberSearch, readRecentSearches, type RecentSearch } from "../../domain/recent";
 import { searchTokensResult, type TokenSummary } from "../../services/api";
@@ -7,6 +8,7 @@ import { track } from "../../services/analytics";
 import { toParent } from "../token/TokenFeedCard";
 import { Button } from "../ui/Button";
 import { TokenAvatar } from "../token/TokenAvatar";
+import { EASE } from "../motion/motion";
 
 export function GlobalSearchDialog({
   open,
@@ -16,6 +18,7 @@ export function GlobalSearchDialog({
   onClose: () => void;
 }) {
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<TokenSummary[]>([]);
@@ -133,16 +136,28 @@ export function GlobalSearchDialog({
     navigate("/app/mix");
   }
 
-  if (!open) return null;
-
   return (
-    <div className="overlay top" role="presentation" onClick={onClose}>
-      <div
+    <AnimatePresence>
+      {open ? (
+      <motion.div
+        className="overlay top motion-overlay"
+        role="presentation"
+        onClick={onClose}
+        initial={reduceMotion ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.22, ease: EASE }}
+      >
+      <motion.div
         className="dialog search-dialog"
         role="dialog"
         aria-modal="true"
         aria-label="Quick search"
         onClick={(event) => event.stopPropagation()}
+        initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.975, filter: "blur(5px)" }}
+        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: 10, scale: 0.985, filter: "blur(3px)" }}
+        transition={{ duration: reduceMotion ? 0 : 0.36, ease: EASE }}
       >
         <div className="search-dialog-input">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -217,8 +232,10 @@ export function GlobalSearchDialog({
           ) : null}
         </div>
         <p className="search-help metric-label">↑↓ select · Enter view · A / B assign parent · Esc close</p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 

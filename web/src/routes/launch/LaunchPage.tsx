@@ -530,6 +530,7 @@ export function LaunchPage() {
             size="lg"
             arrow
             disabled={!canReview || phase === "PINNING_METADATA"}
+            aria-busy={phase === "PINNING_METADATA" || undefined}
           >
             {phase === "PINNING_METADATA" ? "Pinning…" : "Review launch"}
           </Button>

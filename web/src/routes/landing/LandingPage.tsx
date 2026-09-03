@@ -268,39 +268,39 @@ export function LandingPage() {
               </div>
               <p className="body-copy">The lab does not predict the market. It makes new things for it</p>
             </div>
-            <ol className="step-grid">
+            <Stagger as="ol" className="step-grid" step={0.08}>
               {HOW.map(([index, title, copy]) => (
-                <li key={title} className="step-card">
+                <StaggerItem key={title} as="li" className="step-card">
                   <span className="step-index">{index}</span>
                   <h3>{title}</h3>
                   <p>{copy}</p>
-                </li>
+                </StaggerItem>
               ))}
-            </ol>
+            </Stagger>
           </div>
         </SectionReveal>
 
         {/* --------------------------------------------------------- two paths */}
         <SectionReveal className="section" ariaLabel="Two paths">
           <div className="wrap">
-            <div className="path-grid">
-              <article className="path-card is-a">
+            <Stagger className="path-grid" step={0.12}>
+              <StaggerItem as="article" className="path-card is-a">
                 <p className="eyebrow">AI Mix</p>
                 <h2>I have two tokens. Make the third</h2>
 <p className="body-copy">Two tokens in, one editable character out</p>
                 <ButtonLink to="/app/mix" variant="primary" arrow onClick={() => track("landing_primary_cta")}>
                   Open the mixer
                 </ButtonLink>
-              </article>
-              <article className="path-card is-b">
+              </StaggerItem>
+              <StaggerItem as="article" className="path-card is-b">
                 <p className="eyebrow">Direct Launch</p>
                 <h2>I already know what I am launching</h2>
 <p className="body-copy">Name, ticker, image, links. Works with AI offline</p>
                 <ButtonLink to="/app/launch" variant="outline" arrow onClick={() => track("landing_direct_launch_cta")}>
                   Open the launchpad
                 </ButtonLink>
-              </article>
-            </div>
+              </StaggerItem>
+            </Stagger>
           </div>
         </SectionReveal>
 
@@ -386,15 +386,15 @@ export function LandingPage() {
               </div>
             </div>
             <div className="safety-layout">
-              <ol className="pillar-grid">
+              <Stagger as="ol" className="pillar-grid" step={0.07}>
                 {SAFETY_INDEXED.map(([index, title, copy]) => (
-                  <li key={title} className="pillar-card">
+                  <StaggerItem key={title} as="li" className="pillar-card">
                     <span className="step-index">{index}</span>
                     <h3>{title}</h3>
                     <p>{copy}</p>
-                  </li>
+                  </StaggerItem>
                 ))}
-              </ol>
+              </Stagger>
             </div>
           </div>
         </SectionReveal>
@@ -407,9 +407,9 @@ export function LandingPage() {
               <AnimatedText as="h2" lines={["Before you sign"]} />
 <p className="body-copy">What {appConfig.productName} can and cannot do</p>
             </div>
-            <div className="faq-list">
+            <Stagger className="faq-list" step={0.055}>
               {FAQ_ITEMS.map(([question, answer], index) => (
-                <details key={question} className="disclosure faq-item">
+                <StaggerItem key={question} as="details" className="disclosure faq-item">
                   <summary>
                     <span className="faq-index">{String(index + 1).padStart(2, "0")}</span>
                     {question}
@@ -417,9 +417,9 @@ export function LandingPage() {
                   <div className="disclosure-body">
                     <p className="body-copy">{answer}</p>
                   </div>
-                </details>
+                </StaggerItem>
               ))}
-            </div>
+            </Stagger>
           </div>
         </SectionReveal>
 
@@ -464,7 +464,13 @@ function MixBench({
 }) {
   const ready = Boolean(parentA && parentB);
   return (
-    <div className="panel flush bench" aria-label="Mix bench">
+    <motion.div
+      className="panel flush bench"
+      aria-label="Mix bench"
+      initial={reduceMotion ? false : { opacity: 0, y: 26, scale: 0.985, filter: "blur(5px)" }}
+      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+      transition={{ duration: reduceMotion ? 0 : 0.72, ease: EASE, delay: reduceMotion ? 0 : 0.32 }}
+    >
       <div className="chrome-bar">
         <span>
           <span className="chrome-lights" aria-hidden="true">
@@ -554,7 +560,7 @@ function MixBench({
           <span className="metric-label bench-note">No wallet opens until you sign</span>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
