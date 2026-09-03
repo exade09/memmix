@@ -172,22 +172,39 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _static_path_for_request(self, request_path: str):
+        """
+        File existence decides what gets served, not the shape of the path.
+
+        The previous version only let /assets/* and /favicon.svg reach their
+        own file; every other path - /favicon.png, /favicon-180.png,
+        /apple-touch-icon.png, anything else Vite drops at the root of dist/ -
+        silently fell through to the SPA's index.html. That is not a 404: it
+        is a 200 with the wrong body, wrong content type, and no error to
+        notice. It is how the favicon spent this whole session being served
+        as HTML.
+        """
         dist_root = WEB_ROOT / "dist"
+        index_html = dist_root / "index.html" if (dist_root / "index.html").is_file() else WEB_ROOT / "index.html"
         if request_path in {"", "/"}:
-            if (dist_root / "index.html").is_file():
-                return dist_root / "index.html"
-            return WEB_ROOT / "index.html"
-        if request_path.startswith("/assets/") or request_path == "/favicon.svg":
-            dist_file = dist_root / request_path.lstrip("/")
-            if dist_file.is_file():
-                return dist_file
-            public_file = WEB_ROOT / "public" / request_path.lstrip("/")
-            if public_file.is_file():
-                return public_file
-            return WEB_ROOT / request_path.lstrip("/")
-        if (dist_root / "index.html").is_file():
-            return dist_root / "index.html"
-        return WEB_ROOT / "index.html"
+            return index_html
+
+        rel = request_path.lstrip("/")
+        dist_file = dist_root / rel
+        if dist_file.is_file():
+            return dist_file
+        public_file = WEB_ROOT / "public" / rel
+        if public_file.is_file():
+            return public_file
+
+        # A path with a file extension that matched nothing on disk is a
+        # missing asset, not a client-side route: it must 404, never fall
+        # back to index.html and hide the miss behind a 200.
+        if "." in request_path.rsplit("/", 1)[-1]:
+            return dist_root / "__missing__" / rel
+
+        # No extension: this is an SPA route (/app/mix, /docs, /token/0x...),
+        # so the client-side router gets index.html and takes it from there.
+        return index_html
 
     def log_message(self, format: str, *args: object) -> None:
         return
