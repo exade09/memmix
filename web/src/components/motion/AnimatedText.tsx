@@ -32,11 +32,11 @@ import { EASE } from "./motion";
 
 export type TextReveal = "words" | "lines" | "fade";
 
-const WORD_STEP = 0.06;
-const LINE_STEP = 0.14;
+const WORD_STEP = 0.085;
+const LINE_STEP = 0.18;
 
 /** Slow enough to be seen. The previous 0.5s read as a flicker on load. */
-const DURATION = { words: 0.66, lines: 0.72, fade: 0.6 } as const;
+const DURATION = { words: 0.82, lines: 0.86, fade: 0.72 } as const;
 
 const viewport = { once: true, amount: 0.1, margin: "0px 0px -6% 0px" } as const;
 
@@ -45,7 +45,7 @@ function Word({ word, delay }: { word: string; delay: number }) {
     <span className="anim-word">
       <motion.span
         className="anim-word-inner"
-        initial={{ opacity: 0, y: "0.82em", rotate: 1.2, scale: 0.985, filter: "blur(5px)" }}
+        initial={{ opacity: 0, y: "0.96em", rotate: 1.6, scale: 0.975, filter: "blur(8px)" }}
         whileInView={{ opacity: 1, y: "0em", rotate: 0, scale: 1, filter: "blur(0px)" }}
         viewport={viewport}
         transition={{ duration: DURATION.words, ease: EASE, delay }}
@@ -57,18 +57,27 @@ function Word({ word, delay }: { word: string; delay: number }) {
 }
 
 function Line({ line, delay }: { line: string; delay: number }) {
+  const words = line.split(" ").filter(Boolean);
+
   return (
-    <span className="anim-word">
-      <motion.span
-        className="anim-word-inner"
-        initial={{ opacity: 0, y: "0.64em", filter: "blur(4px)" }}
-        whileInView={{ opacity: 1, y: "0em", filter: "blur(0px)" }}
-        viewport={viewport}
-        transition={{ duration: DURATION.lines, ease: EASE, delay }}
-      >
-        {line}
-      </motion.span>
-    </span>
+    <>
+      {words.map((word, index) => (
+        <Fragment key={`${word}-${index}`}>
+          <span className="anim-word">
+            <motion.span
+              className="anim-word-inner"
+              initial={{ opacity: 0, y: "0.76em", filter: "blur(6px)" }}
+              whileInView={{ opacity: 1, y: "0em", filter: "blur(0px)" }}
+              viewport={viewport}
+              transition={{ duration: DURATION.lines, ease: EASE, delay }}
+            >
+              {word}
+            </motion.span>
+          </span>
+          {index < words.length - 1 ? " " : null}
+        </Fragment>
+      ))}
+    </>
   );
 }
 
@@ -106,7 +115,7 @@ export function AnimatedText({
     return (
       <motion.p
         className={className}
-        initial={{ opacity: 0, y: 16, filter: "blur(3px)" }}
+        initial={{ opacity: 0, y: 22, filter: "blur(5px)" }}
         whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={viewport}
         transition={{ duration: DURATION.fade, ease: EASE, delay }}

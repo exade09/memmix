@@ -39,10 +39,10 @@ export function SectionReveal({
         heading's own reveal out, which is why the landing page looked static
         while the app pages did not.
       */
-      initial={{ y: 28, opacity: 0.82 }}
-      whileInView={{ y: 0, opacity: 1 }}
+      initial={{ y: 46, opacity: 0.28, scale: 0.992 }}
+      whileInView={{ y: 0, opacity: 1, scale: 1 }}
       viewport={{ once: true, amount: 0.08, margin: "0px 0px -10% 0px" }}
-      transition={{ duration: 0.72, ease: [0.32, 0.72, 0, 1] }}
+      transition={{ duration: 0.9, ease: [0.32, 0.72, 0, 1] }}
     >
       {children}
     </MotionTag>

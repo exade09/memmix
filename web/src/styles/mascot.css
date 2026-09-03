@@ -12,6 +12,13 @@
   align-items: center;
   gap: 12px;
   width: 100%;
+  transform-origin: center;
+  transition: transform var(--t-slow), filter var(--t-slow);
+}
+
+.glass-mark:hover {
+  transform: translateY(-3px) scale(1.025) rotate(-0.4deg);
+  filter: saturate(1.05);
 }
 
 .glass-mark-body {
@@ -24,6 +31,10 @@
 .glass-mark-art {
   width: 100%;
   height: auto;
+}
+
+.glass-mark:hover .glass-mark-art {
+  filter: saturate(1.06) contrast(1.02);
 }
 
 /*
@@ -112,4 +123,10 @@
 
 .glass-mark.sz-hero {
   max-width: 380px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-mark:hover {
+    transform: none;
+  }
 }

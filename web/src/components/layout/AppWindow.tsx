@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import type { ReactNode } from "react";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { EASE } from "../motion/motion";
 
 /*
@@ -33,7 +33,19 @@ function windowTitle(pathname: string): string {
 export function AppWindow({ children }: { children: ReactNode }) {
   const location = useLocation();
   const reduceMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { amount: 0.08 });
+  const [pageVisible, setPageVisible] = useState(
+    () => typeof document === "undefined" || !document.hidden,
+  );
   const title = windowTitle(location.pathname);
+  const ambient = Boolean(!reduceMotion && inView && pageVisible);
+
+  useEffect(() => {
+    const sync = () => setPageVisible(!document.hidden);
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, []);
 
   const chrome = (
     <div className="app-window-bar">
@@ -80,11 +92,23 @@ export function AppWindow({ children }: { children: ReactNode }) {
 
   return (
     <motion.div
+      ref={ref}
       className="app-window"
       initial={{ opacity: 0, y: 18, scale: 0.985 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.46, ease: EASE }}
     >
+      <motion.span
+        className="app-window-ambient"
+        aria-hidden="true"
+        initial={{ x: "-140%" }}
+        animate={ambient ? { x: ["-140%", "520%"] } : { x: "-140%" }}
+        transition={
+          ambient
+            ? { duration: 2.2, repeat: Infinity, repeatDelay: 3.8, ease: EASE }
+            : { duration: 0.2, ease: EASE }
+        }
+      />
       {chrome}
       <div className="app-window-body">{children}</div>
     </motion.div>

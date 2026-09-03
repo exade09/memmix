@@ -21,7 +21,7 @@ export const DURATION = {
   /** The default for anything entering or leaving. */
   base: 0.28,
   /** Page-level changes, where a beat of weight reads as deliberate. */
-  page: 0.36,
+  page: 0.52,
 } as const;
 
 export const transition: Transition = { duration: DURATION.base, ease: EASE };
@@ -29,9 +29,9 @@ export const pageTransition: Transition = { duration: DURATION.page, ease: EASE 
 
 /** Enter from slightly below, leave straight up. Used for route changes. */
 export const pageVariants: Variants = {
-  initial: { opacity: 0, y: 14, scale: 0.997, filter: "blur(3px)" },
+  initial: { opacity: 0, y: 24, scale: 0.992, filter: "blur(6px)" },
   animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", transition: pageTransition },
-  exit: { opacity: 0, y: -8, scale: 0.998, filter: "blur(2px)", transition: { duration: 0.18, ease: EASE } },
+  exit: { opacity: 0, y: -12, scale: 0.996, filter: "blur(4px)", transition: { duration: 0.24, ease: EASE } },
 };
 
 /**

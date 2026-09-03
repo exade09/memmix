@@ -623,6 +623,7 @@ body[data-surface="plain"] {
    rather than as another section to scroll past.
 --------------------------------------------------------------- */
 .app-window {
+  position: relative;
   border: 1px solid var(--glass-line);
   border-radius: var(--radius-panel);
   background: rgba(255, 255, 255, 0.5);
@@ -634,6 +635,19 @@ body[data-surface="plain"] {
   overflow: hidden;
   /* The open animation scales the window; without this the text shimmers. */
   will-change: transform, opacity;
+}
+
+.app-window-ambient {
+  position: absolute;
+  z-index: 5;
+  top: -1px;
+  left: 0;
+  width: 24%;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.98), rgba(147, 177, 131, 0.58), transparent);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+  pointer-events: none;
 }
 
 .app-window-bar {
@@ -678,6 +692,10 @@ body[data-surface="plain"] {
     box-shadow: none;
     background: transparent;
     backdrop-filter: none;
+  }
+
+  .app-window-ambient {
+    display: none;
   }
 
   .app-window-bar {

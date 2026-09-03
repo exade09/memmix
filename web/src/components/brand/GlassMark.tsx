@@ -112,8 +112,16 @@ export function GlassMark({
     >
       <motion.div
         className="glass-mark-body"
-        animate={animate ? { y: [0, -6, 0] } : { y: 0 }}
-        transition={animate ? { duration: 7, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
+        animate={
+          animate
+            ? { y: [0, -10, -3, 0], rotate: [0, 0.9, -0.55, 0], scale: [1, 1.018, 1.006, 1] }
+            : { y: 0, rotate: 0, scale: 1 }
+        }
+        transition={
+          animate
+            ? { duration: 5.6, repeat: Infinity, ease: "easeInOut" }
+            : { duration: 0.28, ease: [0.32, 0.72, 0, 1] }
+        }
       >
         <img
           className={`glass-mark-art${art === "ok" ? " is-on" : ""}`}

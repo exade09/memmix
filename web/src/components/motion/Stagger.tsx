@@ -68,10 +68,10 @@ export function StaggerItem({
   return (
     <MotionTag
       className={className}
-      initial={{ opacity: 0, y: 20, scale: 0.985, filter: "blur(3px)" }}
+      initial={{ opacity: 0, y: 32, scale: 0.97, filter: "blur(6px)" }}
       whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
       viewport={{ once: true, amount: 0.15 }}
-      transition={{ duration: 0.52, ease: EASE, delay }}
+      transition={{ duration: 0.68, ease: EASE, delay }}
     >
       {children}
     </MotionTag>
