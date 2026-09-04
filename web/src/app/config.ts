@@ -23,6 +23,13 @@ export const appConfig = {
   enableMainnetLaunch: import.meta.env.VITE_ENABLE_MAINNET_LAUNCH !== "false",
   platformTokenAddress: import.meta.env.VITE_PLATFORM_TOKEN_ADDRESS ?? "",
   initialBuyMaxEth: Number(import.meta.env.VITE_INITIAL_BUY_MAX_ETH || "0.5") || 0.5,
+  /*
+    Off by default: the whole app runs normally. Set to "true" to put a
+    "coming soon" gate up on every route except /admin/ca, without removing
+    or touching anything underneath -- flip it back off and redeploy to
+    restore the site exactly as it was.
+  */
+  siteGateEnabled: import.meta.env.VITE_SITE_GATE_ENABLED === "true",
 } as const;
 
 export function networkLabel(chainId: number = appConfig.chainId): string {

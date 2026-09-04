@@ -1,4 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { appConfig } from "./config";
+import { ComingSoonGate } from "../components/layout/ComingSoonGate";
 import { PageShell } from "../components/layout/PageShell";
 import { CaAdminPage } from "../routes/admin/CaAdminPage";
 import { DocsPage } from "../routes/docs/DocsPage";
@@ -11,6 +13,14 @@ import { TokenPage } from "../routes/token/TokenPage";
 import { LaunchSuccessPage } from "../routes/token/LaunchSuccessPage";
 
 export function AppRouter() {
+  if (appConfig.siteGateEnabled) {
+    return (
+      <Routes>
+        <Route path="/admin/ca" element={<CaAdminPage />} />
+        <Route path="*" element={<ComingSoonGate />} />
+      </Routes>
+    );
+  }
   return (
     <Routes>
       <Route element={<PageShell />}>
