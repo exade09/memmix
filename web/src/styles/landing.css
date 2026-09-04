@@ -299,6 +299,17 @@ body[data-intro-open="true"] {
 }
 
 .bench-row {
+  /*
+    Positioned and explicitly stacked above .bench-actions so the search
+    dropdown (position: absolute inside a grid item here) reliably paints
+    over the buttons below it. Without this, .bench's own filter/transform
+    (from its entrance animation) puts .bench-row's grid item and
+    .bench-actions' isolated buttons in the same ambiguous paint layer, and
+    the buttons -- coming later in the DOM -- won paint over the dropdown
+    despite its own z-index: 20.
+  */
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto 132px;
   align-items: center;
@@ -319,6 +330,8 @@ body[data-intro-open="true"] {
 }
 
 .bench-actions {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

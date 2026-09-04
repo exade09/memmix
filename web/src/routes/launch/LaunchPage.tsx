@@ -312,6 +312,7 @@ export function LaunchPage() {
           twitter={twitter}
           telegram={telegram}
           website={website}
+          initialBuy={normalizeInitialBuy(initialBuy)}
           sponsorAddress={sponsorStatus.sponsor_address}
           onBack={() => setPhase("EDITING")}
           onSwitchToSelfPay={() => setPayMode("self")}
