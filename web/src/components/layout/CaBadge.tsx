@@ -17,7 +17,7 @@ import { fetchContractAddress } from "../../services/api";
   visitor who arrives later) catches up once the deploy lands.
 */
 
-const POLL_MS = 60_000;
+const POLL_MS = 8_000;
 export const CA_UPDATED_EVENT = "fons:ca-updated";
 
 export function CaBadge() {
