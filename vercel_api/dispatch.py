@@ -20,6 +20,7 @@ from vercel_api.routes.metadata import metadata_pin_route
 from vercel_api.routes.mix import mix_concepts_route
 from vercel_api.routes.rpc import chain_rpc_route
 from vercel_api.routes.search import search_tokens
+from vercel_api.routes.sponsor_launch import SponsorLaunchError, sponsor_launch_route, sponsor_launch_status
 from vercel_api.routes.token import token_detail
 from vercel_api.shared import runtime_config
 
@@ -36,6 +37,8 @@ def handle_api_get(path: str, query: dict[str, list[str]] | str) -> tuple[int, d
         return _name_check(params)
     if path == "/api/ca":
         return 200, envelope(success=True, data=read_ca())
+    if path == "/api/launch/sponsored/status":
+        return 200, envelope(success=True, data=sponsor_launch_status())
     if path == "/api/health":
         data = health_payload()
         dumped = json.dumps(data)
@@ -69,6 +72,8 @@ def handle_api_post(
         return _metadata_pin(read_multipart, client_ip)
     if path == "/api/chain/rpc":
         return _chain_rpc(reader, client_ip, origin, host)
+    if path == "/api/launch/sponsored":
+        return _sponsor_launch(reader, client_ip)
     if path != "/api/mix/concepts":
         return None
     try:
@@ -138,6 +143,33 @@ def _chain_rpc(reader, client_ip: str, origin: str, host: str) -> tuple[int, dic
         status = 413 if "too large" in str(exc) else 400
         return status, envelope(success=False, code="INVALID_INPUT", message=message)
     return chain_rpc_route(body, client_ip=client_ip, origin=origin, host=host)
+
+
+def _sponsor_launch(reader, client_ip: str) -> tuple[int, dict]:
+    if reader is None:
+        return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON.")
+    try:
+        body = reader(max_bytes=16_000)
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON.")
+    if not isinstance(body, dict):
+        return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON.")
+    try:
+        data = sponsor_launch_route(body, client_ip)
+    except SponsorLaunchError as exc:
+        status = (
+            429
+            if exc.code == "RATE_LIMITED"
+            else 403
+            if exc.code in {"SPONSOR_DISABLED", "SPONSOR_UNCONFIGURED", "LAUNCH_DISABLED"}
+            else 400
+            if exc.code in {"INVALID_INPUT", "CONTRACT_MISSING", "SIMULATION_FAILED"}
+            else 503
+            if exc.code in {"RPC_UNAVAILABLE", "SPONSOR_INSUFFICIENT_BALANCE", "SEND_FAILED", "SIGN_FAILED"}
+            else 502
+        )
+        return status, envelope(success=False, code=exc.code, message=str(exc))
+    return 200, envelope(success=True, data=data)
 
 
 def _name_check(params: dict[str, list[str]]) -> tuple[int, dict]:

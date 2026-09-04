@@ -10,6 +10,9 @@ requires-python = ">=3.12,<3.13"
 # tests/test_dependencies.py fails if the two ever drift apart.
 dependencies = [
     "Pillow>=10.4,<12",
+    "eth-account>=0.13,<0.14",
+    "eth-abi>=5.0,<6",
+    "eth-utils>=6.0,<7",
 ]
 
 [tool.vercel]

@@ -420,3 +420,82 @@ export async function updateContractAddress(
     return { ok: false, error: { code: "NETWORK", message: "Could not reach the server." } };
   }
 }
+
+export type SponsorLaunchStatus = {
+  available: boolean;
+  sponsor_address: string | null;
+};
+
+export type SponsorLaunchSocials = {
+  twitter?: string;
+  telegram?: string;
+  discord?: string;
+  website?: string;
+  farcaster?: string;
+};
+
+export type SponsorLaunchRequest = {
+  name: string;
+  ticker: string;
+  description: string;
+  logo: string;
+  socials?: SponsorLaunchSocials;
+  creator_wallet: string;
+  creator_tax_bps?: number;
+  buyback_enabled?: boolean;
+};
+
+export type SponsorLaunchResult = {
+  status: "confirmed" | "pending";
+  tx_hash: string;
+  token?: string;
+  curve?: string;
+  deployer?: string;
+  explorer_url: string;
+};
+
+/**
+ * Whether Fons is currently paying launch fee + gas from its own wallet
+ * instead of the visitor's. Off by default; only present at all once the
+ * server has both the feature flag and the wallet key configured.
+ */
+export async function fetchSponsorLaunchStatus(signal?: AbortSignal): Promise<SponsorLaunchStatus> {
+  try {
+    const response = await fetch("/api/launch/sponsored/status", {
+      cache: "no-store",
+      signal: signal ?? AbortSignal.timeout(8_000),
+    });
+    const payload = await readEnvelope<SponsorLaunchStatus>(response);
+    if (!payload.success || !payload.data) return { available: false, sponsor_address: null };
+    return payload.data;
+  } catch {
+    return { available: false, sponsor_address: null };
+  }
+}
+
+/**
+ * The sponsored path: no MetaMask signature for the launch itself. Fons's
+ * own wallet is the on-chain deployer; `creator_wallet` still receives any
+ * creator-tax revenue the launch is configured to pay out.
+ */
+export async function submitSponsoredLaunch(
+  body: SponsorLaunchRequest,
+): Promise<{ ok: true; data: SponsorLaunchResult } | { ok: false; error: ApiError }> {
+  try {
+    const response = await fetch("/api/launch/sponsored", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const payload = await readEnvelope<SponsorLaunchResult>(response);
+    if (!payload.success || !payload.data) {
+      return {
+        ok: false,
+        error: payload.error ?? ({ code: "UNKNOWN", message: "Something went wrong." } as ApiError),
+      };
+    }
+    return { ok: true, data: payload.data };
+  } catch {
+    return { ok: false, error: { code: "NETWORK", message: "Could not reach the server." } };
+  }
+}

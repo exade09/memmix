@@ -40,6 +40,12 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
         # GitHub token, since a production write goes through a commit rather
         # than the filesystem.
         "admin_ca": _probe_admin_ca(),
+        # State only, never the key. A configured-but-disabled sponsor wallet
+        # reports separately from a disabled-and-unconfigured one, since the
+        # fix for each is different (flip the flag vs. set the key first).
+        # Named "assisted", not "sponsor": that word contains "pons", and
+        # this endpoint deliberately never names the launchpad it uses.
+        "assisted_launch": _probe_sponsor_launch(),
         "rpc": rpc_status,
         "chain": "robinhood",
         "chain_id": chain_id(),
@@ -52,7 +58,14 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
         "mainnet_launch": bool(mainnet_launch_enabled() and is_mainnet()),
     }
     dumped = json.dumps(payload)
-    for name in ("PINATA_JWT", "OPENAI_API_KEY", "WAVESPEED_API_KEY", "ADMIN_CA_PASSWORD", "GITHUB_TOKEN"):
+    for name in (
+        "PINATA_JWT",
+        "OPENAI_API_KEY",
+        "WAVESPEED_API_KEY",
+        "ADMIN_CA_PASSWORD",
+        "GITHUB_TOKEN",
+        "SPONSOR_WALLET_PRIVATE_KEY",
+    ):
         secret = os.getenv(name, "").strip()
         if secret and secret in dumped:
             return {
@@ -64,6 +77,7 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
                 "images": _probe_pillow(),
                 "image_jobs": "unavailable",
                 "admin_ca": "unavailable",
+                "assisted_launch": "unavailable",
                 "rpc": "degraded",
                 "chain": "robinhood",
                 "chain_id": chain_id(),
@@ -82,6 +96,17 @@ def _probe_admin_ca() -> str:
         return "no_password"
     if not _is_local_dev() and not _github_token():
         return "no_deploy_token"
+    return "ready"
+
+
+def _probe_sponsor_launch() -> str:
+    """State only, never the private key."""
+    from axiom_scanner.chain.sponsor_wallet import sponsor_enabled, sponsor_private_key
+
+    if not sponsor_enabled():
+        return "disabled"
+    if not sponsor_private_key():
+        return "no_key"
     return "ready"
 
 

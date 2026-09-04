@@ -58,7 +58,12 @@ class DependencyDeclarationTests(unittest.TestCase):
 
     def test_every_third_party_import_is_declared(self) -> None:
         # Import name -> distribution name, where they differ.
-        distribution_for = {"PIL": "pillow"}
+        distribution_for = {
+            "PIL": "pillow",
+            "eth_abi": "eth-abi",
+            "eth_account": "eth-account",
+            "eth_utils": "eth-utils",
+        }
         declared = {
             spec.split(">")[0].split("<")[0].split("=")[0].split("[")[0].strip().lower()
             for spec in _declared()
