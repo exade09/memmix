@@ -9,9 +9,16 @@ import { fetchContractAddress } from "../../services/api";
   fetched once, since a production edit lands as a fresh deploy a little
   after the admin saves it, and a visitor already on the page should not
   have to reload to see it.
+
+  The header is mounted globally, so the admin page has this same badge
+  sitting above its own form. CA_UPDATED_EVENT lets a successful save show
+  up here the instant it happens, in this tab, instead of waiting out the
+  poll interval — the poll stays as the way every other open tab (and a
+  visitor who arrives later) catches up once the deploy lands.
 */
 
 const POLL_MS = 60_000;
+export const CA_UPDATED_EVENT = "fons:ca-updated";
 
 export function CaBadge() {
   const [ca, setCa] = useState("");
@@ -26,9 +33,15 @@ export function CaBadge() {
     };
     load();
     const interval = window.setInterval(load, POLL_MS);
+    const onUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ ca: string }>).detail;
+      if (detail) setCa(detail.ca || "");
+    };
+    window.addEventListener(CA_UPDATED_EVENT, onUpdated);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
+      window.removeEventListener(CA_UPDATED_EVENT, onUpdated);
     };
   }, []);
 

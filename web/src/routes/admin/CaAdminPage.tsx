@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CA_UPDATED_EVENT } from "../../components/layout/CaBadge";
 import { SiteFooter } from "../../components/layout/SiteFooter";
 import { Button } from "../../components/ui/Button";
 import { fetchContractAddress, updateContractAddress } from "../../services/api";
@@ -72,6 +73,7 @@ export function CaAdminPage() {
       return;
     }
     setCurrent({ ca: result.data.ca, updated_at: result.data.updated_at });
+    window.dispatchEvent(new CustomEvent(CA_UPDATED_EVENT, { detail: { ca: result.data.ca } }));
     setMessage({
       tone: "ok",
       text:

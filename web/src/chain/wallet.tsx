@@ -17,12 +17,30 @@ type Eip1193 = {
   on?: (event: string, handler: (...args: never[]) => void) => void;
   removeListener?: (event: string, handler: (...args: never[]) => void) => void;
   isMetaMask?: boolean;
+  providers?: Eip1193[];
 };
 
 declare global {
   interface Window {
     ethereum?: Eip1193;
   }
+}
+
+/*
+  With more than one wallet extension installed, `window.ethereum` is often a
+  shared multi-provider object rather than any single wallet — reading it, or
+  even a read-only call like eth_accounts, can make that object's own
+  extension (Phantom does this) pop up a "which wallet" chooser before it will
+  answer. Since this app only ever speaks MetaMask, pick that provider out of
+  window.ethereum.providers directly so no call ever touches the ambiguous
+  top-level object in the first place.
+*/
+function resolveMetaMask(eth: Eip1193 | undefined): Eip1193 | undefined {
+  if (!eth) return undefined;
+  if (Array.isArray(eth.providers) && eth.providers.length) {
+    return eth.providers.find((candidate) => candidate.isMetaMask) ?? eth.providers[0];
+  }
+  return eth;
 }
 
 /*
@@ -57,7 +75,7 @@ type WalletState = {
 const WalletContext = createContext<WalletState | null>(null);
 
 export function ChainProvider({ children }: { children: ReactNode }) {
-  const provider = typeof window === "undefined" ? undefined : window.ethereum;
+  const provider = typeof window === "undefined" ? undefined : resolveMetaMask(window.ethereum);
   const available = Boolean(provider);
   const [address, setAddress] = useState<Address | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
