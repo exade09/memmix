@@ -22,7 +22,7 @@ const HOW = [
   ["01", "Pick", "Any two Robinhood Chain tokens"],
   ["02", "Mutate", "AI finds the logic, not a word splice"],
   ["03", "Edit", "Every field stays yours"],
-  ["04", "Launch", "See the debit, then sign it"],
+  ["04", "Launch", "Fons pays the fee and gas. Nothing to sign"],
 ] as const;
 
 /*
@@ -32,7 +32,7 @@ const HOW = [
 const FACTS = [
   ["Tokens in", "2", "Never one"],
   ["AI outputs", "4", "Name, ticker, description, avatar"],
-  ["Platform fee", "0 ETH", "Gas still costs ETH"],
+  ["Cost to launch", "0 ETH", "Fons pays the fee and gas"],
 ] as const;
 
 export function LandingPage() {

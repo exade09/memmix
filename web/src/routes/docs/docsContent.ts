@@ -39,7 +39,7 @@ export const DOC_SECTIONS: DocSection[] = [
           ["Get three concepts", "The mix returns three, and marks the one it would choose. You pick before any image is made."],
           ["Generate one avatar", "One square image for the concept you chose."],
           ["Edit anything", "Name, ticker, description, links and image are all yours to change before a wallet ever opens."],
-          ["Launch", "The transaction is built, checked and simulated. You sign it in MetaMask."],
+          ["Launch", "The transaction is built, checked and simulated, then sent. Fons pays the fee and gas, so there is nothing to sign in MetaMask."],
         ],
       },
       {
@@ -105,26 +105,26 @@ export const DOC_SECTIONS: DocSection[] = [
   {
     id: "cost",
     title: "What a launch costs",
-    lede: "Fons adds no fee of its own. That is not the same as free.",
+    lede: "Fons pays the launch fee and gas by default. Launching is free.",
     blocks: [
       {
         kind: "facts",
         items: [
           ["Fons fee", "0 ETH"],
-          ["Launch contract fee", "0.0005 ETH"],
-          ["Gas", "about 0.0019 ETH"],
-          ["Typical total", "about 0.0021 ETH"],
+          ["Launch contract fee", "Covered by Fons"],
+          ["Gas", "Covered by Fons"],
+          ["What you pay", "0 ETH"],
         ],
       },
       {
         kind: "text",
         body:
-          "The launch deploys two contracts, your token and its curve, which is why gas is the larger half of the bill. Every figure above is read live from the chain and shown on the review screen before MetaMask opens; the numbers here are what it looked like when this page was written.",
+          "By default, Fons signs and pays for the launch itself from its own wallet: no MetaMask signature and no debit from your wallet for the launch transaction. The launch still deploys two contracts, your token and its curve; that cost comes out of Fons's balance, not yours.",
       },
       {
         kind: "note",
         body:
-          "Your wallet reserves the maximum a transaction could cost, not what it ends up costing, and refunds the difference. Keep about 0.003 ETH on the account so a small rise in the base fee cannot strand the launch.",
+          "Prefer to pay it yourself? Direct Launch still supports that: the launch contract fee is currently 0.0005 ETH and gas is about 0.0019 ETH, so a self-paid launch typically totals about 0.0021 ETH, read live from the chain and shown before you sign. Your wallet reserves the maximum it could cost and refunds the difference, so keep a small buffer on the account.",
       },
     ],
   },
@@ -167,16 +167,16 @@ export const DOC_SECTIONS: DocSection[] = [
   },
   {
     id: "safety",
-    title: "What Fons checks before you sign",
-    lede: "In this order, every time.",
+    title: "What Fons checks before launching",
+    lede: "In this order, every time — whether Fons is paying or you are.",
     blocks: [
       {
         kind: "steps",
         items: [
-          ["The contract is real", "The launch contract address is checked for bytecode. No code, no signature request."],
-          ["The terms are current", "Fee and economics are read live and pinned, so a change between quoting and signing reverts instead of silently repricing."],
-          ["The transaction simulates", "The whole launch is run against the chain first. A failed simulation disables signing."],
-          ["The cost is shown", "Fee, gas and any opening buy, with the maximum debit, before the wallet opens."],
+          ["The contract is real", "The launch contract address is checked for bytecode. No code, no launch."],
+          ["The terms are current", "Fee and economics are read live and pinned, so a change between quoting and sending reverts instead of silently repricing."],
+          ["The transaction simulates", "The whole launch is run against the chain first. A failed simulation stops it before anything is sent."],
+          ["The cost is shown", "On a self-paid launch: fee, gas and any opening buy, with the maximum debit, before the wallet opens. On a sponsored launch: the same numbers, paid from Fons's wallet instead."],
         ],
       },
       {
@@ -196,7 +196,7 @@ export const DOC_SECTIONS: DocSection[] = [
         items: [
           "When a value cannot be read, the field says unknown. There is no invented volume and no placeholder holder count.",
           "A similar-name check is informational. It never blocks a launch and it is not a trademark search.",
-          "Fons is non-custodial. Your keys stay in your wallet and there is no version of this where Fons can move your token.",
+          "Fons never asks for or holds your wallet's keys or funds, on either launch path. On a sponsored launch Fons's own wallet is the one that calls the launch contract, so it is the on-chain deployer of record for that token; on a self-paid launch, yours is.",
           "Nothing here is a promise of price, liquidity, a listing or a market. Token creation and trading are risky.",
         ],
       },

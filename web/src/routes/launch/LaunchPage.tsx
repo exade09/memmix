@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { appConfig } from "../../app/config";
 import { AvatarCropper } from "../../components/launch/AvatarCropper";
 import { CostSummary, LaunchReview, LivePreview } from "../../components/launch/LaunchReview";
+import { SponsoredLaunchReview } from "../../components/launch/SponsoredLaunchReview";
 import { Button, FileButton } from "../../components/ui/Button";
 import { getMemoryAvatar, hasMemoryAvatar, setMemoryAvatar } from "../../domain/avatarMemory";
 import { readDraftMix, readDraftToken, writeDraftToken } from "../../domain/draft";
@@ -31,10 +32,12 @@ import {
 } from "../../domain/validation";
 import {
   checkLaunchName,
+  fetchSponsorLaunchStatus,
   LaunchApiError,
   pinMetadata,
   type MetadataPinResult,
   type NameCheckResult,
+  type SponsorLaunchStatus,
 } from "../../services/api";
 import type { LaunchState } from "../../services/launchBoundary";
 import { track } from "../../services/analytics";
@@ -66,6 +69,17 @@ export function LaunchPage() {
   const [pending, setPending] = useState<PendingLaunch | null>(() => readPendingLaunch());
   const [pinResult, setPinResult] = useState<MetadataPinResult | null>(null);
   const [nameCheck, setNameCheck] = useState<NameCheckResult | null>(null);
+  const [sponsorStatus, setSponsorStatus] = useState<SponsorLaunchStatus>({
+    available: false,
+    sponsor_address: null,
+  });
+  const [payMode, setPayMode] = useState<"sponsored" | "self">("sponsored");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchSponsorLaunchStatus(controller.signal).then(setSponsorStatus);
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (!fromMix) return;
@@ -287,6 +301,23 @@ export function LaunchPage() {
   );
 
   if (phase === "REVIEWING" && pinResult) {
+    if (payMode === "sponsored" && sponsorStatus.available && sponsorStatus.sponsor_address) {
+      return (
+        <SponsoredLaunchReview
+          name={name.trim() || pinResult.name}
+          ticker={tickerValue || pinResult.ticker}
+          description={description}
+          avatarSrc={avatarSrc}
+          imageUri={pinResult.image_uri}
+          twitter={twitter}
+          telegram={telegram}
+          website={website}
+          sponsorAddress={sponsorStatus.sponsor_address}
+          onBack={() => setPhase("EDITING")}
+          onSwitchToSelfPay={() => setPayMode("self")}
+        />
+      );
+    }
     return (
       <LaunchReview
         name={name.trim() || pinResult.name}

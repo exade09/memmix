@@ -42,11 +42,11 @@ export function LegalHubPage() {
       </nav>
       <h3>What FONS can verify</h3>
       <ul className="legal-list">
-        <li>Non-custodial: keys stay in MetaMask.</li>
-        <li>Explicit signature: nothing is sent until you approve it.</li>
-        <li>Transaction simulation before MetaMask opens.</li>
-        <li>The launchpad contract is verified to hold code before signing.</li>
-        <li>Visible wallet debit on the review screen.</li>
+        <li>FONS never asks for or holds your wallet's keys or funds, on either launch path.</li>
+        <li>By default FONS pays the launch fee and gas itself; launching costs you 0 ETH.</li>
+        <li>Choosing to pay it yourself instead: explicit signature, nothing is sent until you approve it in MetaMask.</li>
+        <li>Transaction simulation before anything is sent, on both paths.</li>
+        <li>The launchpad contract is verified to hold code before launching.</li>
         <li>No hidden FONS platform launch fee in this version.</li>
       </ul>
       <h3>What FONS does not promise</h3>

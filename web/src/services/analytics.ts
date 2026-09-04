@@ -29,6 +29,9 @@ export const ANALYTICS_EVENTS = [
   "initial_buy_skipped",
   "launch_reconciliation_needed",
   "external_market_opened",
+  "sponsored_launch_started",
+  "sponsored_launch_confirmed",
+  "sponsored_launch_failed",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];
