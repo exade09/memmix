@@ -12,7 +12,7 @@ import { Stagger, StaggerItem } from "../../components/motion/Stagger";
 import { EASE } from "../../components/motion/motion";
 import { SearchResultButton, TokenFeedCard, TokenSkeleton, toParent } from "../../components/token/TokenFeedCard";
 import { Button, ButtonLink } from "../../components/ui/Button";
-import { FAQ_ITEMS, SAFETY_PILLARS } from "../../domain/legalCopy";
+import { FAQ_ITEMS } from "../../domain/legalCopy";
 import { readDraftMix, setDraftParent, type ParentToken } from "../../domain/draft";
 import { track } from "../../services/analytics";
 import { fetchFeedResult, searchTokensResult, type TokenSummary } from "../../services/api";
@@ -34,14 +34,6 @@ const FACTS = [
   ["AI outputs", "4", "Name, ticker, description, avatar"],
   ["Platform fee", "0 ETH", "Gas still costs ETH"],
 ] as const;
-
-const SAFETY_INDEXED = SAFETY_PILLARS.map(([title, copy], index) => [
-  String(index + 1).padStart(2, "0"),
-  title,
-  copy,
-] as const);
-
-
 
 export function LandingPage() {
   const reduceMotion = useReducedMotion();
@@ -364,52 +356,6 @@ export function LandingPage() {
                     </StaggerItem>
                   ))}
             </Stagger>
-          </div>
-        </SectionReveal>
-
-        {/* --------------------------------------------------------- the mark */}
-        <SectionReveal id="mascot" className="section born-section" ariaLabel="What is born">
-          <div className="wrap born-section-inner">
-            <div className="born-section-figure">
-              <GlassMark state="idle" className="sz-lg" />
-            </div>
-            <div className="stack">
-              <p className="eyebrow">What is born</p>
-              <AnimatedText as="h2" lines={["Two rings of glass, and the bead between them"]} />
-              <p className="body-copy">
-                One parent arrives warm, one arrives cold. Where they overlap, something clear forms that was in
-                neither of them. That is the whole product, and it is the whole mark
-              </p>
-              <p className="body-copy">The rings hold. They never hold your keys</p>
-              <div className="btn-row">
-                <ButtonLink to="/app/mix" variant="primary" arrow>
-                  Enter the lab
-                </ButtonLink>
-              </div>
-            </div>
-          </div>
-        </SectionReveal>
-
-        {/* --------------------------------------------------------- safety */}
-        <SectionReveal className="section raised" ariaLabel="Safety">
-          <div className="wrap">
-            <div className="panel-head">
-              <div>
-                <p className="eyebrow">Safety</p>
-                <AnimatedText as="h2" lines={["Safe to sign. Never safe to assume"]} />
-              </div>
-            </div>
-            <div className="safety-layout">
-              <Stagger as="ol" className="pillar-grid" step={0.07}>
-                {SAFETY_INDEXED.map(([index, title, copy]) => (
-                  <StaggerItem key={title} as="li" className="pillar-card">
-                    <span className="step-index">{index}</span>
-                    <h3>{title}</h3>
-                    <p>{copy}</p>
-                  </StaggerItem>
-                ))}
-              </Stagger>
-            </div>
           </div>
         </SectionReveal>
 

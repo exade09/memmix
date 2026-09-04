@@ -5,7 +5,6 @@ const links = [
   { to: "/app/launch", label: "Launch", index: "02" },
   { to: "/app/explore", label: "Explore", index: "03" },
   { to: "/docs", label: "Docs", index: "04" },
-  { to: "/safety", label: "Safety", index: "05" },
 ];
 
 export function AppSidebar() {

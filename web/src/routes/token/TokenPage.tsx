@@ -2,7 +2,6 @@ import { useChain } from "../../chain/wallet";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { appConfig } from "../../app/config";
-import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { Button, ButtonAnchor, ButtonLink } from "../../components/ui/Button";
 import { setDraftParent } from "../../domain/draft";
 import { INDEXER_NOTICE, explorerTokenUrl, marketUrl } from "../../domain/legalCopy";
@@ -153,7 +152,6 @@ export function TokenPage() {
             Mix
           </ButtonLink>
         </div>
-        <SafetyBanner />
       </section>
     );
   }
@@ -293,8 +291,6 @@ export function TokenPage() {
               </ButtonAnchor>
             ) : null}
           </div>
-
-          <SafetyBanner />
         </>
       ) : null}
     </section>

@@ -1,17 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { SiteFooter } from "../../components/layout/SiteFooter";
-import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { ButtonLink } from "../../components/ui/Button";
 import { AnimatedText } from "../../components/motion/AnimatedText";
 import {
   CONTENT_POLICY,
-  FAQ_ITEMS,
   FOOTER_DISCLAIMER,
   NOT_PROMISED,
   PRIVACY_COPY,
   RISK_DISCLOSURE,
-  SAFETY_PILLARS,
   ZERO_PLATFORM_FEE,
 } from "../../domain/legalCopy";
 import { analyticsOptedOut, setAnalyticsOptOut } from "../../services/analytics";
@@ -24,7 +21,6 @@ function LegalShell({ title, children }: { title: string; children: ReactNode })
           <p className="eyebrow">Legal</p>
           <AnimatedText as="h1" reveal="lines" lines={[title]} />
           {children}
-          <SafetyBanner showFee />
         </div>
       </div>
       <SiteFooter />
@@ -37,9 +33,6 @@ export function LegalHubPage() {
     <LegalShell title="Legal">
       <p className="body-copy">{FOOTER_DISCLAIMER}</p>
       <nav className="btn-row" aria-label="Legal pages">
-        <ButtonLink to="/safety" variant="outline" size="sm">
-          Safety
-        </ButtonLink>
         <ButtonLink to="/terms" variant="outline" size="sm">
           Terms
         </ButtonLink>
@@ -62,44 +55,6 @@ export function LegalHubPage() {
           <li key={item}>{item}</li>
         ))}
       </ul>
-    </LegalShell>
-  );
-}
-
-export function SafetyPage() {
-  return (
-    <LegalShell title="Safe to sign. Never safe to assume">
-      <SafetyBanner />
-      <p className="note">{ZERO_PLATFORM_FEE}</p>
-      <ol className="pillar-grid">
-        {SAFETY_PILLARS.map(([title, copy], index) => (
-          <li key={title} className="pillar-card">
-            <span className="step-index">{String(index + 1).padStart(2, "0")}</span>
-            <h3>{title}</h3>
-            <p>{copy}</p>
-          </li>
-        ))}
-      </ol>
-      <h3>Process, not market</h3>
-      <p className="body-copy">
-        FONS protects the launch workflow. It does not make a token safe, liquid, honest or valuable after it exists.
-      </p>
-      <ul className="legal-list">
-        {NOT_PROMISED.map((item) => (
-          <li key={item}>Not promised: {item}.</li>
-        ))}
-      </ul>
-      <h3>FAQ</h3>
-      <div className="faq-list">
-        {FAQ_ITEMS.map(([question, answer]) => (
-          <details key={question} className="disclosure faq-item">
-            <summary>{question}</summary>
-            <div className="disclosure-body">
-              <p className="body-copy">{answer}</p>
-            </div>
-          </details>
-        ))}
-      </div>
     </LegalShell>
   );
 }

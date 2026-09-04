@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { GlassMark } from "../../components/brand/GlassMark";
-import { SafetyBanner } from "../../components/layout/SafetyBanner";
 import { Button, ButtonAnchor, ButtonLink } from "../../components/ui/Button";
 import { setDraftParent } from "../../domain/draft";
 import { explorerTokenUrl, explorerTxUrl, marketUrl, ponsTokenUrl, shareLaunchCopy } from "../../domain/legalCopy";
@@ -73,7 +72,6 @@ export function LaunchSuccessPage() {
             Explore
           </ButtonLink>
         </div>
-        <SafetyBanner showFee />
       </section>
     );
   }
@@ -165,7 +163,6 @@ export function LaunchSuccessPage() {
       <p className="metric-label">
         Indexers may take time to pick this token up. An on-chain receipt is not undone by missing market data
       </p>
-      <SafetyBanner showFee />
     </section>
   );
 }

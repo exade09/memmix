@@ -1,6 +1,3 @@
-export const SAFETY_PROMISE =
-  "Your keys stay in MetaMask. FONS builds and checks the launch transaction; only you can sign it. We never ask for a seed phrase or private key.";
-
 export const RISK_DISCLOSURE =
   "Token creation and trading are risky. FONS does not guarantee value, liquidity, market integrity or profit. Review every transaction and every external link yourself.";
 
@@ -54,13 +51,6 @@ export const CONTENT_POLICY = [
 
 export const PRIVACY_COPY =
   "MVP collects only technical logs necessary for reliability: request id, endpoint, status, duration, coarse rate-limit key, provider status and transaction signature after user submission. Wallet balances, raw uploaded images, full AI prompts containing user data, signed transaction bytes, auth headers, API keys and private keys are not logged. IP addresses are not kept longer than abuse protection requires. Optional anonymous product events never include a raw wallet address.";
-
-export const SAFETY_PILLARS = [
-  ["NON-CUSTODIAL", "We never receive your seed phrase or private key."],
-  ["VERIFIED PATH", "The launch contract is checked for bytecode and the launch is simulated before any signature is requested."],
-  ["COST BEFORE SIGN", "You see the estimated debit and optional buy before MetaMask opens."],
-  ["MARKET REALITY", "We do not promise profit, liquidity or honest third parties."],
-] as const;
 
 export function shareLaunchCopy(input: {
   name: string;

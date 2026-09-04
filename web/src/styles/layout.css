@@ -643,6 +643,13 @@ body[data-page-hidden="true"] .grain {
 }
 
 .footer-watermark {
+  /*
+    A solid, very faint fill instead of an outline. Geist Variable's glyphs
+    are built from overlapping sub-contours, and -webkit-text-stroke draws
+    every one of them individually -- at this size that showed up as stray
+    lines cutting through the letterforms instead of a clean outline. A fill
+    has no seams to trace, so it stays clean at any size.
+  */
   display: block;
   width: 100%;
   margin-top: 12px;
@@ -652,8 +659,7 @@ body[data-page-hidden="true"] .grain {
   line-height: 0.8;
   letter-spacing: 0.06em;
   text-align: center;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(34, 51, 31, 0.1);
+  color: rgba(34, 51, 31, 0.06);
   user-select: none;
   pointer-events: none;
   transform: translateY(18%);

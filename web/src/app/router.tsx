@@ -5,7 +5,7 @@ import { DocsPage } from "../routes/docs/DocsPage";
 import { ExplorePage } from "../routes/explore/ExplorePage";
 import { LandingPage } from "../routes/landing/LandingPage";
 import { LaunchPage } from "../routes/launch/LaunchPage";
-import { LegalHubPage, NotFoundPage, PrivacyPage, SafetyPage, TermsPage } from "../routes/legal/LegalPages";
+import { LegalHubPage, NotFoundPage, PrivacyPage, TermsPage } from "../routes/legal/LegalPages";
 import { MixPage } from "../routes/mix/MixPage";
 import { TokenPage } from "../routes/token/TokenPage";
 import { LaunchSuccessPage } from "../routes/token/LaunchSuccessPage";
@@ -24,7 +24,6 @@ export function AppRouter() {
         <Route path="/docs" element={<DocsPage />} />
         <Route path="/admin/ca" element={<CaAdminPage />} />
         <Route path="/legal" element={<LegalHubPage />} />
-        <Route path="/safety" element={<SafetyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="*" element={<NotFoundPage />} />

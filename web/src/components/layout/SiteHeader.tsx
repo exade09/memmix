@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { Wordmark } from "../brand/Wordmark";
 import { CaBadge } from "./CaBadge";
 import { WalletButton } from "../wallet/WalletButton";
@@ -9,15 +9,10 @@ const links = [
   { to: "/app/mix", label: "Mix" },
   { to: "/app/launch", label: "Launch" },
   { to: "/app/explore", label: "Explore" },
-  { to: "/#mascot", label: "Mark" },
   { to: "/docs", label: "Docs" },
-  { to: "/safety", label: "Safety" },
 ];
 
 export function SiteHeader({ onOpenSearch }: { onOpenSearch: () => void }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
@@ -43,43 +38,15 @@ export function SiteHeader({ onOpenSearch }: { onOpenSearch: () => void }) {
         <CaBadge />
       </div>
       <nav className="header-nav" aria-label="FONS">
-        {links.map((link) => {
-          if (link.to.startsWith("/#")) {
-            const onLanding = location.pathname === "/";
-            return (
-              <a
-                key={link.label}
-                className={`nav-link${onLanding && location.hash === "#mascot" ? " is-active" : ""}`}
-                href={link.to}
-                onClick={(event) => {
-                  if (location.pathname !== "/") {
-                    event.preventDefault();
-                    navigate("/#mascot");
-                    return;
-                  }
-                  event.preventDefault();
-                  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-                  document.getElementById("mascot")?.scrollIntoView({
-                    behavior: reduce ? "auto" : "smooth",
-                    block: "start",
-                  });
-                  window.history.replaceState(null, "", "/#mascot");
-                }}
-              >
-                {link.label}
-              </a>
-            );
-          }
-          return (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}
-            >
-              {link.label}
-            </NavLink>
-          );
-        })}
+        {links.map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}
+          >
+            {link.label}
+          </NavLink>
+        ))}
       </nav>
       <div className="header-tools">
         <a

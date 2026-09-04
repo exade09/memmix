@@ -22,11 +22,9 @@ export function SiteFooter() {
             <Link to="/app/launch">Direct Launch</Link>
             <Link to="/app/explore">Explore</Link>
             <Link to="/docs">Docs</Link>
-            <Link to="/#mascot">The mark</Link>
           </div>
           <div className="footer-col">
             <h4>Read first</h4>
-            <Link to="/safety">Safety</Link>
             <Link to="/terms">Terms</Link>
             <Link to="/privacy">Privacy</Link>
             <Link to="/legal">Legal</Link>

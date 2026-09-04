@@ -11,7 +11,6 @@ import { AppWindow } from "./AppWindow";
 export function PageShell() {
   const location = useLocation();
   const [params, setParams] = useSearchParams();
-  const reduceMotion = useReducedMotion();
   const [searchOpen, setSearchOpen] = useState(false);
   const isApp = location.pathname.startsWith("/app") || location.pathname.startsWith("/token/");
 
@@ -40,14 +39,6 @@ export function PageShell() {
     document.addEventListener("visibilitychange", sync);
     return () => document.removeEventListener("visibilitychange", sync);
   }, []);
-
-  useEffect(() => {
-    if (location.hash !== "#mascot") return;
-    document.getElementById("mascot")?.scrollIntoView({
-      behavior: reduceMotion ? "auto" : "smooth",
-      block: "start",
-    });
-  }, [location.hash, reduceMotion]);
 
   useEffect(() => {
     if (params.get("search") === "1") {
