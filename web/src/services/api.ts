@@ -465,6 +465,46 @@ export type SponsorLaunchResult = {
   explorer_url: string;
 };
 
+export type VaultState = {
+  /** True once there is a token to pay holders of. */
+  live: boolean;
+  /** True once a fee is switched on and the vault is filling up. */
+  collecting: boolean;
+  reason: string | null;
+  token: string | null;
+  vault: string | null;
+  balance_wei: string;
+  creator_fee_bps: number;
+  holder_count: number;
+  /** False when the holder scan was bounded, so counts are a floor, not a total. */
+  complete_scan: boolean;
+  block_number: number;
+  distributed_wei: string;
+};
+
+/**
+ * The rewards vault, read from the chain on every request.
+ *
+ * Returns null rather than a fabricated shape when it cannot be read: the
+ * page shows "unknown" instead of a zero that would look like a fact.
+ */
+export async function fetchVaultState(
+  options: { holders?: boolean; signal?: AbortSignal } = {},
+): Promise<VaultState | null> {
+  const { holders = true, signal } = options;
+  try {
+    const response = await fetch(`/api/vault?holders=${holders ? "1" : "0"}`, {
+      cache: "no-store",
+      signal: signal ?? AbortSignal.timeout(20_000),
+    });
+    const payload = await readEnvelope<VaultState>(response);
+    if (!payload.success || !payload.data) return null;
+    return payload.data;
+  } catch {
+    return null;
+  }
+}
+
 export type TokenizedStock = {
   symbol: string;
   name: string;

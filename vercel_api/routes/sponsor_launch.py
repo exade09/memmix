@@ -13,9 +13,12 @@ every request is rate-limited per IP against a wallet that really does
 spend real ETH on a real network.
 
 The on-chain deployer for a sponsored launch is the sponsor wallet, not the
-visitor -- the factory has no separate "creator" field, only msg.sender. The
-visitor's own wallet still goes into TokenParams.creatorFeeRecipient, so any
-creator-tax revenue still flows to them.
+visitor -- the factory has no separate "creator" field, only msg.sender.
+Because Fons is the creator here, the creator fee is Fons's, and it is
+pointed at the rewards vault rather than at any individual wallet. The rate
+is set by SPONSORED_CREATOR_FEE_BPS and is zero unless someone turns it on;
+the request cannot choose it, or anyone could set their own trading tax on a
+token Fons publishes and pays for.
 """
 
 import secrets
@@ -41,6 +44,7 @@ from axiom_scanner.chain.pons_abi import (
 )
 from axiom_scanner.chain.rpc_client import RpcClient, RpcError
 from axiom_scanner.chain.stocks import find_stock, is_allowed_pair_token, is_native_pair
+from axiom_scanner.rewards.config import creator_fee_bps, vault_address
 from axiom_scanner.chain.sponsor_wallet import (
     SponsorWalletError,
     send_sponsored_call,
@@ -165,7 +169,10 @@ def sponsor_launch_route(
         logo=fields["logo"],
         description=fields["description"],
         socials=Socials(**fields["socials"]),
-        creator_fee_recipient=fields["creator_wallet"],
+        # The fee goes to the vault, which is what holders are paid from. It
+        # falls back to the caller's wallet only when no vault is configured,
+        # which is the pre-rewards behaviour.
+        creator_fee_recipient=vault_address() or fields["creator_wallet"],
         creator_tax_bps=fields["creator_tax_bps"],
         buyback_enabled=fields["buyback_enabled"],
         expected_economics=economics,
@@ -271,11 +278,18 @@ def _validate_body(body: dict[str, Any]) -> dict[str, Any]:
     except EthAddressError as exc:
         raise SponsorLaunchError(str(exc), "INVALID_INPUT") from exc
 
-    raw_tax = body.get("creator_tax_bps", 0)
-    try:
-        creator_tax_bps = int(raw_tax)
-    except (TypeError, ValueError) as exc:
-        raise SponsorLaunchError("Creator tax must be a whole number of basis points.", "INVALID_INPUT") from exc
+    """
+    The creator fee on a sponsored launch is set by us, not by the caller.
+
+    Fons pays for these launches and is the on-chain deployer, so it is the
+    creator that the factory pays this fee to -- and that fee is what funds
+    the rewards vault. Letting the request choose it would let anyone set
+    their own trading tax on a token Fons is publishing and paying for.
+
+    It stays zero unless SPONSORED_CREATOR_FEE_BPS is set, so this changes
+    nothing until someone deliberately turns it on.
+    """
+    creator_tax_bps = creator_fee_bps()
     if creator_tax_bps < 0 or creator_tax_bps > MAX_CREATOR_TAX_BPS:
         raise SponsorLaunchError(
             f"Creator tax must be between 0 and {MAX_CREATOR_TAX_BPS} basis points.", "INVALID_INPUT"

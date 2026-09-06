@@ -189,33 +189,33 @@ export const DOC_SECTIONS: DocSection[] = [
   {
     id: "vault",
     title: "The rewards vault",
-    lede: "Planned, not live. Nothing is accruing yet.",
+    lede: "Fees from sponsored launches, split across $FONS holders.",
     blocks: [
       {
         kind: "text",
         body:
-          "The idea is simple: fees from launch activity collect in one vault rather than in a private wallet, and what the vault holds is split across $FONS holders in proportion to how much they hold. Hold the token, receive a share of what the platform actually earns.",
+          "When Fons pays for a launch it is the on-chain creator, so the creator fee on that token's trades belongs to Fons rather than to any individual. That fee is pointed at one published wallet - the vault - and its balance is split across $FONS holders in proportion to how much they hold.",
       },
       {
-        kind: "facts",
+        kind: "steps",
         items: [
-          ["Vault", "Not live"],
-          ["Collecting fees", "No"],
-          ["Distributed so far", "Nothing"],
-        ],
-      },
-      {
-        kind: "list",
-        items: [
-          "$FONS does not exist yet, so there is no holder list to split anything across.",
-          "Sponsored launches currently set the creator fee to zero, so no trading fee is being collected at all today.",
-          "The distributing wallet is not set up. When it is, its address will be published so payouts can be checked on-chain instead of taken on trust.",
+          ["Fons launches and pays", "On a sponsored launch the creator fee is Fons's, because Fons is the creator the factory records."],
+          ["The fee lands in the vault", "One wallet, address published on the vault page, balance visible to anyone."],
+          ["Holders are paid their share", "Balances are read at a single block; each holder gets a proportional share, and rounding stays in the vault."],
         ],
       },
       {
         kind: "note",
         body:
-          "This is a plan, not a promise of income. Fees only exist if people trade, the amount is whatever trading produces, and no rate or projection is quoted anywhere on the site.",
+          "Payouts are sent by Fons from that wallet rather than enforced by a contract, so they depend on Fons actually sending them. That is why the address is published: every payment can be checked on the explorer. Fees only exist if people trade, and no rate is promised.",
+      },
+      {
+        kind: "list",
+        items: [
+          "Shares are computed from balances at one block, so buying in after a snapshot does not backdate a claim.",
+          "Amounts smaller than the gas needed to send them are skipped and stay in the vault for the next distribution.",
+          "The vault's own balance is excluded from the split, so it cannot pay itself.",
+        ],
       },
     ],
   },

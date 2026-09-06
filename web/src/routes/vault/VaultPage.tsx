@@ -3,57 +3,51 @@ import { appConfig } from "../../app/config";
 import { SiteFooter } from "../../components/layout/SiteFooter";
 import { AnimatedText } from "../../components/motion/AnimatedText";
 import { GlassMark } from "../../components/brand/GlassMark";
-import { ButtonLink } from "../../components/ui/Button";
-import { fetchContractAddress } from "../../services/api";
+import { ButtonAnchor, ButtonLink } from "../../components/ui/Button";
+import { weiToEthLabel } from "../../chain/units";
+import { shortenAddress } from "../../chain/address";
+import { explorerTokenUrl } from "../../domain/legalCopy";
+import { fetchVaultState, type VaultState } from "../../services/api";
 
 /*
-  The rewards vault, described before it exists.
+  The rewards vault.
 
-  Deliberately shows no balances, no yields and no "you have earned" figures.
-  Nothing is accruing yet: $FONS has not launched, and sponsored launches
-  currently set the creator tax to zero, so there is no fee stream to hold.
-  Inventing a number here would be inventing income, which is the one thing
-  this page must not do -- it is the same rule the rest of the site follows
-  about unknown values.
+  Every figure here is read from the chain when the page loads: the balance is
+  the vault wallet's balance, the holder count comes from the token's own
+  Transfer history, and what has been paid out is the transfers the vault has
+  sent. Nothing is stored server-side, so there is no number here that Fons
+  could quietly edit -- anyone can check all of it against the address.
 
-  What it does instead is state the mechanism plainly and report, from real
-  configuration, how far along it actually is.
+  While it is unconfigured the page says so plainly rather than showing
+  zeroes, because a zero reads as a fact ("nothing has accrued") when the
+  truth is that nothing is switched on yet.
 */
 
-type Readiness = {
-  tokenLive: boolean;
-  /** The header CA, which is the honest signal for whether $FONS exists yet. */
-  contractAddress: string;
-};
+const EXPLORER = "https://robinhoodchain.blockscout.com";
+
+function addressUrl(address: string): string {
+  return `${EXPLORER}/address/${address}`;
+}
 
 export function VaultPage() {
-  const [readiness, setReadiness] = useState<Readiness>({ tokenLive: false, contractAddress: "" });
+  const [state, setState] = useState<VaultState | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchContractAddress(controller.signal).then((state) => {
-      const ca = (state.ca || "").trim();
-      // "TBA", a note, or an empty value all mean the same thing: not live.
-      const looksLikeAddress = /^0x[a-fA-F0-9]{40}$/.test(ca);
-      setReadiness({ tokenLive: looksLikeAddress, contractAddress: ca });
+    fetchVaultState({ signal: controller.signal }).then((next) => {
+      setState(next);
+      setLoading(false);
     });
     return () => controller.abort();
   }, []);
 
-  const steps: [string, string][] = [
-    [
-      "A launch pays a fee",
-      "Every token launched through Fons carries the launch contract's own fee, and can carry a creator fee on each trade.",
-    ],
-    [
-      "The fee reaches the vault",
-      `Instead of going to one wallet, that stream is pointed at the vault: a single balance the platform does not spend on itself.`,
-    ],
-    [
-      `Holders of $${appConfig.tokenSymbol} share it`,
-      `What the vault holds is split across ${`$${appConfig.tokenSymbol}`} holders in proportion to how much they hold, on a fixed schedule.`,
-    ],
-  ];
+  const live = Boolean(state?.live);
+  // Filling up and paying out are separate: the vault can collect for weeks
+  // before $FONS exists, and the page should not report that as nothing.
+  const collecting = Boolean(state?.collecting);
+  const hasVault = Boolean(state?.vault);
+  const feePercent = state ? (state.creator_fee_bps / 100).toFixed(2).replace(/\.?0+$/, "") : null;
 
   return (
     <>
@@ -62,76 +56,136 @@ export function VaultPage() {
           <p className="eyebrow">Rewards</p>
           <AnimatedText as="h1" reveal="lines" lines={["The vault"]} />
           <p className="body-copy">
-            One balance, fed by launch activity, split across ${appConfig.tokenSymbol} holders. This page describes
-            how it is built, and says plainly how much of it is live.
+            Fees from the launches Fons pays for collect in one wallet, and that balance is split across $
+            {appConfig.tokenSymbol} holders in proportion to how much they hold. Everything below is read from the
+            chain, not from our database.
           </p>
 
           <div className="panel stack" style={{ marginTop: 8 }}>
-            <p className="eyebrow">Status</p>
-            <dl className="facts strong">
-              <div>
-                <dt>Vault</dt>
-                <dd>Not live yet</dd>
-              </div>
-              <div>
-                <dt>${appConfig.tokenSymbol}</dt>
-                <dd>{readiness.tokenLive ? readiness.contractAddress : "Not launched"}</dd>
-              </div>
-              <div>
-                <dt>Collecting fees</dt>
-                <dd>No</dd>
-              </div>
-              <div>
-                <dt>Distributed so far</dt>
-                <dd>Nothing</dd>
-              </div>
-            </dl>
-            <p className="metric-label">
-              These are the real values, not placeholders. Nothing is accruing, so there is no balance to show and no
-              rate to quote. When that changes, the numbers here will come from the chain rather than from this page.
-            </p>
+            <p className="eyebrow">Live state</p>
+            {loading ? (
+              <p className="metric-label">Reading the chain…</p>
+            ) : !state ? (
+              <p className="note warn">
+                The vault could not be read just now. Nothing is wrong with the balance — this page simply could not
+                reach the chain, so it is not going to guess at a number.
+              </p>
+            ) : (
+              <>
+                <dl className="facts strong">
+                  <div>
+                    <dt>In the vault</dt>
+                    <dd>{hasVault ? weiToEthLabel(BigInt(state.balance_wei)) : "No wallet yet"}</dd>
+                  </div>
+                  <div>
+                    <dt>Paid out so far</dt>
+                    <dd>{hasVault ? weiToEthLabel(BigInt(state.distributed_wei)) : "Nothing"}</dd>
+                  </div>
+                  <div>
+                    <dt>Holders</dt>
+                    <dd>{live ? state.holder_count.toLocaleString() : "No token yet"}</dd>
+                  </div>
+                  <div>
+                    <dt>Fee funding it</dt>
+                    <dd>{state.creator_fee_bps > 0 ? `${feePercent}% of trades` : "Off"}</dd>
+                  </div>
+                </dl>
+
+                {state.reason === "no_vault" ? (
+                  <p className="note warn">
+                    The vault wallet is not set up yet, so no fee is being collected.
+                  </p>
+                ) : null}
+
+                {state.reason === "no_token" ? (
+                  <p className="note">
+                    {collecting
+                      ? `The vault is collecting. Payouts begin once $${appConfig.tokenSymbol} launches — until it exists there is no holder list to split across, so the balance simply builds up.`
+                      : `The vault is set up, but the fee that funds it is switched off, so the balance is not growing yet.`}
+                  </p>
+                ) : null}
+
+                {live && !collecting ? (
+                  <p className="note warn">
+                    The fee that funds the vault is switched off, so the balance is not growing.
+                  </p>
+                ) : null}
+
+                {live && !state.complete_scan ? (
+                  <p className="metric-label">
+                    The holder count comes from a bounded scan of recent history, so treat it as a floor rather than
+                    a final total. Payout shares are always computed from balances at one block, not from this count.
+                  </p>
+                ) : null}
+
+                {state.vault ? (
+                  <p className="metric-label">
+                    Vault wallet {shortenAddress(state.vault)} — check every payment yourself on the explorer.
+                  </p>
+                ) : null}
+              </>
+            )}
           </div>
 
-          <h3>How it will work</h3>
+          <h3>How it works</h3>
           <ol className="doc-steps">
-            {steps.map(([title, body], index) => (
-              <li key={title}>
-                <span className="doc-step-index">{String(index + 1).padStart(2, "0")}</span>
-                <div>
-                  <strong>{title}</strong>
-                  <p>{body}</p>
-                </div>
-              </li>
-            ))}
+            <li>
+              <span className="doc-step-index">01</span>
+              <div>
+                <strong>Fons launches a token and pays for it</strong>
+                <p>
+                  On a sponsored launch Fons is the on-chain creator, so the creator fee on that token's trades
+                  belongs to Fons rather than to any individual.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span className="doc-step-index">02</span>
+              <div>
+                <strong>That fee lands in the vault</strong>
+                <p>
+                  It is pointed at one wallet whose address is published above, instead of at a private one. Its
+                  balance is public and always has been.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span className="doc-step-index">03</span>
+              <div>
+                <strong>It is split across ${appConfig.tokenSymbol} holders</strong>
+                <p>
+                  Balances are read at a single block and each holder receives a share proportional to what they
+                  hold. Rounding is left in the vault rather than given to whoever sorts first.
+                </p>
+              </div>
+            </li>
           </ol>
 
-          <h3>What has to happen first</h3>
-          <ul className="legal-list">
-            <li>
-              ${appConfig.tokenSymbol} has to exist. Until it is launched there is no holder list to split anything
-              across.
-            </li>
-            <li>
-              A creator fee has to be switched on. Sponsored launches currently set it to zero, so no trading fee is
-              being collected at all today.
-            </li>
-            <li>
-              The distributing wallet has to be set up and funded for gas, and its address published here so payouts
-              can be checked on-chain rather than taken on trust.
-            </li>
-          </ul>
-
           <aside className="doc-note">
-            This is a plan, not a promise of income. Fees only exist if people trade, the amount is whatever trading
-            produces, and no figure on this page is a projection. Nothing here is financial advice.
+            Payouts are sent by Fons from that wallet. They are not enforced by a contract, so this depends on Fons
+            actually sending them — that is a real difference from a system that distributes on its own, and it is
+            why the wallet address is published for you to audit. Fees only exist if people trade, the amount is
+            whatever trading produces, and no rate or projection is promised anywhere on this site.
           </aside>
 
           <div className="btn-row" style={{ marginTop: 8 }}>
-            <ButtonLink to="/docs" variant="outline">
+            {state?.vault ? (
+              <ButtonAnchor href={addressUrl(state.vault)} target="_blank" rel="noreferrer" variant="outline">
+                View the vault wallet
+              </ButtonAnchor>
+            ) : null}
+            {state?.token ? (
+              <ButtonAnchor
+                href={explorerTokenUrl(state.token)}
+                target="_blank"
+                rel="noreferrer"
+                variant="outline"
+              >
+                View ${appConfig.tokenSymbol}
+              </ButtonAnchor>
+            ) : null}
+            <ButtonLink to="/docs" variant="ghost">
               Read the docs
-            </ButtonLink>
-            <ButtonLink to="/app/mix" variant="primary" arrow>
-              Mix two tokens
             </ButtonLink>
           </div>
 

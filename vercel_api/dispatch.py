@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from urllib.parse import parse_qs
 
 from axiom_scanner.analysis.logical_mixer import MixError
@@ -9,6 +10,7 @@ from axiom_scanner.http_client import SourceError
 from axiom_scanner.security.images import ImageError
 from axiom_scanner.security.query import QueryError
 from axiom_scanner.chain.stocks import public_stock_list
+from axiom_scanner.rewards.vault import VaultError
 from axiom_scanner.storage.pinata import MetadataError
 from vercel_api.envelope import envelope
 from vercel_api.launch_config import RPC_MAX_BODY_BYTES
@@ -19,6 +21,12 @@ from vercel_api.routes.health import health_payload
 from vercel_api.routes.launch import name_check_route
 from vercel_api.routes.metadata import metadata_pin_route
 from vercel_api.routes.mix import mix_concepts_route
+from vercel_api.routes.rewards import (
+    vault_distribute_route,
+    vault_error_status,
+    vault_plan_route,
+    vault_state_route,
+)
 from vercel_api.routes.rpc import chain_rpc_route
 from vercel_api.routes.search import search_tokens
 from vercel_api.routes.sponsor_launch import SponsorLaunchError, sponsor_launch_route, sponsor_launch_status
@@ -42,6 +50,8 @@ def handle_api_get(path: str, query: dict[str, list[str]] | str) -> tuple[int, d
         return 200, envelope(success=True, data=sponsor_launch_status())
     if path == "/api/stocks":
         return 200, envelope(success=True, data={"stocks": public_stock_list()})
+    if path == "/api/vault":
+        return _vault_state(params)
     if path == "/api/health":
         data = health_payload()
         dumped = json.dumps(data)
@@ -77,6 +87,10 @@ def handle_api_post(
         return _chain_rpc(reader, client_ip, origin, host)
     if path == "/api/launch/sponsored":
         return _sponsor_launch(reader, client_ip)
+    if path == "/api/admin/vault/plan":
+        return _vault_admin(reader, client_ip, vault_plan_route)
+    if path == "/api/admin/vault/distribute":
+        return _vault_admin(reader, client_ip, vault_distribute_route)
     if path != "/api/mix/concepts":
         return None
     try:
@@ -146,6 +160,36 @@ def _chain_rpc(reader, client_ip: str, origin: str, host: str) -> tuple[int, dic
         status = 413 if "too large" in str(exc) else 400
         return status, envelope(success=False, code="INVALID_INPUT", message=message)
     return chain_rpc_route(body, client_ip=client_ip, origin=origin, host=host)
+
+
+def _vault_state(params: dict[str, list[str]]) -> tuple[int, dict]:
+    # Holder scanning is the slow part, so it can be skipped for a quick read.
+    include = params.get("holders", ["1"])[0] not in {"0", "false", "no"}
+    try:
+        data = vault_state_route(include_holders=include)
+    except VaultError as exc:
+        return vault_error_status(exc.code), envelope(success=False, code=exc.code, message=str(exc))
+    return 200, envelope(success=True, data=data)
+
+
+def _vault_admin(reader, client_ip: str, handler) -> tuple[int, dict]:
+    if reader is None:
+        return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON.")
+    try:
+        body = reader(max_bytes=8_000)
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON.")
+    if not isinstance(body, dict):
+        return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON.")
+    try:
+        data = handler(body, client_ip)
+    except VaultError as exc:
+        return vault_error_status(exc.code), envelope(success=False, code=exc.code, message=str(exc))
+    dumped = json.dumps(data)
+    secret = (os.getenv("ADMIN_CA_PASSWORD") or "").strip()
+    if secret and secret in dumped:
+        return 500, envelope(success=False, code="ADMIN_DISABLED", message="Refusing to echo the password.")
+    return 200, envelope(success=True, data=data)
 
 
 def _sponsor_launch(reader, client_ip: str) -> tuple[int, dict]:
