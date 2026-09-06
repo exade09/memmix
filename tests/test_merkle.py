@@ -99,3 +99,86 @@ class MerkleBehaviourTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RoundStorageTests(unittest.TestCase):
+    """Rounds are stored as payouts only; proofs are rebuilt on demand."""
+
+    def setUp(self) -> None:
+        import axiom_scanner.rewards.rounds as rounds_mod
+        from pathlib import Path
+        import tempfile
+
+        self._mod = rounds_mod
+        self._original = rounds_mod.ROUNDS_FILE
+        self._tmp = Path(tempfile.mkdtemp()) / "reward_rounds.json"
+        rounds_mod.ROUNDS_FILE = self._tmp
+
+    def tearDown(self) -> None:
+        self._mod.ROUNDS_FILE = self._original
+
+    def test_a_recorded_round_yields_a_verifiable_proof(self) -> None:
+        from axiom_scanner.rewards.merkle import verify, MerkleEntry
+
+        payouts = {ALICE: 6 * 10**18, BOB: 3 * 10**18, CAROL: 1 * 10**18}
+        dist = build_distribution(payouts)
+        self._mod.add_round(
+            round_id=0,
+            asset="0x" + "0" * 40,
+            asset_symbol="ETH",
+            asset_decimals=18,
+            payouts=payouts,
+            snapshot_block=123,
+            root=dist.root,
+            total=dist.total,
+        )
+
+        claims = self._mod.claims_for(ALICE)
+        self.assertEqual(len(claims), 1)
+        claim = claims[0]
+        self.assertEqual(claim["amount_wei"], str(6 * 10**18))
+
+        rebuilt = MerkleEntry(
+            index=claim["index"],
+            account=claim["account"],
+            amount=int(claim["amount_wei"]),
+            proof=claim["proof"],
+        )
+        self.assertTrue(verify(dist.root, rebuilt), "the rebuilt proof must verify against the on-chain root")
+
+    def test_lookup_is_case_insensitive_but_the_leaf_is_not(self) -> None:
+        """
+        Wallets return addresses in arbitrary case, so lookup must be lenient
+        -- but the proof has to be built from the exact recorded string, since
+        the leaf hashes those bytes.
+        """
+        from axiom_scanner.rewards.merkle import verify, MerkleEntry
+
+        payouts = {ALICE: 10}
+        dist = build_distribution(payouts)
+        self._mod.add_round(
+            round_id=0, asset="0x" + "0" * 40, asset_symbol="ETH", asset_decimals=18,
+            payouts=payouts, snapshot_block=1, root=dist.root, total=dist.total,
+        )
+        claims = self._mod.claims_for(ALICE.lower())
+        self.assertEqual(len(claims), 1)
+        self.assertEqual(claims[0]["account"], ALICE, "must return the recorded casing")
+        entry = MerkleEntry(
+            index=claims[0]["index"], account=claims[0]["account"],
+            amount=int(claims[0]["amount_wei"]), proof=claims[0]["proof"],
+        )
+        self.assertTrue(verify(dist.root, entry))
+
+    def test_an_unknown_address_gets_nothing(self) -> None:
+        self.assertEqual(self._mod.claims_for("0x9999999999999999999999999999999999999999"), [])
+
+    def test_a_round_id_cannot_be_recorded_twice(self) -> None:
+        payouts = {ALICE: 10}
+        dist = build_distribution(payouts)
+        args = dict(
+            round_id=0, asset="0x" + "0" * 40, asset_symbol="ETH", asset_decimals=18,
+            payouts=payouts, snapshot_block=1, root=dist.root, total=dist.total,
+        )
+        self._mod.add_round(**args)
+        with self.assertRaises(self._mod.RoundError):
+            self._mod.add_round(**args)

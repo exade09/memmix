@@ -505,6 +505,42 @@ export async function fetchVaultState(
   }
 }
 
+export type RewardClaim = {
+  round_id: number;
+  asset: string;
+  asset_symbol: string;
+  asset_decimals: number;
+  snapshot_block: number;
+  index: number;
+  account: string;
+  amount_wei: string;
+  proof: string[];
+};
+
+/**
+ * What this wallet can claim, with the proof for each entry.
+ *
+ * Public and unauthenticated: an address's own payout is not a secret, and
+ * the proof is worthless to anyone else -- the contract always pays the
+ * account named in the leaf.
+ */
+export async function fetchRewardClaims(
+  address: string,
+  signal?: AbortSignal,
+): Promise<RewardClaim[]> {
+  try {
+    const response = await fetch(`/api/vault/claims?address=${encodeURIComponent(address)}`, {
+      cache: "no-store",
+      signal: signal ?? AbortSignal.timeout(15_000),
+    });
+    const payload = await readEnvelope<{ claims: RewardClaim[] }>(response);
+    if (!payload.success || !payload.data) return [];
+    return payload.data.claims ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export type TokenizedStock = {
   symbol: string;
   name: string;

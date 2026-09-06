@@ -22,7 +22,11 @@ from vercel_api.routes.launch import name_check_route
 from vercel_api.routes.metadata import metadata_pin_route
 from vercel_api.routes.mix import mix_concepts_route
 from vercel_api.routes.rewards import (
+    vault_claims_route,
     vault_distribute_route,
+    vault_prepare_round_route,
+    vault_publish_round_route,
+    vault_rounds_route,
     vault_error_status,
     vault_plan_route,
     vault_state_route,
@@ -52,6 +56,11 @@ def handle_api_get(path: str, query: dict[str, list[str]] | str) -> tuple[int, d
         return 200, envelope(success=True, data={"stocks": public_stock_list()})
     if path == "/api/vault":
         return _vault_state(params)
+    if path == "/api/vault/claims":
+        address = params.get("address", [""])[0]
+        return 200, envelope(success=True, data=vault_claims_route(address))
+    if path == "/api/vault/rounds":
+        return 200, envelope(success=True, data=vault_rounds_route())
     if path == "/api/health":
         data = health_payload()
         dumped = json.dumps(data)
@@ -91,6 +100,10 @@ def handle_api_post(
         return _vault_admin(reader, client_ip, vault_plan_route)
     if path == "/api/admin/vault/distribute":
         return _vault_admin(reader, client_ip, vault_distribute_route)
+    if path == "/api/admin/vault/round/prepare":
+        return _vault_admin(reader, client_ip, vault_prepare_round_route)
+    if path == "/api/admin/vault/round/publish":
+        return _vault_admin(reader, client_ip, lambda b, ip: vault_publish_round_route(b, ip))
     if path != "/api/mix/concepts":
         return None
     try:

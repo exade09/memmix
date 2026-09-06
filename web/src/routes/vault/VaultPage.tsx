@@ -8,6 +8,7 @@ import { weiToEthLabel } from "../../chain/units";
 import { shortenAddress } from "../../chain/address";
 import { explorerTokenUrl } from "../../domain/legalCopy";
 import { fetchVaultState, type VaultState } from "../../services/api";
+import { ClaimPanel } from "../../components/vault/ClaimPanel";
 
 /*
   The rewards vault.
@@ -126,6 +127,8 @@ export function VaultPage() {
               </>
             )}
           </div>
+
+          <ClaimPanel />
 
           <h3>How it works</h3>
           <ol className="doc-steps">

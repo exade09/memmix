@@ -997,3 +997,126 @@
 .pair-option.is-on strong {
   color: var(--moss-deep);
 }
+
+/* ---------------------------------------------------------------
+   Claiming rewards
+
+   One row per claimable entry: the asset's own face, what it is
+   worth, and the button. The logo carries recognition, the ticker
+   carries certainty -- both are shown, because a logo alone is not
+   proof of which asset this is.
+--------------------------------------------------------------- */
+
+.claim-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.claim-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius-card);
+  background: var(--glass-2);
+  transition: border-color var(--t-micro), background var(--t-micro);
+}
+
+.claim-row:hover {
+  border-color: var(--glass-line-2);
+  background: var(--glass-3);
+}
+
+.claim-row.is-done {
+  opacity: 0.62;
+}
+
+.asset-badge {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--glass-line-2);
+  background: var(--glass-3);
+  color: var(--moss-deep);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.asset-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.asset-badge svg {
+  width: 22px;
+  height: 22px;
+}
+
+/*
+  The ticker is the default face, so it has to hold up at five characters
+  rather than look like a fallback. Slightly tighter tracking and a size that
+  steps down for longer symbols keeps it inside the disc.
+*/
+.asset-badge.is-ticker {
+  font-size: 9px;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 0 3px;
+  text-align: center;
+  color: var(--ink);
+  background: linear-gradient(150deg, var(--glass-3), var(--glass-2));
+}
+
+.asset-badge.is-native {
+  color: var(--moss-deep);
+}
+
+.claim-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.claim-amount strong {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.claim-action {
+  flex: none;
+}
+
+.claim-error {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+@media (max-width: 560px) {
+  .claim-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .claim-action {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

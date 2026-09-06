@@ -18,6 +18,16 @@ from typing import Any
 
 from axiom_scanner.chain.rpc_client import RpcClient
 from axiom_scanner.http_client import HttpClient
+from axiom_scanner.rewards.config import platform_token_address, vault_address
+from axiom_scanner.rewards.merkle import build_distribution
+from axiom_scanner.rewards.rounds import (
+    RoundError,
+    add_round,
+    claims_for,
+    public_rounds,
+)
+from axiom_scanner.chain.stocks import find_stock
+from axiom_scanner.rewards.holders import snapshot_holders, compute_shares
 from axiom_scanner.rewards.vault import (
     VaultError,
     execute_distribution,
@@ -121,6 +131,135 @@ def vault_error_status(code: str) -> int:
             "NO_HOLDERS",
             "ALL_SHARES_DUST",
             "INCOMPLETE_HOLDER_SCAN",
+            "ROOT_MISMATCH",
+            "ROUND_EXISTS",
         }
         else 503
     )
+
+
+# ---------------------------------------------------------------
+# Payout rounds
+# ---------------------------------------------------------------
+
+
+def _asset_meta(asset: str) -> tuple[str, int]:
+    """Symbol and decimals for whatever is being paid out."""
+    if not asset or asset.lower() == "0x" + "0" * 40:
+        return "ETH", 18
+    stock = find_stock(asset)
+    if stock:
+        return stock["symbol"], int(stock["decimals"])
+    return "TOKEN", 18
+
+
+def vault_claims_route(address: str) -> dict[str, Any]:
+    """Public: what this address can claim, with proofs. No password."""
+    claims = claims_for(address)
+    for claim in claims:
+        symbol, decimals = _asset_meta(str(claim.get("asset") or ""))
+        claim.setdefault("asset_symbol", symbol)
+        claim.setdefault("asset_decimals", decimals)
+    return {"address": address, "claims": claims, "count": len(claims)}
+
+
+def vault_rounds_route() -> dict[str, Any]:
+    return {"rounds": public_rounds()}
+
+
+def vault_prepare_round_route(body: dict[str, Any], client_ip: str, *, http: Any = None) -> dict[str, Any]:
+    """
+    Work out a round without publishing anything.
+
+    Returns the root and the exact per-address split, so it can be checked --
+    and the root compared against a recomputation -- before any money moves.
+    """
+    _guard(body, client_ip)
+    amount = _amount(body)
+    asset = str(body.get("asset") or "").strip() or "0x" + "0" * 40
+
+    token = platform_token_address()
+    if not token:
+        raise VaultError("There is no token to snapshot holders of yet.", "NOT_CONFIGURED")
+
+    rpc = _rpc(http)
+    snap = snapshot_holders(rpc, token, exclude={vault_address()} if vault_address() else None)
+    if snap.total_supply_held <= 0:
+        raise VaultError("No holders were found to distribute to.", "NO_HOLDERS")
+    if not snap.complete:
+        raise VaultError(
+            "The holder list is incomplete, so this round could miss holders. "
+            "Set FONS_TOKEN_START_BLOCK to the token's first block and try again.",
+            "INCOMPLETE_HOLDER_SCAN",
+        )
+
+    payouts = compute_shares(snap, amount, min_payout=1)
+    if not payouts:
+        raise VaultError("Every share would round to zero.", "ALL_SHARES_DUST")
+
+    dist = build_distribution(payouts)
+    symbol, decimals = _asset_meta(asset)
+    return {
+        "asset": asset,
+        "asset_symbol": symbol,
+        "asset_decimals": decimals,
+        "root": dist.root,
+        "total_wei": str(dist.total),
+        "requested_wei": str(amount),
+        "snapshot_block": snap.block_number,
+        "recipient_count": len(dist.entries),
+        "payouts": {a: str(v) for a, v in payouts.items()},
+    }
+
+
+def vault_publish_round_route(body: dict[str, Any], client_ip: str) -> dict[str, Any]:
+    """
+    Record a round that has already been created on chain.
+
+    The chain is the authority: this only stores the payouts so proofs can be
+    rebuilt for holders. The root is recomputed here and compared with the one
+    supplied, so a mismatched table cannot be filed against a real round.
+    """
+    _guard(body, client_ip)
+    try:
+        round_id = int(str(body.get("round_id")))
+    except (TypeError, ValueError) as exc:
+        raise VaultError("round_id must be a whole number.", "INVALID_INPUT") from exc
+
+    raw_payouts = body.get("payouts")
+    if not isinstance(raw_payouts, dict) or not raw_payouts:
+        raise VaultError("payouts is required.", "INVALID_INPUT")
+    try:
+        payouts = {str(a): int(str(v)) for a, v in raw_payouts.items()}
+    except (TypeError, ValueError) as exc:
+        raise VaultError("payouts amounts must be whole numbers of wei.", "INVALID_INPUT") from exc
+
+    dist = build_distribution(payouts)
+    supplied_root = str(body.get("root") or "").lower()
+    if supplied_root and supplied_root != dist.root.lower():
+        raise VaultError(
+            "These payouts do not produce the root that was given.", "ROOT_MISMATCH"
+        )
+
+    asset = str(body.get("asset") or "").strip() or "0x" + "0" * 40
+    symbol, decimals = _asset_meta(asset)
+    try:
+        record = add_round(
+            round_id=round_id,
+            asset=asset,
+            asset_symbol=symbol,
+            asset_decimals=decimals,
+            payouts=payouts,
+            snapshot_block=int(body.get("snapshot_block") or 0),
+            root=dist.root,
+            total=dist.total,
+        )
+    except RoundError as exc:
+        raise VaultError(str(exc), exc.code) from exc
+
+    return {
+        "round_id": record["round_id"],
+        "root": record["root"],
+        "total_wei": record["total_wei"],
+        "recipient_count": len(payouts),
+    }
