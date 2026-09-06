@@ -204,6 +204,7 @@ export type PonsLaunchTerms = {
 export async function readLaunchTerms(
   client: PublicClient,
   launchConfigId: bigint = DEFAULT_LAUNCH_CONFIG_ID,
+  pairToken: Address = NATIVE_PAIR_TOKEN,
 ): Promise<PonsLaunchTerms> {
   const address = ponsFactoryAddress();
   const base = { address, abi: PONS_FACTORY_ABI } as const;
@@ -212,7 +213,13 @@ export async function readLaunchTerms(
     client.readContract({ ...base, functionName: "launchFee" }),
     client.readContract({ ...base, functionName: "launchEnabled" }),
     client.readContract({ ...base, functionName: "getLaunchConfig", args: [launchConfigId] }),
-    client.readContract({ ...base, functionName: "previewLaunchEconomics", args: [launchConfigId, NATIVE_PAIR_TOKEN] }),
+    /*
+      The economics digest is quoted per pair token, so it must be read for the
+      pair the launch will actually use. Quoting against ETH and then launching
+      against a stock reverts on expectedEconomics -- which is the pin doing its
+      job, but only if we ask the right question here.
+    */
+    client.readContract({ ...base, functionName: "previewLaunchEconomics", args: [launchConfigId, pairToken] }),
   ]);
 
   return {

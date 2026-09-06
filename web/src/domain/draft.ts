@@ -69,6 +69,13 @@ export type DraftToken = {
   mix_strategy?: string;
   generated?: boolean;
   initial_buy_sol?: string;
+  /*
+    Carried over when a parent was a tokenized equity, so the launch form can
+    offer that stock as the pair the new token trades against. A suggestion
+    only: the server still checks it against its own registry, and the picker
+    on the launch form can override it.
+  */
+  pair_token?: string;
 };
 
 export function readDraftMix(): DraftMix {

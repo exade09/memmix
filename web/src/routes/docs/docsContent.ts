@@ -187,6 +187,39 @@ export const DOC_SECTIONS: DocSection[] = [
     ],
   },
   {
+    id: "vault",
+    title: "The rewards vault",
+    lede: "Planned, not live. Nothing is accruing yet.",
+    blocks: [
+      {
+        kind: "text",
+        body:
+          "The idea is simple: fees from launch activity collect in one vault rather than in a private wallet, and what the vault holds is split across $FONS holders in proportion to how much they hold. Hold the token, receive a share of what the platform actually earns.",
+      },
+      {
+        kind: "facts",
+        items: [
+          ["Vault", "Not live"],
+          ["Collecting fees", "No"],
+          ["Distributed so far", "Nothing"],
+        ],
+      },
+      {
+        kind: "list",
+        items: [
+          "$FONS does not exist yet, so there is no holder list to split anything across.",
+          "Sponsored launches currently set the creator fee to zero, so no trading fee is being collected at all today.",
+          "The distributing wallet is not set up. When it is, its address will be published so payouts can be checked on-chain instead of taken on trust.",
+        ],
+      },
+      {
+        kind: "note",
+        body:
+          "This is a plan, not a promise of income. Fees only exist if people trade, the amount is whatever trading produces, and no rate or projection is quoted anywhere on the site.",
+      },
+    ],
+  },
+  {
     id: "honesty",
     title: "What Fons will not tell you",
     lede: "The gaps are on purpose.",

@@ -5,6 +5,7 @@ import { appConfig } from "../../app/config";
 import { AvatarCropper } from "../../components/launch/AvatarCropper";
 import { CostSummary, LaunchReview, LivePreview } from "../../components/launch/LaunchReview";
 import { SponsoredLaunchReview } from "../../components/launch/SponsoredLaunchReview";
+import { NATIVE_PAIR, StockPairPicker, pairLabel, type PairChoice } from "../../components/launch/StockPairPicker";
 import { Button, FileButton } from "../../components/ui/Button";
 import { getMemoryAvatar, hasMemoryAvatar, setMemoryAvatar } from "../../domain/avatarMemory";
 import { readDraftMix, readDraftToken, writeDraftToken } from "../../domain/draft";
@@ -33,6 +34,7 @@ import {
 import {
   checkLaunchName,
   fetchSponsorLaunchStatus,
+  fetchStocks,
   LaunchApiError,
   pinMetadata,
   type MetadataPinResult,
@@ -74,12 +76,30 @@ export function LaunchPage() {
     sponsor_address: null,
   });
   const [payMode, setPayMode] = useState<"sponsored" | "self">("sponsored");
+  const [pairChoice, setPairChoice] = useState<PairChoice>(NATIVE_PAIR);
 
   useEffect(() => {
     const controller = new AbortController();
     fetchSponsorLaunchStatus(controller.signal).then(setSponsorStatus);
     return () => controller.abort();
   }, []);
+
+  /*
+    A mix against a tokenized equity suggests that equity as the pair. The
+    address is only a hint from the draft, so it is resolved against the
+    server's own list rather than trusted: an address that is not on it just
+    leaves the default ETH pair in place.
+  */
+  useEffect(() => {
+    const suggested = restored?.pair_token;
+    if (!suggested) return;
+    const controller = new AbortController();
+    fetchStocks(controller.signal).then((list) => {
+      const match = list.find((stock) => stock.address.toLowerCase() === suggested.toLowerCase());
+      if (match) setPairChoice({ kind: "stock", stock: match });
+    });
+    return () => controller.abort();
+  }, [restored?.pair_token]);
 
   useEffect(() => {
     if (!fromMix) return;
@@ -313,6 +333,7 @@ export function LaunchPage() {
           telegram={telegram}
           website={website}
           initialBuy={normalizeInitialBuy(initialBuy)}
+          pair={pairChoice}
           sponsorAddress={sponsorStatus.sponsor_address}
           onBack={() => setPhase("EDITING")}
           onSwitchToSelfPay={() => setPayMode("self")}
@@ -332,6 +353,7 @@ export function LaunchPage() {
         telegram={telegram}
         website={website}
         initialBuy={normalizeInitialBuy(initialBuy)}
+        pair={pairChoice}
         generated={generated}
         nameCheck={nameCheck}
         onBack={() => setPhase("EDITING")}
@@ -468,6 +490,11 @@ export function LaunchPage() {
             />
           </label>
 
+          <div className="field">
+            <span>Trades against</span>
+            <StockPairPicker value={pairChoice} onChange={setPairChoice} />
+          </div>
+
           <details
             className="disclosure"
             open={socialsOpen}
@@ -504,7 +531,12 @@ export function LaunchPage() {
             <summary>Advanced · optional initial buy</summary>
             <div className="disclosure-body">
               <p className="metric-label">
-                Default is 0 ETH: create without buy. The opening buy is never turned on automatically, and it is a second signature after the token exists.
+                Default is 0: create without buy. The opening buy is never turned on automatically, and it is a
+                second signature after the token exists
+                {pairChoice.kind === "stock"
+                  ? `. This token is priced in ${pairChoice.stock.symbol}, so an opening buy is spent in ${pairChoice.stock.symbol} from your own wallet, not ETH`
+                  : ""}
+                .
               </p>
               <div className="btn-row tight">
                 {INITIAL_BUY_PRESETS.map((preset) => (
@@ -541,7 +573,7 @@ export function LaunchPage() {
             <summary>Preview</summary>
             <div className="disclosure-body">
               {preview}
-              <CostSummary initialBuy={normalizeInitialBuy(buyError ? "0" : initialBuy)} />
+              <CostSummary initialBuy={normalizeInitialBuy(buyError ? "0" : initialBuy)} pairSymbol={pairLabel(pairChoice)} />
             </div>
           </details>
 
@@ -572,7 +604,7 @@ export function LaunchPage() {
             <p className="eyebrow">Live preview</p>
             {preview}
             <p className="eyebrow">Cost summary</p>
-            <CostSummary initialBuy={normalizeInitialBuy(buyError ? INITIAL_BUY_DEFAULT : initialBuy)} />
+            <CostSummary initialBuy={normalizeInitialBuy(buyError ? INITIAL_BUY_DEFAULT : initialBuy)} pairSymbol={pairLabel(pairChoice)} />
           </div>
         </aside>
       </div>

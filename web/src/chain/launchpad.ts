@@ -1,4 +1,5 @@
 import { decodeEventLog, type Address, type PublicClient, type WalletClient } from "viem";
+import { approveErc20, readErc20Allowance, readErc20Balance } from "./erc20";
 import { LaunchError, isInsufficientBalance, isWalletRejection, mapSendFailure } from "./errors";
 import { applyPercentBuffer, weiToEthLabel } from "./units";
 import { TARGET_CHAIN_ID } from "./wallet";
@@ -150,6 +151,13 @@ export type LaunchInput = {
   socials?: Partial<PonsSocials>;
   creatorTaxBps?: number;
   buybackEnabled?: boolean;
+  /*
+    What the token trades against. Defaults to the native ETH curve; pass a
+    tokenized stock's address to launch a pair that is bought and sold in that
+    stock instead. The launch fee itself is always ETH either way -- only the
+    curve's own currency changes.
+  */
+  pairToken?: Address;
 };
 
 /**
@@ -164,7 +172,9 @@ export async function simulateLaunch(input: LaunchInput): Promise<PreparedLaunch
   validateLaunchFields(name, symbol, metadataUri);
   const address = await assertLaunchpadDeployed(client);
 
-  const terms = await readLaunchTerms(client, DEFAULT_LAUNCH_CONFIG_ID);
+  const pairToken = input.pairToken ?? NATIVE_PAIR_TOKEN;
+  const nativePair = pairToken === NATIVE_PAIR_TOKEN;
+  const terms = await readLaunchTerms(client, DEFAULT_LAUNCH_CONFIG_ID, pairToken);
   if (!terms.launchEnabled || !terms.config.enabled) {
     throw new LaunchError("Launching is switched off on chain right now.", "LAUNCH_DISABLED_ONCHAIN");
   }
@@ -193,7 +203,7 @@ export async function simulateLaunch(input: LaunchInput): Promise<PreparedLaunch
     address,
     abi: PONS_FACTORY_ABI,
     functionName: "launchToken",
-    args: [params, DEFAULT_LAUNCH_CONFIG_ID, NATIVE_PAIR_TOKEN],
+    args: [params, DEFAULT_LAUNCH_CONFIG_ID, pairToken],
     value: terms.launchFeeWei,
     account,
   } as const;
@@ -224,13 +234,20 @@ export async function simulateLaunch(input: LaunchInput): Promise<PreparedLaunch
   const fees = await client.estimateFeesPerGas();
   const perGas = fees.maxFeePerGas ?? fees.gasPrice ?? 0n;
   const gasWei = gas * perGas;
-  const maxDebitWei = applyPercentBuffer(gasWei + terms.launchFeeWei + initialBuyWei, COST_BUFFER_PERCENT);
+  /*
+    The opening buy only belongs in an ETH total when the curve is actually
+    priced in ETH. On a stock pair it is denominated in that stock, so adding
+    it here would state a wallet debit in ETH that includes a quantity of
+    Apple -- a number that is not wrong so much as meaningless.
+  */
+  const ethSideWei = nativePair ? gasWei + terms.launchFeeWei + initialBuyWei : gasWei + terms.launchFeeWei;
+  const maxDebitWei = applyPercentBuffer(ethSideWei, COST_BUFFER_PERCENT);
 
   return {
     address,
     params,
     launchConfigId: DEFAULT_LAUNCH_CONFIG_ID,
-    pairToken: NATIVE_PAIR_TOKEN,
+    pairToken,
     value: terms.launchFeeWei,
     gas,
     terms,
@@ -342,24 +359,55 @@ export async function submitInitialBuy(
   client: PublicClient,
   account: Address,
   curve: Address,
-  amountWei: bigint,
+  amount: bigint,
+  /*
+    Which currency `amount` is in. Omit for the native ETH curve; pass the
+    stock's address for a stock-paired one. The two are not interchangeable:
+    an ETH curve is bought by attaching value, a token-paired curve by
+    approving the curve to pull the token and attaching none.
+  */
+  pairToken: Address = NATIVE_PAIR_TOKEN,
 ): Promise<`0x${string}`> {
-  if (amountWei <= 0n) {
+  if (amount <= 0n) {
     throw new LaunchError("No initial buy amount was set.", "INVALID_INPUT");
   }
+  const nativePair = pairToken === NATIVE_PAIR_TOKEN;
   const call = {
     address: curve,
     abi: PONS_CURVE_ABI,
     functionName: "buy",
-    value: amountWei,
     account,
+    ...(nativePair ? { value: amount } : {}),
   } as const;
+
   try {
-    const quoted = await client.simulateContract({ ...call, args: [amountWei, 0n, account] });
+    if (!nativePair) {
+      /*
+        Approve first, and only when the standing allowance is short. Curves
+        are freshly deployed per launch, so this is normally the first
+        approval this pair has ever had; re-approving an already sufficient
+        allowance would just be a second wallet prompt for nothing.
+      */
+      const balance = await readErc20Balance(client, pairToken, account);
+      if (balance < amount) {
+        throw new LaunchError(
+          "This wallet does not hold enough of the pair token for that opening buy.",
+          "INSUFFICIENT_BALANCE",
+        );
+      }
+      const allowance = await readErc20Allowance(client, pairToken, account, curve);
+      if (allowance < amount) {
+        const approvalHash = await approveErc20(wallet, account, pairToken, curve, amount);
+        await client.waitForTransactionReceipt({ hash: approvalHash });
+      }
+    }
+
+    const quoted = await client.simulateContract({ ...call, args: [amount, 0n, account] });
     const expected = quoted.result as bigint;
     const minTokensOut = (expected * (100n - OPENING_BUY_SLIPPAGE_PERCENT)) / 100n;
-    return await wallet.writeContract({ ...call, args: [amountWei, minTokensOut, account], chain: null });
+    return await wallet.writeContract({ ...call, args: [amount, minTokensOut, account], chain: null });
   } catch (error: unknown) {
+    if (error instanceof LaunchError) throw error;
     throw mapSendFailure(error);
   }
 }

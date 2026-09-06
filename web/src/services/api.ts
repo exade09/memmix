@@ -443,6 +443,16 @@ export type SponsorLaunchRequest = {
   creator_wallet: string;
   creator_tax_bps?: number;
   buyback_enabled?: boolean;
+  /** Omit for the native ETH curve, or pass a verified stock's address. */
+  pair_token?: string;
+};
+
+export type LaunchPair = {
+  kind: "native" | "stock" | "unknown";
+  symbol: string;
+  name: string;
+  address: string;
+  decimals: number;
 };
 
 export type SponsorLaunchResult = {
@@ -451,8 +461,37 @@ export type SponsorLaunchResult = {
   token?: string;
   curve?: string;
   deployer?: string;
+  pair?: LaunchPair;
   explorer_url: string;
 };
+
+export type TokenizedStock = {
+  symbol: string;
+  name: string;
+  address: string;
+  decimals: number;
+};
+
+/**
+ * The equities a launch may be paired against.
+ *
+ * Served from the same checked-in registry the server gates sponsored
+ * launches on, so the picker cannot offer something the backend would then
+ * refuse.
+ */
+export async function fetchStocks(signal?: AbortSignal): Promise<TokenizedStock[]> {
+  try {
+    const response = await fetch("/api/stocks", {
+      cache: "no-store",
+      signal: signal ?? AbortSignal.timeout(10_000),
+    });
+    const payload = await readEnvelope<{ stocks: TokenizedStock[] }>(response);
+    if (!payload.success || !payload.data) return [];
+    return payload.data.stocks ?? [];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Whether Fons is currently paying launch fee + gas from its own wallet

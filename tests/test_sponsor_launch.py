@@ -33,6 +33,8 @@ from vercel_api.routes.sponsor_launch import SponsorLaunchError, reset_sponsor_l
 TEST_KEY = Account.create().key.hex()
 TEST_ADDRESS = Account.from_key(TEST_KEY).address
 FACTORY = "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e"
+# A real entry from the verified registry, so the allowlist is exercised as shipped.
+AAPL = "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9"
 
 VALID_BODY = {
     "name": "Test Token",
@@ -280,6 +282,74 @@ class SponsorLaunchRouteTests(unittest.TestCase):
         self.assertTrue(payload["data"]["available"])
         self.assertEqual(payload["data"]["sponsor_address"], TEST_ADDRESS)
         self.assertNotIn(TEST_KEY, json.dumps(payload))
+
+    def test_defaults_to_the_native_eth_pair(self) -> None:
+        result = sponsor_launch_route(dict(VALID_BODY), "10.0.1.1", http=FakePoster())
+        self.assertEqual(result["pair"]["kind"], "native")
+        self.assertEqual(result["pair"]["symbol"], "ETH")
+
+    def test_accepts_a_verified_stock_as_the_pair(self) -> None:
+        body = dict(VALID_BODY, pair_token=AAPL)
+        result = sponsor_launch_route(body, "10.0.1.2", http=FakePoster())
+        self.assertEqual(result["status"], "confirmed")
+        self.assertEqual(result["pair"]["kind"], "stock")
+        self.assertEqual(result["pair"]["symbol"], "AAPL")
+        self.assertEqual(result["pair"]["decimals"], 18)
+
+    def test_refuses_to_sponsor_an_unlisted_pair_token(self) -> None:
+        """The wallet guard: the factory accepts any address, so we must not."""
+        body = dict(VALID_BODY, pair_token="0x1111111111111111111111111111111111111111")
+        with self.assertRaises(SponsorLaunchError) as ctx:
+            sponsor_launch_route(body, "10.0.1.3", http=FakePoster())
+        self.assertEqual(ctx.exception.code, "PAIR_TOKEN_NOT_ALLOWED")
+
+    def test_refuses_a_malformed_pair_token(self) -> None:
+        body = dict(VALID_BODY, pair_token="not-an-address")
+        with self.assertRaises(SponsorLaunchError) as ctx:
+            sponsor_launch_route(body, "10.0.1.4", http=FakePoster())
+        self.assertEqual(ctx.exception.code, "INVALID_INPUT")
+
+    def test_economics_are_quoted_against_the_chosen_pair(self) -> None:
+        """Quoting ETH and launching a stock pair would revert on expectedEconomics."""
+        poster = FakePoster()
+        sponsor_launch_route(dict(VALID_BODY, pair_token=AAPL), "10.0.1.5", http=poster)
+        previews = [
+            c for c in poster.calls
+            if c["method"] == "eth_call"
+            and c["params"][0]["data"].startswith("0x" + PREVIEW_ECONOMICS_SELECTOR.hex())
+        ]
+        self.assertTrue(previews, "no previewLaunchEconomics call was made")
+        self.assertIn(AAPL[2:].lower(), previews[0]["params"][0]["data"].lower())
+
+    def test_stocks_endpoint_lists_verified_equities(self) -> None:
+        status, payload = handle_api_get("/api/stocks", "")
+        self.assertEqual(status, 200)
+        stocks = payload["data"]["stocks"]
+        self.assertTrue(len(stocks) > 20)
+        symbols = {s["symbol"] for s in stocks}
+        self.assertIn("AAPL", symbols)
+        self.assertIn("NVDA", symbols)
+        for s in stocks:
+            self.assertTrue(s["address"].startswith("0x") and len(s["address"]) == 42)
+
+    def test_registry_rejects_absurdly_long_symbols(self) -> None:
+        """
+        A token's symbol() is attacker controlled. One spam contract on this
+        chain returns a 43,000-character symbol containing the very words the
+        registry was discovered by, and it did get in on the first pass.
+        """
+        from axiom_scanner.chain.stocks import MAX_NAME_LENGTH, MAX_SYMBOL_LENGTH, load_stocks
+
+        for stock in load_stocks():
+            self.assertLessEqual(len(stock["symbol"]), MAX_SYMBOL_LENGTH, stock["address"])
+            self.assertLessEqual(len(stock["name"]), MAX_NAME_LENGTH, stock["address"])
+
+    def test_registry_has_no_duplicate_tickers(self) -> None:
+        """An ambiguous ticker is a way to pair against the wrong contract."""
+        from axiom_scanner.chain.stocks import load_stocks
+
+        symbols = [s["symbol"] for s in load_stocks()]
+        self.assertEqual(len(symbols), len(set(symbols)))
 
     def test_dispatch_wires_the_post_route(self) -> None:
         with patch("vercel_api.routes.sponsor_launch.HttpClient", return_value=FakePoster()):

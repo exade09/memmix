@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import type { Address } from "viem";
 import { AnimatedText } from "../motion/AnimatedText";
 import { readPendingLaunch, writePendingLaunch } from "../../domain/pendingLaunch";
-import { formatEth } from "../../domain/validation";
 import { submitSponsoredLaunch } from "../../services/api";
 import { useChain } from "../../chain/wallet";
 import { ethToWei } from "../../chain/units";
+import { parseTokenAmount } from "../../chain/erc20";
 import { submitInitialBuy } from "../../chain/launchpad";
+import { pairLabel, type PairChoice } from "./StockPairPicker";
 import { Button } from "../ui/Button";
 import { GlassMark } from "../brand/GlassMark";
 import { track } from "../../services/analytics";
@@ -42,6 +43,7 @@ type SponsoredLaunchReviewProps = {
   telegram: string;
   website: string;
   initialBuy: string;
+  pair: PairChoice;
   sponsorAddress: string;
   onBack: () => void;
   onSwitchToSelfPay: () => void;
@@ -56,8 +58,16 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
   const [buying, setBuying] = useState(false);
   const [buyNote, setBuyNote] = useState("");
 
-  const buyWei = ethToWei(props.initialBuy);
-  const wantsBuy = buyWei > 0n;
+  /*
+    The opening buy is denominated in whatever the curve is priced in, so a
+    stock pair parses against that stock's decimals rather than ETH's.
+  */
+  const stock = props.pair.kind === "stock" ? props.pair.stock : null;
+  const buyAmount = stock
+    ? parseTokenAmount(props.initialBuy, stock.decimals)
+    : ethToWei(props.initialBuy);
+  const wantsBuy = buyAmount > 0n;
+  const buyUnit = pairLabel(props.pair);
 
   async function onLaunch() {
     if (submitting) return;
@@ -73,6 +83,7 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
       creator_wallet: props.sponsorAddress,
       creator_tax_bps: 0,
       buyback_enabled: false,
+      pair_token: stock ? stock.address : undefined,
     });
     setSubmitting(false);
     if (!result.ok) {
@@ -120,7 +131,14 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
     setBuying(true);
     setBuyNote("");
     try {
-      await submitInitialBuy(walletClient, publicClient, address, launched.curve as Address, buyWei);
+      await submitInitialBuy(
+        walletClient,
+        publicClient,
+        address,
+        launched.curve as Address,
+        buyAmount,
+        stock ? (stock.address as Address) : undefined,
+      );
       track("initial_buy_submitted");
     } catch (err: unknown) {
       track("initial_buy_skipped");
@@ -153,7 +171,7 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
           <dl className="facts strong">
             <div>
               <dt>Amount</dt>
-              <dd>{formatEth(props.initialBuy)}</dd>
+              <dd>{props.initialBuy} {buyUnit}</dd>
             </div>
             <div>
               <dt>Paid from</dt>
@@ -179,7 +197,7 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
             onClick={() => void onBuy()}
             disabled={buying}
           >
-            {buying ? "Buying…" : address ? `Buy ${formatEth(props.initialBuy)}` : "Connect wallet to buy"}
+            {buying ? "Buying…" : address ? `Buy ${props.initialBuy} ${buyUnit}` : "Connect wallet to buy"}
           </Button>
         </div>
       </section>
@@ -224,6 +242,10 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
               <dt>You pay</dt>
               <dd>0 ETH</dd>
             </div>
+            <div>
+              <dt>Trades in</dt>
+              <dd>{buyUnit}</dd>
+            </div>
           </dl>
           <p className="metric-label">
             No wallet connection needed for this launch. The transaction is still simulated against the chain
@@ -231,7 +253,7 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
           </p>
           {wantsBuy ? (
             <p className="metric-label">
-              You set an opening buy of {formatEth(props.initialBuy)}. Fons does not pay for that part — you will be
+              You set an opening buy of {props.initialBuy} {buyUnit}. Fons does not pay for that part — you will be
               asked to connect your own wallet for it, as its own step, right after the token exists.
             </p>
           ) : null}

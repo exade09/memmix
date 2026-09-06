@@ -15,6 +15,8 @@ import {
 } from "../../services/launchBoundary";
 import { useChain } from "../../chain/wallet";
 import { ethToWei } from "../../chain/units";
+import { parseTokenAmount } from "../../chain/erc20";
+import { pairLabel, type PairChoice } from "./StockPairPicker";
 import { LaunchError } from "../../chain/errors";
 import {
   acquireLaunchSubmit,
@@ -37,14 +39,18 @@ export function CostSummary({
   initialBuy,
   estimate,
   fallback,
+  pairSymbol = "ETH",
 }: {
   initialBuy: string;
   estimate?: CostEstimate | null;
   fallback?: string;
+  /** What the curve is priced in. The fee and gas are always ETH regardless. */
+  pairSymbol?: string;
 }) {
   const boundary = getTransactionBoundary();
   const unknown = fallback || boundary.unknownCostLabel;
   const formatted = formatCost(estimate ?? null, unknown);
+  const nativePair = pairSymbol === "ETH";
   return (
     <dl className="facts strong">
       <div>
@@ -61,12 +67,22 @@ export function CostSummary({
       </div>
       <div>
         <dt>Initial buy</dt>
-        <dd>{formatEth(initialBuy)}</dd>
+        <dd>{nativePair ? formatEth(initialBuy) : `${initialBuy} ${pairSymbol}`}</dd>
       </div>
       <div>
-        <dt>Maximum wallet debit</dt>
+        {/*
+          On a stock pair the opening buy is spent in that stock, so it is not
+          part of an ETH debit and the label has to say which currency this
+          total is actually in.
+        */}
+        <dt>{nativePair ? "Maximum wallet debit" : "Maximum ETH debit"}</dt>
         <dd>{estimate ? formatted.maxDebit : unknown}</dd>
       </div>
+      {!nativePair ? (
+        <p className="facts-note">
+          Priced in {pairSymbol}. The fee and gas above are ETH; the opening buy is spent in {pairSymbol}.
+        </p>
+      ) : null}
       {estimate?.bufferLabel ? <p className="facts-note">{estimate.bufferLabel}</p> : null}
     </dl>
   );
@@ -116,6 +132,7 @@ type LaunchReviewProps = {
   telegram: string;
   website: string;
   initialBuy: string;
+  pair: PairChoice;
   generated: boolean;
   nameCheck: NameCheckResult | null;
   onBack: () => void;
@@ -169,7 +186,10 @@ export function LaunchReview(props: LaunchReviewProps) {
         name: props.name,
         symbol: props.ticker,
         metadataUri: props.metadataUri,
-        initialBuyWei: ethToWei(props.initialBuy),
+        initialBuyWei:
+          props.pair.kind === "stock"
+            ? parseTokenAmount(props.initialBuy, props.pair.stock.decimals)
+            : ethToWei(props.initialBuy),
         // Pons stores these on the launch itself, so they go in the call
         // rather than only into the pinned metadata document.
         description: props.description,
@@ -179,6 +199,7 @@ export function LaunchReview(props: LaunchReviewProps) {
           telegram: props.telegram,
           website: props.website,
         },
+        pairToken: props.pair.kind === "stock" ? (props.pair.stock.address as Address) : undefined,
       });
       preparedRef.current = prepared;
       setEstimate(prepared.estimate);
@@ -206,6 +227,7 @@ export function LaunchReview(props: LaunchReviewProps) {
     props.description,
     props.imageUri,
     props.initialBuy,
+    props.pair,
     props.metadataUri,
     props.name,
     props.telegram,
@@ -262,12 +284,22 @@ export function LaunchReview(props: LaunchReviewProps) {
         either way, so a declined or failed buy must never read as a failed
         launch.
       */
-      const buyWei = ethToWei(props.initialBuy);
+      const buyStock = props.pair.kind === "stock" ? props.pair.stock : null;
+      const buyWei = buyStock
+        ? parseTokenAmount(props.initialBuy, buyStock.decimals)
+        : ethToWei(props.initialBuy);
       if (buyWei > 0n) {
         setState("SUBMITTING");
         setError("Token created. Approve the opening buy, or skip it.");
         try {
-          await submitInitialBuy(walletClient, publicClient, address, confirmed.curve, buyWei);
+          await submitInitialBuy(
+            walletClient,
+            publicClient,
+            address,
+            confirmed.curve,
+            buyWei,
+            buyStock ? (buyStock.address as Address) : undefined,
+          );
           track("initial_buy_submitted");
         } catch (buyErr: unknown) {
           track("initial_buy_skipped");
@@ -412,7 +444,7 @@ export function LaunchReview(props: LaunchReviewProps) {
 
         <div className="panel stack">
           <p className="eyebrow">Cost</p>
-          <CostSummary initialBuy={props.initialBuy} estimate={estimate} />
+          <CostSummary initialBuy={props.initialBuy} estimate={estimate} pairSymbol={pairLabel(props.pair)} />
           <p className="metric-label">Gas comes from the node estimate, not a marketing constant</p>
         </div>
 

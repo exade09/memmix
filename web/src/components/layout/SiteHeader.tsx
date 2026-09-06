@@ -9,6 +9,7 @@ const links = [
   { to: "/app/mix", label: "Mix" },
   { to: "/app/launch", label: "Launch" },
   { to: "/app/explore", label: "Explore" },
+  { to: "/vault", label: "Vault" },
   { to: "/docs", label: "Docs" },
 ];
 

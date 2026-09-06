@@ -23,6 +23,7 @@ export const FAQ_ITEMS = [
   ["Can I launch without using AI?", "Yes. Direct Launch accepts your own name, ticker, description, image and links."],
   ["Can I edit the generated result?", "Yes. Every generated field is editable before metadata is pinned and the launch is sent."],
   ["Is a token launched here guaranteed to be safe?", "FONS protects the launch workflow by checking the factory holds code and simulating the transaction before anything is sent, whether Fons's wallet is paying or yours is. It cannot guarantee the future behaviour, market, holders, links or price of any token."],
+  ["Do I earn anything for holding $FONS?", "Not today. A rewards vault is planned: fees from launch activity would collect in one vault and be split across $FONS holders in proportion to their holdings. It is not live — $FONS has not launched, no fee is being collected, and nothing has been distributed. Treat it as a plan, not income."],
   ["Does FONS guarantee profit?", "No. FONS does not provide investment advice or predict returns."],
   ["Can metadata be edited after launch?", "Treat submitted token data as permanent. Review the name, ticker, image, description and links before signing."],
   ["Who is responsible for uploaded and generated content?", "The launcher is responsible for having the right to use uploaded names, images and links. AI output must also be reviewed before launch."],

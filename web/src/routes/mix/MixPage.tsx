@@ -24,7 +24,7 @@ import {
   NAME_MAX,
   normalizeTicker,
 } from "../../domain/validation";
-import { MixApiError, avatarJobStatus, mixConcepts, startAvatarJob } from "../../services/api";
+import { MixApiError, avatarJobStatus, fetchStocks, mixConcepts, startAvatarJob } from "../../services/api";
 import { track } from "../../services/analytics";
 
 const ANALYZE_LABELS = ["Reading Token A", "Reading Token B", "Finding the mutation"];
@@ -60,6 +60,12 @@ export function MixPage() {
     (stored.concepts ?? []).find((item) => item.id === stored.selected_concept_id) ?? stored.concepts?.[0] ?? null;
   const [parentA, setParentA] = useState<ParentToken | null>(stored.parent_a);
   const [parentB, setParentB] = useState<ParentToken | null>(stored.parent_b);
+  /*
+    Addresses of the tokenized equities, so a parent that happens to be one
+    can be carried through to the launch form as the pair. Lowercased once
+    here rather than at every comparison.
+  */
+  const [stockAddresses, setStockAddresses] = useState<Set<string>>(() => new Set());
   const [refA, setRefA] = useState<File | null>(null);
   const [refB, setRefB] = useState<File | null>(null);
   const [concepts, setConcepts] = useState<MixConcept[]>(stored.concepts ?? []);
@@ -141,6 +147,14 @@ export function MixPage() {
       avatar_next_base: nextAvatarBase,
     });
   }, [parentA, parentB, concepts, selectedId, fallbackNotice, jobToken, avatarUrl, nextAvatarBase]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchStocks(controller.signal).then((list) => {
+      setStockAddresses(new Set(list.map((stock) => stock.address.toLowerCase())));
+    });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (!analyzing) return;
@@ -398,6 +412,20 @@ export function MixPage() {
 
   function useInLaunch() {
     if (!fieldsValid || !parentA || !parentB) return;
+    /*
+      If one of the parents is a tokenized equity, carry it through as the
+      suggested pair: mixing a meme with Apple and then pricing the result in
+      ETH throws away the more interesting half of what was just chosen. B is
+      preferred when both are stocks, since it is the one the mix treats as
+      the donor. Still only a suggestion -- the launch form shows the picker
+      and the server re-checks it.
+    */
+    const stockParent =
+      stockAddresses.has(parentB.mint.toLowerCase())
+        ? parentB
+        : stockAddresses.has(parentA.mint.toLowerCase())
+          ? parentA
+          : null;
     writeDraftToken({
       source: "ai_mix",
       name: name.trim(),
@@ -408,6 +436,7 @@ export function MixPage() {
       mix_strategy: selected?.internal?.strategy,
       generated: Boolean(lastGeneratedUrl) && !replaced,
       avatar_url: isPublicImageUrl(avatarUrl) ? avatarUrl : undefined,
+      ...(stockParent ? { pair_token: stockParent.mint } : {}),
     });
     track("draft_sent_to_launch");
     navigate("/app/launch?source=mix");

@@ -934,3 +934,66 @@
     transform: none;
   }
 }
+
+/* ---------------------------------------------------------------
+   Pair picker: what a launch trades against
+
+   ETH or a tokenized equity. The options are a scrollable grid
+   rather than a native select so a ticker and its full company
+   name can both be read at a glance.
+--------------------------------------------------------------- */
+
+.pair-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+  max-height: 232px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius-card);
+  background: var(--glass-2);
+}
+
+.pair-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-tile);
+  background: transparent;
+  text-align: left;
+  transition: background var(--t-micro), border-color var(--t-micro);
+}
+
+.pair-option:hover {
+  background: var(--glass-3);
+}
+
+.pair-option strong {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: var(--track-mid);
+  color: var(--ink);
+}
+
+.pair-option span {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.pair-option.is-on {
+  border-color: var(--moss);
+  background: var(--glass-3);
+}
+
+.pair-option.is-on strong {
+  color: var(--moss-deep);
+}

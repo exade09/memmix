@@ -21,6 +21,7 @@ export function SiteFooter() {
             <Link to="/app/mix">AI Mix</Link>
             <Link to="/app/launch">Direct Launch</Link>
             <Link to="/app/explore">Explore</Link>
+            <Link to="/vault">Vault</Link>
             <Link to="/docs">Docs</Link>
           </div>
           <div className="footer-col">

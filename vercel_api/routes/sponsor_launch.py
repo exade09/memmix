@@ -40,6 +40,7 @@ from axiom_scanner.chain.pons_abi import (
     require_eth_address,
 )
 from axiom_scanner.chain.rpc_client import RpcClient, RpcError
+from axiom_scanner.chain.stocks import find_stock, is_allowed_pair_token, is_native_pair
 from axiom_scanner.chain.sponsor_wallet import (
     SponsorWalletError,
     send_sponsored_call,
@@ -133,12 +134,15 @@ def sponsor_launch_route(
         if not enabled:
             raise SponsorLaunchError("Launching is currently disabled on the factory.", "LAUNCH_DISABLED")
 
+        # Economics are quoted per pair token, so this has to be read for the
+        # pair the launch will actually use -- quoting ETH and launching a
+        # stock pair reverts on expectedEconomics.
         economics = decode_bytes32(
             rpc.eth_call(
                 {
                     "to": factory,
                     "data": "0x"
-                    + encode_preview_economics_call(DEFAULT_LAUNCH_CONFIG_ID, ZERO_ADDRESS).hex(),
+                    + encode_preview_economics_call(DEFAULT_LAUNCH_CONFIG_ID, fields["pair_token"]).hex(),
                 }
             )
         )
@@ -167,7 +171,7 @@ def sponsor_launch_route(
         expected_economics=economics,
         salt=secrets.token_bytes(32),
     )
-    calldata = encode_launch_token_call(token_params, DEFAULT_LAUNCH_CONFIG_ID, ZERO_ADDRESS)
+    calldata = encode_launch_token_call(token_params, DEFAULT_LAUNCH_CONFIG_ID, fields["pair_token"])
 
     try:
         rpc.eth_call(
@@ -188,11 +192,16 @@ def sponsor_launch_route(
     except SponsorWalletError as exc:
         raise SponsorLaunchError(str(exc), exc.code) from exc
 
+    # What the new token trades against, echoed back so the client can price
+    # and approve an opening buy without having to guess the pair.
+    pair = _pair_summary(fields["pair_token"])
+
     receipt = wait_for_receipt(rpc, sent.tx_hash)
     if receipt is None:
         return {
             "status": "pending",
             "tx_hash": sent.tx_hash,
+            "pair": pair,
             "explorer_url": f"{explorer_url()}/tx/{sent.tx_hash}",
         }
 
@@ -204,6 +213,7 @@ def sponsor_launch_route(
         return {
             "status": "confirmed",
             "tx_hash": sent.tx_hash,
+            "pair": pair,
             "explorer_url": f"{explorer_url()}/tx/{sent.tx_hash}",
         }
 
@@ -214,8 +224,20 @@ def sponsor_launch_route(
         "token": token,
         "curve": curve,
         "deployer": deployer,
+        "pair": pair,
         "explorer_url": f"{explorer_url()}/token/{token}",
     }
+
+
+def _pair_summary(pair_token: str) -> dict[str, Any]:
+    if is_native_pair(pair_token):
+        return {"kind": "native", "symbol": "ETH", "name": "Ether", "address": ZERO_ADDRESS, "decimals": 18}
+    stock = find_stock(pair_token)
+    if stock is None:
+        # Unreachable through the route, which gates on the same registry;
+        # kept so this helper cannot invent a symbol if that ever changes.
+        return {"kind": "unknown", "symbol": "", "name": "", "address": pair_token, "decimals": 18}
+    return {"kind": "stock", **stock}
 
 
 def _validate_body(body: dict[str, Any]) -> dict[str, Any]:
@@ -261,11 +283,30 @@ def _validate_body(body: dict[str, Any]) -> dict[str, Any]:
 
     buyback_enabled = bool(body.get("buyback_enabled", False))
 
+    # The pair token gate. Fons's wallet pays for this launch, and the factory
+    # accepts any address here without checking it, so an unvalidated value is
+    # a way to spend our balance deploying a curve against a contract that is
+    # not an equity -- or not a token at all. Only the native ETH curve or a
+    # stock this build verified on chain is allowed through.
+    raw_pair = body.get("pair_token")
+    if raw_pair is None or is_native_pair(str(raw_pair)):
+        pair_token = ZERO_ADDRESS
+    else:
+        try:
+            pair_token = require_eth_address(raw_pair)
+        except EthAddressError as exc:
+            raise SponsorLaunchError(str(exc), "INVALID_INPUT") from exc
+        if not is_allowed_pair_token(pair_token):
+            raise SponsorLaunchError(
+                "That pair token is not one Fons will sponsor a launch against.", "PAIR_TOKEN_NOT_ALLOWED"
+            )
+
     return {
         "name": name,
         "ticker": ticker,
         "description": description,
         "logo": logo,
+        "pair_token": pair_token,
         "socials": {
             "twitter": twitter,
             "telegram": telegram,

@@ -5,6 +5,7 @@ import os
 from typing import Any, Protocol
 
 from axiom_scanner.analysis.mix_fallback import build_fallback_concepts
+from axiom_scanner.chain.stocks import find_stock
 from axiom_scanner.analysis.mix_schema import (
     CONCEPT_IDS,
     FALLBACK_NOTICE,
@@ -306,13 +307,19 @@ def _sanitize_parent(raw: object, label: str) -> dict[str, str]:
     description = sanitize_parent_text(raw.get("description") or "", 240)
     image = safe_image_url(raw.get("image_url") or "")
     observation = "has a square token avatar" if image else "no reference image"
+    # Whether this parent is a real listed company is decided here, from the
+    # verified registry, rather than taken from the request. A caller claiming
+    # "this meme coin is Apple" would otherwise steer the model into writing
+    # about a company that has nothing to do with the token.
+    stock = find_stock(mint)
     return {
         "mint": mint,
-        "name": name or "Unknown",
-        "symbol": symbol or "UNK",
+        "name": stock["name"] if stock else (name or "Unknown"),
+        "symbol": stock["symbol"] if stock else (symbol or "UNK"),
         "description": description,
         "image_url": image,
         "visual_observation": observation,
+        "asset_class": "listed company (tokenized equity)" if stock else "meme token",
     }
 
 
@@ -322,6 +329,7 @@ def _render_untrusted(parent: dict[str, str]) -> str:
         f"mint={parent['mint']}\n"
         f"name={parent['name']}\n"
         f"symbol={parent['symbol']}\n"
+        f"asset_class={parent.get('asset_class', 'meme token')}\n"
         f"description={parent['description']}\n"
         f"visual_observation={parent['visual_observation']}\n"
         "UNTRUSTED_PARENT_END"

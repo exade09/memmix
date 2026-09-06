@@ -8,6 +8,7 @@ from axiom_scanner.analysis.wavespeed_hybrid import HybridImageError
 from axiom_scanner.http_client import SourceError
 from axiom_scanner.security.images import ImageError
 from axiom_scanner.security.query import QueryError
+from axiom_scanner.chain.stocks import public_stock_list
 from axiom_scanner.storage.pinata import MetadataError
 from vercel_api.envelope import envelope
 from vercel_api.launch_config import RPC_MAX_BODY_BYTES
@@ -39,6 +40,8 @@ def handle_api_get(path: str, query: dict[str, list[str]] | str) -> tuple[int, d
         return 200, envelope(success=True, data=read_ca())
     if path == "/api/launch/sponsored/status":
         return 200, envelope(success=True, data=sponsor_launch_status())
+    if path == "/api/stocks":
+        return 200, envelope(success=True, data={"stocks": public_stock_list()})
     if path == "/api/health":
         data = health_payload()
         dumped = json.dumps(data)

@@ -12,6 +12,8 @@ export type DraftToken = {
   mix_strategy?: string;
   generated?: boolean;
   initial_buy_sol?: string;
+  /** A tokenized equity carried over from Mix as the suggested trading pair. */
+  pair_token?: string;
 };
 
 const PUBLIC_KEYS = [
@@ -28,6 +30,7 @@ const PUBLIC_KEYS = [
   "mix_strategy",
   "generated",
   "initial_buy_sol",
+  "pair_token",
 ] as const;
 
 export function isPublicImageUrl(url: string | undefined): boolean {
@@ -51,6 +54,7 @@ export function persistableDraftToken(draft: DraftToken): DraftToken {
     ...(draft.parent_a_mint ? { parent_a_mint: draft.parent_a_mint } : {}),
     ...(draft.parent_b_mint ? { parent_b_mint: draft.parent_b_mint } : {}),
     ...(draft.mix_strategy ? { mix_strategy: draft.mix_strategy } : {}),
+    ...(draft.pair_token ? { pair_token: draft.pair_token } : {}),
     generated: Boolean(draft.generated),
     initial_buy_sol: draft.initial_buy_sol && draft.initial_buy_sol !== "0" ? draft.initial_buy_sol : "0",
   };

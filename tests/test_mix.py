@@ -170,6 +170,25 @@ class MixValidationTests(unittest.TestCase):
         self.assertEqual(parsed["concepts"][0]["ticker"], "BWH1")
         self.assertEqual(normalize_ticker("$bonk"), "BONK")
 
+    def test_stock_parent_is_labelled_from_the_registry(self) -> None:
+        """A stock parent is announced to the model as a listed company."""
+        from axiom_scanner.analysis.logical_mixer import _render_untrusted, _sanitize_parent
+
+        aapl = {"mint": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9", "name": "whatever", "symbol": "XX"}
+        rendered = _render_untrusted(_sanitize_parent(aapl, "Parent B"))
+        self.assertIn("asset_class=listed company", rendered)
+        # Identity comes from the registry, not from what the caller typed.
+        self.assertIn("symbol=AAPL", rendered)
+        self.assertNotIn("whatever", rendered)
+
+    def test_a_meme_cannot_claim_to_be_a_stock(self) -> None:
+        """asset_class is derived server-side, so it cannot be spoofed."""
+        from axiom_scanner.analysis.logical_mixer import _render_untrusted, _sanitize_parent
+
+        liar = dict(PARENT_A, asset_class="listed company (tokenized equity)", name="Apple")
+        rendered = _render_untrusted(_sanitize_parent(liar, "Parent A"))
+        self.assertIn("asset_class=meme token", rendered)
+
     def test_duplicate_parents(self) -> None:
         with self.assertRaises(MixError) as ctx:
             mix_concepts(PARENT_A, PARENT_A, http=FakePoster([]))

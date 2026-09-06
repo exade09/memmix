@@ -10,6 +10,7 @@ import { LaunchPage } from "../routes/launch/LaunchPage";
 import { LegalHubPage, NotFoundPage, PrivacyPage, TermsPage } from "../routes/legal/LegalPages";
 import { MixPage } from "../routes/mix/MixPage";
 import { TokenPage } from "../routes/token/TokenPage";
+import { VaultPage } from "../routes/vault/VaultPage";
 import { LaunchSuccessPage } from "../routes/token/LaunchSuccessPage";
 
 export function AppRouter() {
@@ -32,6 +33,7 @@ export function AppRouter() {
         <Route path="/app/explore" element={<ExplorePage />} />
         <Route path="/token/:mint" element={<TokenPage />} />
         <Route path="/docs" element={<DocsPage />} />
+        <Route path="/vault" element={<VaultPage />} />
         <Route path="/admin/ca" element={<CaAdminPage />} />
         <Route path="/legal" element={<LegalHubPage />} />
         <Route path="/terms" element={<TermsPage />} />
