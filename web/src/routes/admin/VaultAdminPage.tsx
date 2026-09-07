@@ -14,9 +14,9 @@ import {
   isNativeAsset,
   NATIVE_ASSET,
   readDistributorOwner,
-  rewardsDistributorAddress,
   submitCreateRound,
 } from "../../chain/rewards";
+import { useDistributor } from "../../chain/useDistributor";
 import {
   fetchStocks,
   prepareRewardRound,
@@ -52,7 +52,7 @@ type Stage = "locked" | "compose" | "prepared" | "created" | "done";
 
 export function VaultAdminPage() {
   const { address, walletClient, publicClient, connect, phase, onTargetChain, switchNetwork } = useChain();
-  const distributor = rewardsDistributorAddress();
+  const { distributor } = useDistributor();
 
   const [password, setPassword] = useState("");
   const [stage, setStage] = useState<Stage>("locked");
@@ -191,9 +191,9 @@ export function VaultAdminPage() {
             <p className="eyebrow">Admin</p>
             <h1>Payout rounds</h1>
             <p className="note warn">
-              No distributor is configured. Deploy it with{" "}
-              <code>contracts/scripts/deploy-distributor.cjs</code>, then set{" "}
-              <code>VITE_REWARDS_DISTRIBUTOR_ADDRESS</code> and redeploy.
+              No distributor is configured, so there is nothing to pay out of yet. Deploy it with{" "}
+              <code>contracts/scripts/deploy-distributor.cjs</code>, then paste its address into{" "}
+              <a href="/admin/settings">settings</a>.
             </p>
           </div>
         </div>

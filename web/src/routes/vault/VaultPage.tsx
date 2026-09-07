@@ -9,7 +9,7 @@ import { shortenAddress } from "../../chain/address";
 import { explorerTokenUrl } from "../../domain/legalCopy";
 import { fetchVaultState, type VaultState } from "../../services/api";
 import { ClaimPanel } from "../../components/vault/ClaimPanel";
-import { rewardsDistributorAddress } from "../../chain/rewards";
+import { useDistributor } from "../../chain/useDistributor";
 
 /*
   The rewards vault.
@@ -34,6 +34,7 @@ function addressUrl(address: string): string {
 export function VaultPage() {
   const [state, setState] = useState<VaultState | null>(null);
   const [loading, setLoading] = useState(true);
+  const { distributor } = useDistributor();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -52,7 +53,7 @@ export function VaultPage() {
   // Whether payouts are enforced by the distributor or are still transfers
   // Fons sends by hand. The page has to say which, because the honest claim
   // is a different one in each case.
-  const onChain = Boolean(rewardsDistributorAddress());
+  const onChain = Boolean(distributor);
   const feePercent = state ? (state.creator_fee_bps / 100).toFixed(2).replace(/\.?0+$/, "") : null;
 
   return (

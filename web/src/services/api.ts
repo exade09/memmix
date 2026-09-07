@@ -480,6 +480,8 @@ export type VaultState = {
   complete_scan: boolean;
   block_number: number;
   distributed_wei: string;
+  /** Where claims are sent. Null until a distributor is configured. */
+  distributor: string | null;
 };
 
 /**
@@ -688,4 +690,56 @@ async function postAdminJson<T>(
   } catch {
     return { ok: false, error: { code: "NETWORK", message: "Could not reach the server." } };
   }
+}
+
+export type PublicSettings = {
+  distributor: string | null;
+  token: string | null;
+};
+
+/**
+ * The handful of addresses the browser needs at runtime.
+ *
+ * The distributor used to be a build-time variable, which meant changing it
+ * needed a rebuild. Serving it means the admin panel can set it and the claim
+ * button appears on the next page load.
+ */
+export async function fetchPublicSettings(signal?: AbortSignal): Promise<PublicSettings | null> {
+  try {
+    const response = await fetch("/api/settings", {
+      cache: "no-store",
+      signal: signal ?? AbortSignal.timeout(10_000),
+    });
+    const payload = await readEnvelope<PublicSettings>(response);
+    if (!payload.success || !payload.data) return null;
+    return payload.data;
+  } catch {
+    return null;
+  }
+}
+
+export type AdminSettings = {
+  stored: Record<string, string | number>;
+  effective: {
+    fons_token_address: string | null;
+    fons_token_start_block: number;
+    rewards_distributor_address: string | null;
+    rewards_vault_address: string | null;
+    creator_fee_bps: number;
+  };
+  live_in_seconds?: number;
+};
+
+/** Reading the panel is gated too: it reports where the fees go. */
+export async function fetchAdminSettings(
+  password: string,
+): Promise<{ ok: true; data: AdminSettings } | { ok: false; error: ApiError }> {
+  return postAdminJson<AdminSettings>("/api/admin/settings", { password, read_only: true });
+}
+
+export async function saveAdminSettings(
+  password: string,
+  patch: Record<string, string>,
+): Promise<{ ok: true; data: AdminSettings } | { ok: false; error: ApiError }> {
+  return postAdminJson<AdminSettings>("/api/admin/settings", { password, ...patch });
 }

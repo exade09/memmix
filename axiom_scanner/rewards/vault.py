@@ -30,6 +30,7 @@ from axiom_scanner.chain.sponsor_wallet import (
 )
 from axiom_scanner.rewards.config import (
     creator_fee_bps,
+    distributor_address,
     min_payout_wei,
     platform_token_address,
     rewards_enabled,
@@ -87,6 +88,7 @@ def read_vault_state(rpc: RpcClient, *, include_holders: bool = True) -> dict[st
             "complete_scan": False,
             "block_number": 0,
             "distributed_wei": "0",
+            "distributor": distributor_address() or None,
         }
 
     if not token:
@@ -108,6 +110,7 @@ def read_vault_state(rpc: RpcClient, *, include_holders: bool = True) -> dict[st
             "complete_scan": False,
             "block_number": block_number,
             "distributed_wei": str(distributed),
+            "distributor": distributor_address() or None,
         }
 
     try:
@@ -141,6 +144,7 @@ def read_vault_state(rpc: RpcClient, *, include_holders: bool = True) -> dict[st
         "complete_scan": complete,
         "block_number": block_number,
         "distributed_wei": str(read_distributed_total(rpc, vault)),
+        "distributor": distributor_address() or None,
     }
 
 

@@ -34,6 +34,14 @@ from vercel_api.routes.rewards import (
 from vercel_api.routes.rpc import chain_rpc_route
 from vercel_api.routes.search import search_tokens
 from vercel_api.routes.sponsor_launch import SponsorLaunchError, sponsor_launch_route, sponsor_launch_status
+from vercel_api.routes.settings import (
+    SettingsRouteError,
+    authorise as authorise_settings,
+    admin_settings_route,
+    public_settings_route,
+    settings_error_status,
+    update_settings_route,
+)
 from vercel_api.routes.token import token_detail
 from vercel_api.shared import runtime_config
 
@@ -61,6 +69,8 @@ def handle_api_get(path: str, query: dict[str, list[str]] | str) -> tuple[int, d
         return 200, envelope(success=True, data=vault_claims_route(address))
     if path == "/api/vault/rounds":
         return 200, envelope(success=True, data=vault_rounds_route())
+    if path == "/api/settings":
+        return 200, envelope(success=True, data=public_settings_route())
     if path == "/api/health":
         data = health_payload()
         dumped = json.dumps(data)
@@ -104,6 +114,8 @@ def handle_api_post(
         return _vault_admin(reader, client_ip, vault_prepare_round_route)
     if path == "/api/admin/vault/round/publish":
         return _vault_admin(reader, client_ip, lambda b, ip: vault_publish_round_route(b, ip))
+    if path == "/api/admin/settings":
+        return _settings_update(reader, client_ip)
     if path != "/api/mix/concepts":
         return None
     try:
@@ -423,6 +435,27 @@ def _optional_bool(raw: str) -> bool | None:
     if value in {"0", "false", "no"}:
         return False
     return None
+
+
+def _settings_update(reader, client_ip: str) -> tuple[int, dict]:
+    try:
+        body = reader(max_bytes=4_000)
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON.")
+    if not isinstance(body, dict):
+        return 400, envelope(success=False, code="INVALID_INPUT", message="Request body must be JSON.")
+    # Reading the panel's view needs the password too: it reports what is in
+    # effect, and that is a map of where the money goes.
+    read_only = bool(body.get("read_only"))
+    try:
+        if read_only:
+            authorise_settings(body, client_ip)
+            data = admin_settings_route()
+        else:
+            data = update_settings_route(body, client_ip)
+    except SettingsRouteError as exc:
+        return settings_error_status(exc.code), envelope(success=False, code=exc.code, message=str(exc))
+    return 200, envelope(success=True, data=data)
 
 
 def _ca_update(reader, client_ip: str) -> tuple[int, dict]:

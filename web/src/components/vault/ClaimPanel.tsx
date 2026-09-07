@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Address } from "viem";
 import { useChain } from "../../chain/wallet";
-import { isClaimed, rewardsDistributorAddress, submitClaim } from "../../chain/rewards";
+import { isClaimed, submitClaim } from "../../chain/rewards";
+import { useDistributor } from "../../chain/useDistributor";
 import { formatTokenAmount } from "../../chain/erc20";
 import { fetchRewardClaims, type RewardClaim } from "../../services/api";
 import { Button } from "../ui/Button";
@@ -20,7 +21,7 @@ type ClaimRow = RewardClaim & { claimed: boolean; pending: boolean; error: strin
 
 export function ClaimPanel() {
   const { address, walletClient, publicClient, connect, phase } = useChain();
-  const distributor = rewardsDistributorAddress();
+  const { distributor, loading: resolving } = useDistributor();
   const [rows, setRows] = useState<ClaimRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -78,6 +79,8 @@ export function ClaimPanel() {
       );
     }
   }
+
+  if (resolving) return null;
 
   if (!distributor) {
     return (

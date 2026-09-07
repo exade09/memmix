@@ -90,11 +90,12 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
 
 def _probe_admin_ca() -> str:
     """State only, never the password or the deploy token."""
-    from vercel_api.routes.ca import _admin_password, _github_token, _is_local_dev
+    from vercel_api.github_store import github_token, is_local_dev
+    from vercel_api.routes.ca import _admin_password
 
     if not _admin_password():
         return "no_password"
-    if not _is_local_dev() and not _github_token():
+    if not is_local_dev() and not github_token():
         return "no_deploy_token"
     return "ready"
 

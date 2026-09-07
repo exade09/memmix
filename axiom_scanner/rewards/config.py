@@ -4,17 +4,25 @@ from __future__ import annotations
 Where the rewards vault reads its identity from.
 
 Two addresses decide whether any of this is live: the token whose holders
-are paid, and the wallet that holds and sends the fees. Both are read from
-the environment, and the token falls back to the contract address the CA
-admin already publishes -- so once $FONS launches and its address is set
-there, the vault starts reading real balances without a second place to
-update.
+are paid, and the wallet that holds and sends the fees.
+
+Each value is looked for in three places, in this order: the admin panel's
+stored settings, then the environment, then a sensible default. The panel
+comes first because it is the one an operator can change without a redeploy,
+which is the whole reason it exists; the environment stays as a fallback so
+anything already configured keeps working untouched.
+
+The token has one extra fallback: the contract address the CA admin already
+publishes. Once $FONS launches and its address is set there, the vault starts
+reading real balances without a second place to update.
 """
 
 import json
 import os
 import re
 from pathlib import Path
+
+from axiom_scanner.rewards.settings import stored_address, stored_int
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CA_FILE = PROJECT_ROOT / "data" / "ca.json"
@@ -33,9 +41,12 @@ def _clean_address(value: object) -> str:
 
 def platform_token_address() -> str:
     """
-    The token whose holders get paid. Explicit env wins; otherwise the
-    published CA is used, which is where the address lands first anyway.
+    The token whose holders get paid. Falls back to the published CA, which
+    is where the address lands first anyway.
     """
+    stored = stored_address("fons_token_address")
+    if stored:
+        return stored
     explicit = _clean_address(os.getenv("FONS_TOKEN_ADDRESS"))
     if explicit:
         return explicit
@@ -52,6 +63,9 @@ def vault_address() -> str:
     The wallet fees collect in and are sent from. Defaults to the sponsor
     wallet, which is already the creator-fee recipient on sponsored launches.
     """
+    stored = stored_address("rewards_vault_address")
+    if stored:
+        return stored
     explicit = _clean_address(os.getenv("REWARDS_VAULT_ADDRESS"))
     if explicit:
         return explicit
@@ -68,6 +82,9 @@ def creator_fee_bps() -> int:
     is a deliberate act, because it is a real fee charged on other people's
     trades. Capped at the factory's own 10% ceiling.
     """
+    stored = stored_int("creator_fee_bps")
+    if stored is not None:
+        return max(0, min(stored, 1000))
     raw = (os.getenv("SPONSORED_CREATOR_FEE_BPS") or "0").strip()
     try:
         value = int(raw)
@@ -87,6 +104,9 @@ def token_start_block() -> int:
     and silently paid nothing. With this set, the scan starts where the token
     does and cannot miss anyone.
     """
+    stored = stored_int("fons_token_start_block")
+    if stored is not None:
+        return max(0, stored)
     raw = (os.getenv("FONS_TOKEN_START_BLOCK") or "").strip()
     try:
         return max(0, int(raw))
@@ -106,3 +126,18 @@ def min_payout_wei() -> int:
 def rewards_enabled() -> bool:
     """Live only when there is a token to pay holders of and a wallet to pay from."""
     return bool(platform_token_address() and vault_address())
+
+
+def distributor_address() -> str:
+    """
+    The contract holders claim from.
+
+    This one has no historical environment name on the server: it was a
+    build-time variable baked into the bundle, which meant changing it needed
+    a rebuild. It is served to the browser at request time now, so the panel
+    can set it and the claim button appears without one.
+    """
+    stored = stored_address("rewards_distributor_address")
+    if stored:
+        return stored
+    return _clean_address(os.getenv("REWARDS_DISTRIBUTOR_ADDRESS"))

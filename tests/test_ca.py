@@ -122,7 +122,7 @@ class CaTests(unittest.TestCase):
                 return FakeResponse(json.dumps({"sha": "abc123"}).encode("utf-8"))
             return FakeResponse(b"{}")
 
-        with patch("vercel_api.routes.ca.urlopen", side_effect=fake_urlopen):
+        with patch("vercel_api.github_store.urlopen", side_effect=fake_urlopen):
             result = update_ca(password="unit-test-password", ca="0xnew", client_ip="7.7.7.7")
 
         self.assertEqual(result["ca"], "0xnew")
@@ -141,7 +141,7 @@ class CaTests(unittest.TestCase):
         def fake_urlopen(request, timeout=None):
             raise HTTPError(request.full_url, 500, "boom", hdrs=None, fp=None)
 
-        with patch("vercel_api.routes.ca.urlopen", side_effect=fake_urlopen):
+        with patch("vercel_api.github_store.urlopen", side_effect=fake_urlopen):
             with self.assertRaises(CaError) as ctx:
                 update_ca(password="unit-test-password", ca="0xnew", client_ip="8.8.8.8")
         self.assertEqual(ctx.exception.code, "DEPLOY_UNAVAILABLE")
