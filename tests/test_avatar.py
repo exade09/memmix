@@ -489,6 +489,26 @@ class DispatchAvatarTests(AvatarTestCase):
         self.assertEqual(status, 400)
         self.assertEqual(payload["error"]["code"], "INVALID_INPUT")
 
+    def test_image_generation_is_off_unless_switched_on(self) -> None:
+        """
+        `/api/generate-image` has no auth and no rate limit, and every call
+        spends the OpenAI balance. Nothing in the site reaches it -- avatars go
+        through WaveSpeed -- so with a key configured it was a door onto the
+        bill for anyone who guessed the path. Default off, and the refusal must
+        come before the body is read.
+        """
+        from axiom_scanner.analysis.image_generation import ImageGenerationError, generate_meme_image, image_generation_enabled
+
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test", "ENABLE_IMAGE_GENERATION": ""}):
+            self.assertFalse(image_generation_enabled())
+            with self.assertRaises(ImageGenerationError) as ctx:
+                generate_meme_image({}, resolve_og_image=lambda name, symbol: "")
+        self.assertEqual(ctx.exception.status, 404, "a disabled route must not announce itself")
+        self.assertEqual(ctx.exception.code, "disabled")
+
+        with patch.dict(os.environ, {"ENABLE_IMAGE_GENERATION": "true"}):
+            self.assertTrue(image_generation_enabled())
+
     def test_avatar_module_does_not_call_openai_images(self) -> None:
         from axiom_scanner.analysis import avatar_job
 

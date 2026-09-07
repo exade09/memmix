@@ -5,6 +5,7 @@ import mimetypes
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
+from axiom_scanner.analysis.image_generation import image_generation_enabled
 from vercel_api.dispatch import handle_api_get, handle_api_post
 from vercel_api.security_headers import apply_security_headers
 from vercel_api.shared import (
@@ -114,6 +115,11 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, {"error": str(exc)}, status=400)
 
     def _send_generated_image(self) -> None:
+        # Refused before the body is read: a disabled route should not accept
+        # half a megabyte from anyone who asks, and 404 does not advertise it.
+        if not image_generation_enabled():
+            send_json(self, {"error": "Not found"}, status=404)
+            return
         try:
             payload = read_json_body(self, max_bytes=512_000)
             config = runtime_config()

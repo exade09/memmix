@@ -10,7 +10,11 @@ from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from axiom_scanner.analysis.image_generation import ImageGenerationError, generate_meme_image
+from axiom_scanner.analysis.image_generation import (
+    ImageGenerationError,
+    generate_meme_image,
+    image_generation_enabled,
+)
 from axiom_scanner.analysis.narratives import (
     generate_narratives,
     load_og_memecoins,
@@ -242,6 +246,10 @@ def run_web(args: argparse.Namespace) -> int:
                 self._send_json({"error": str(exc)}, status=400)
 
         def _send_generated_image(self) -> None:
+            # Same refusal as the deployed server, before any body is read.
+            if not image_generation_enabled():
+                self.send_error(404)
+                return
             try:
                 content_length = _parse_int(self.headers.get("Content-Length", "0"), 0)
                 body = self.rfile.read(min(content_length, 512_000))

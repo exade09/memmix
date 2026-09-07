@@ -199,6 +199,7 @@ Git: large uncommitted FONS rewrite may sit on `main` on top of the old Axiom Me
 - Pending launch reconciliation on reload — do not auto-duplicate a launch.
 - Success page waits for the receipt and for the token bytecode to exist, not a toast.
 - `ENABLE_NATIVE_LAUNCH` and `ENABLE_MAINNET_LAUNCH` both default **on** now. Either one set to `false` switches launching off, on the server and in the client independently.
+- `ENABLE_IMAGE_GENERATION` defaults **off**, and `/api/generate-image` answers 404 without it. The route has no auth and no rate limit and every call spends the OpenAI balance; nothing in the site reaches it, because avatars run on WaveSpeed. Do not switch it on to "fix" an avatar bug.
 
 ### Token page
 

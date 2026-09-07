@@ -149,6 +149,7 @@ Optional environment variables:
 - `ROBINHOOD_RPC_URL`: read-only JSON-RPC endpoint proxied by `/api/chain/rpc`.
 - `PONS_FACTORY_ADDRESS`: optional override for the Pons v2 launch factory. Defaults to the verified live deployment.
 - `ENABLE_NATIVE_LAUNCH` / `ENABLE_MAINNET_LAUNCH`: both default to `true`. Set either to `false` to switch launching off.
+- `ENABLE_IMAGE_GENERATION`: defaults to `false`, which makes `/api/generate-image` answer 404. The route has no auth and no rate limit and every call spends the OpenAI balance, and nothing in the site uses it — avatars go through WaveSpeed. Turn it on only if something starts calling it.
 
 If live DexScreener requests fail in a serverless function, `/api/scan` falls back
 to a bundled meme dataset so the dashboard still renders. That dataset is

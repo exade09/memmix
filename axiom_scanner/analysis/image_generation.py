@@ -16,10 +16,34 @@ class ImageGenerationError(RuntimeError):
         self.status = status
 
 
+def image_generation_enabled() -> bool:
+    """
+    Off unless switched on deliberately.
+
+    Nothing in the site calls `/api/generate-image` -- avatars go through
+    WaveSpeed -- but the route stayed reachable from the open internet, with no
+    auth and no rate limit, and every call spends the OpenAI balance. That was
+    harmless while no key was configured and became a door onto the bill the
+    moment one was. Flagged rather than deleted: the code still works, and
+    turning it back on is one variable.
+    """
+    raw = os.getenv("ENABLE_IMAGE_GENERATION", "false").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
 def generate_meme_image(
     payload: dict[str, Any],
     resolve_og_image: Callable[[str, str], str],
 ) -> dict[str, Any]:
+    # Defence in depth: both servers refuse the route before they read a body,
+    # so reaching this means a new caller was added without the check.
+    if not image_generation_enabled():
+        raise ImageGenerationError(
+            "Image generation is disabled.",
+            code="disabled",
+            status=404,
+        )
+
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
         raise ImageGenerationError(
