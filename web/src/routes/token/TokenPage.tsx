@@ -1,5 +1,5 @@
 import { useChain } from "../../chain/wallet";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { appConfig } from "../../app/config";
 import { Button, ButtonAnchor, ButtonLink } from "../../components/ui/Button";
@@ -8,6 +8,7 @@ import { INDEXER_NOTICE, explorerTokenUrl, marketUrl } from "../../domain/legalC
 import { track } from "../../services/analytics";
 import { fetchToken, TokenApiError, type TokenDetail } from "../../services/api";
 import { readOnchainToken, type OnchainTokenView } from "../../chain/tokenOnchain";
+import { usePlatformToken } from "../../chain/useDistributor";
 import { TokenAvatar } from "../../components/token/TokenAvatar";
 import { AnimatedText } from "../../components/motion/AnimatedText";
 
@@ -105,10 +106,9 @@ export function TokenPage() {
   const partial = Boolean((exists || detail) && (onchainError || error) && !notFound);
   const showToken = !loading && (exists || Boolean(detail) || onchainError) && !notFound;
 
-  const buyPlatform = useMemo(() => {
-    const value = appConfig.platformTokenAddress.trim();
-    return value || "";
-  }, []);
+  // Served by the API so the address can be set from the admin panel; the
+  // build-time variable is still the fallback inside the hook.
+  const buyPlatform = usePlatformToken() ?? "";
 
   function copyMint() {
     void navigator.clipboard.writeText(mint);
