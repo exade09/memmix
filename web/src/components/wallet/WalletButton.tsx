@@ -7,20 +7,33 @@ export function WalletButton() {
   const { available, address, phase, onTargetChain, connect, disconnect, switchNetwork } = useChain();
 
   /*
-    No MetaMask in the browser is a real state, not an error. Sending the user
-    to install it is more useful than a button that cannot do anything.
+    No wallet in the browser is a real state, not an error. Sending the user
+    to install one is more useful than a button that cannot do anything.
+    Rabby is offered because it is the other wallet this app connects to, and
+    naming only one of the two reads as a requirement rather than a choice.
   */
   if (!available) {
     return (
-      <ButtonAnchor
-        variant="secondary"
-        size="sm"
-        href="https://metamask.io/download/"
-        target="_blank"
-        rel="noreferrer"
-      >
-        Get MetaMask
-      </ButtonAnchor>
+      <div className="wallet-status" data-wallet-phase={phase}>
+        <ButtonAnchor
+          variant="secondary"
+          size="sm"
+          href="https://metamask.io/download/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Get MetaMask
+        </ButtonAnchor>
+        <ButtonAnchor
+          variant="secondary"
+          size="sm"
+          href="https://rabby.io/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Get Rabby
+        </ButtonAnchor>
+      </div>
     );
   }
 

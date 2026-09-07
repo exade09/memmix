@@ -4,12 +4,15 @@ import { chainFor, chainLabel, ROBINHOOD_MAINNET_ID, ROBINHOOD_TESTNET_ID } from
 import { isWalletRejection } from "./errors";
 
 /*
-  MetaMask, spoken to directly over EIP-1193.
+  MetaMask and Rabby, spoken to directly over EIP-1193.
 
   The Solana build needed a wallet-adapter package to abstract over a dozen
   wallets; here the browser already exposes the interface, so the whole
   connection is a context and three RPC calls. Nothing is requested until the
   user asks for it: no eager connect, no silent account access.
+
+  Both wallets speak the same interface, so supporting Rabby is a question of
+  which provider gets picked, not of a second code path.
 */
 
 type Eip1193 = {
@@ -17,6 +20,9 @@ type Eip1193 = {
   on?: (event: string, handler: (...args: never[]) => void) => void;
   removeListener?: (event: string, handler: (...args: never[]) => void) => void;
   isMetaMask?: boolean;
+  // Rabby sets isMetaMask too, for compatibility with sites that only look
+  // for that. isRabby is the only flag that tells the two apart.
+  isRabby?: boolean;
   providers?: Eip1193[];
 };
 
@@ -31,14 +37,22 @@ declare global {
   shared multi-provider object rather than any single wallet — reading it, or
   even a read-only call like eth_accounts, can make that object's own
   extension (Phantom does this) pop up a "which wallet" chooser before it will
-  answer. Since this app only ever speaks MetaMask, pick that provider out of
-  window.ethereum.providers directly so no call ever touches the ambiguous
-  top-level object in the first place.
+  answer. So pick a known provider out of window.ethereum.providers directly
+  and never let a call touch the ambiguous top-level object.
+
+  Rabby is checked before MetaMask, and deliberately: Rabby also reports
+  isMetaMask, so testing for MetaMask first would match Rabby and then hand
+  back whichever entry happens to sit earlier in the array. Someone who
+  installed Rabby alongside MetaMask chose Rabby to be the one that answers.
 */
-function resolveMetaMask(eth: Eip1193 | undefined): Eip1193 | undefined {
+function resolveWallet(eth: Eip1193 | undefined): Eip1193 | undefined {
   if (!eth) return undefined;
   if (Array.isArray(eth.providers) && eth.providers.length) {
-    return eth.providers.find((candidate) => candidate.isMetaMask) ?? eth.providers[0];
+    return (
+      eth.providers.find((candidate) => candidate.isRabby) ??
+      eth.providers.find((candidate) => candidate.isMetaMask) ??
+      eth.providers[0]
+    );
   }
   return eth;
 }
@@ -75,7 +89,7 @@ type WalletState = {
 const WalletContext = createContext<WalletState | null>(null);
 
 export function ChainProvider({ children }: { children: ReactNode }) {
-  const provider = typeof window === "undefined" ? undefined : resolveMetaMask(window.ethereum);
+  const provider = typeof window === "undefined" ? undefined : resolveWallet(window.ethereum);
   const available = Boolean(provider);
   const [address, setAddress] = useState<Address | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
