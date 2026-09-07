@@ -19,15 +19,15 @@ import { track } from "../../services/analytics";
   contract needs still gets re-validated server-side exactly as if it were
   untrusted -- because from the server's point of view, it is.
 
-  The token is still the visitor's. The factory reads the deployer from
-  msg.sender, and that is Fons's wallet because Fons is the one paying, so
-  `token.deployer()` names us and always will. But the curve -- the contract
-  that runs the trading and holds the fee -- records the creator fee recipient
-  as its creator, and that is the visitor's connected wallet. So they are the
-  creator where it counts, and the fees are theirs to collect.
+  Fons is the creator of a sponsored launch in both senses the chain records:
+  the factory reads the deployer from msg.sender, which is Fons's wallet
+  because Fons is paying, and the curve records the creator fee recipient,
+  which is the vault. So the creator fee on these tokens funds $FONS holder
+  payouts rather than going to the visitor.
 
-  That residue on `token.deployer()` is the one real difference from paying
-  yourself, which is why "pay it yourself instead" stays one click away.
+  That is the trade, and it is a real difference from paying yourself, which
+  is why "pay it yourself instead" stays one click away and why the screen
+  says so before anything is sent.
 
   The opening buy is never part of what Fons sponsors, even if the visitor
   set an amount back on the edit step. Fons's wallet only ever pays to create
@@ -49,6 +49,7 @@ type SponsoredLaunchReviewProps = {
   website: string;
   initialBuy: string;
   pair: PairChoice;
+  sponsorAddress: string;
   onBack: () => void;
   onSwitchToSelfPay: () => void;
 };
@@ -75,16 +76,6 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
 
   async function onLaunch() {
     if (submitting) return;
-    /*
-      The connected wallet is the token's creator on the curve and the address
-      its fees are paid to, and none of that can be changed after the launch
-      lands. Launching without one would mint a token whose fees have nowhere
-      to go, permanently, so this refuses rather than guessing an address.
-    */
-    if (!address) {
-      setError("Connect the wallet that should own this token. It receives the trading fees, and that cannot be changed later.");
-      return;
-    }
     setSubmitting(true);
     setError("");
     track("sponsored_launch_started");
@@ -94,7 +85,7 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
       description: props.description,
       logo: props.imageUri || props.avatarSrc,
       socials: { twitter: props.twitter, telegram: props.telegram, website: props.website },
-      creator_wallet: address,
+      creator_wallet: props.sponsorAddress,
       creator_tax_bps: 0,
       buyback_enabled: false,
       pair_token: stock ? stock.address : undefined,
@@ -109,7 +100,7 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
     writePendingLaunch({
       token: result.data.token ?? null,
       curve: result.data.curve ?? null,
-      creator: address,
+      creator: props.sponsorAddress,
       metadata_uri: current?.metadata_uri ?? "",
       image_uri: props.imageUri,
       image_hash: current?.image_hash ?? "",
@@ -262,9 +253,13 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
             </div>
           </dl>
           <p className="metric-label">
-            Connect the wallet that should own {props.ticker}. Fons pays and signs the launch, but this address is
-            the creator on the curve and the one the trading fees are paid to. It is written into the token and
-            cannot be changed afterwards. You are not asked to sign anything and you are not charged.
+            No wallet connection needed for this launch. The transaction is still simulated against the chain
+            before anything is sent.
+          </p>
+          <p className="metric-label">
+            Fons pays the fee and the gas, and in exchange keeps the creator fee on {props.ticker} trades — it funds
+            the payouts token holders receive. That is written into {props.ticker} at launch and cannot be changed
+            later. Launch it from your own wallet instead and the fee stays yours.
           </p>
           {wantsBuy ? (
             <p className="metric-label">
@@ -292,10 +287,10 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
           variant="primary"
           size="lg"
           aria-busy={submitting || undefined}
-          onClick={() => void (address ? onLaunch() : connect())}
+          onClick={() => void onLaunch()}
           disabled={submitting}
         >
-          {submitting ? "Launching…" : address ? "Launch for free" : "Connect wallet to launch"}
+          {submitting ? "Launching…" : "Launch for free"}
         </Button>
       </div>
     </section>

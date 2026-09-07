@@ -328,29 +328,43 @@ class SponsorLaunchRouteTests(unittest.TestCase):
         self.assertEqual(result["curve"], "0x2222222222222222222222222222222222222222")
         self.assertTrue(result["tx_hash"].startswith("0x"))
 
-    def test_the_launcher_receives_the_fee_not_the_vault(self) -> None:
+    def test_the_vault_receives_the_fee_not_the_caller(self) -> None:
         """
-        Fons pays for the launch and keeps nothing. The launcher's wallet goes
-        into the call as the creator fee recipient, which is also the only way
-        they are the creator at all: the factory takes the deployer from
-        msg.sender, and msg.sender is ours because we are the one paying. The
-        curve records this address instead, so it is what Pons shows and what
-        the fees can be collected against.
+        Fons pays the launch fee and the gas, and takes the creator fee for
+        it. That trade is the whole funding model: the vault has no other
+        income, because $FONS is launched outside this site and its own fee
+        never arrives here.
 
-        A vault address is configured here on purpose. It must not win.
+        The caller supplies a wallet of their own, and it must not win -- the
+        request does not get to redirect a fee Fons is paying for.
         """
-        vault = "0x000000000000000000000000000000000000BEEF"
+        vault = "0x000000000000000000000000000000000000bEEF"
         env = {"REWARDS_VAULT_ADDRESS": vault, "SPONSORED_CREATOR_FEE_BPS": "50"}
         fake = FakePoster()
         with patch.dict(os.environ, env):
             sponsor_launch_route(dict(VALID_BODY), "10.0.0.55", http=fake)
 
         recipient, tax_bps = _launch_params(fake)
-        self.assertEqual(recipient.lower(), TEST_ADDRESS.lower(), "the launcher owns their token")
-        self.assertNotEqual(recipient.lower(), vault.lower(), "the vault must not take another launch's fee")
-        # The rate stays ours: it taxes everyone who later trades the token and
-        # can never be changed, so the request does not get to choose it.
+        self.assertEqual(recipient.lower(), vault.lower(), "the vault is what holders are paid from")
+        self.assertNotEqual(recipient.lower(), TEST_ADDRESS.lower(), "the caller cannot redirect it")
         self.assertEqual(tax_bps, 50)
+
+    def test_the_caller_cannot_redirect_the_fee_by_clearing_the_vault(self) -> None:
+        """
+        With no vault configured the fee lands on the sponsor wallet, because
+        vault_address() falls back to it -- not on whatever wallet the request
+        asked for. Worth pinning: the caller's wallet is in the request and is
+        the obvious thing for a later edit to reach for, and a fee Fons paid
+        for must never be redirectable by the person asking for the launch.
+        """
+        outsider = "0x00000000000000000000000000000000000000C0"
+        body = dict(VALID_BODY, creator_wallet=outsider)
+        fake = FakePoster()
+        with patch.dict(os.environ, {"REWARDS_VAULT_ADDRESS": "", "SPONSORED_CREATOR_FEE_BPS": "50"}):
+            sponsor_launch_route(body, "10.0.0.56", http=fake)
+        recipient, _ = _launch_params(fake)
+        self.assertEqual(recipient.lower(), TEST_ADDRESS.lower(), "the sponsor wallet, not the caller's")
+        self.assertNotEqual(recipient.lower(), outsider.lower())
 
     def test_reverted_send_surfaces_as_error(self) -> None:
         with self.assertRaises(SponsorLaunchError) as ctx:

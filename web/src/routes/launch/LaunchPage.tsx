@@ -335,6 +335,7 @@ export function LaunchPage() {
           initialBuy={normalizeInitialBuy(initialBuy)}
           pair={pairChoice}
           onBack={() => setPhase("EDITING")}
+          sponsorAddress={sponsorStatus.sponsor_address}
           onSwitchToSelfPay={() => setPayMode("self")}
         />
       );

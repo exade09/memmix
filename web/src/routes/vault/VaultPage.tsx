@@ -141,11 +141,12 @@ export function VaultPage() {
             <li>
               <span className="doc-step-index">01</span>
               <div>
-                <strong>Trading ${appConfig.tokenSymbol} pays a creator fee</strong>
+                <strong>Fons launches a token and pays for it</strong>
                 <p>
-                  Every token launched here carries the same creator fee, and it belongs to whoever launched it —
-                  Fons pays for other people's launches but keeps none of their fees. ${appConfig.tokenSymbol} was
-                  launched with this vault as its creator, so its fee is paid to the vault instead of to a person.
+                  Fons covers the launch fee and the gas, and takes the creator fee on that token's trades in
+                  return. That trade is what funds everything below. Launch from your own wallet instead and the
+                  fee stays yours — and ${appConfig.tokenSymbol} itself was launched that way, so its own fee is
+                  not part of this.
                 </p>
               </div>
             </li>
