@@ -10,6 +10,17 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
  * @notice A fixed-supply ERC-20 that pays its holders a share of every
  *         deposit of ETH it receives.
  *
+ * @dev NOT the launch path. $FONS launches through Pons, the same factory
+ *      every token on the site uses, so nothing deploys this contract in
+ *      production and there is deliberately no script that does.
+ *
+ *      It survives because holder rewards did not end up needing it: payouts
+ *      go through RewardsDistributor, which reads balances off any ordinary
+ *      ERC-20 and settles by Merkle proof. That works on a Pons token, which
+ *      is what made launching through Pons possible at all. This contract
+ *      remains as the fixture the distributor's ERC-20 tests deploy, and as
+ *      a record of the accumulator approach that was measured and dropped.
+ *
  * @dev Why it is built this way.
  *
  * You cannot loop over holders on chain -- there is no such list, and gas

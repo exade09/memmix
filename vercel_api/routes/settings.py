@@ -31,7 +31,11 @@ from axiom_scanner.rewards.config import (
 # files.
 from axiom_scanner.rewards import settings as settings_store
 from axiom_scanner.rewards.settings import SettingsError, read_settings, validate
+from axiom_scanner.chain.rpc_client import RpcClient
+from axiom_scanner.http_client import HttpClient
+from axiom_scanner.rewards.launch_lookup import LaunchLookupError, find_launch
 from vercel_api.github_store import StoreError, save_json
+from vercel_api.launch_config import chain_rpc_url, launchpad_address
 
 RATE_LIMIT = 8
 RATE_WINDOW_SECONDS = 600
@@ -76,6 +80,34 @@ def admin_settings_route() -> dict[str, Any]:
             "creator_fee_bps": creator_fee_bps(),
         },
     }
+
+
+def detect_launch_route(body: dict[str, Any], client_ip: str, *, http: Any = None) -> dict[str, Any]:
+    """
+    Look up a token's launch block on the Pons factory.
+
+    $FONS launches through the same factory as everything else on the site,
+    so its first block is already on chain. Reading it beats asking someone
+    to copy it: a start block that is wrong by a little raises no error at
+    all, it just silently pays nothing to everyone who bought earlier.
+    """
+    authorise(body, client_ip)
+    token = str(body.get("token") or "").strip()
+    if not token:
+        token = platform_token_address()
+    if not token:
+        raise SettingsRouteError(
+            "There is no token address to look up yet. Publish the CA first, "
+            "or type the address into the field above.",
+            "INVALID_INPUT",
+        )
+    rpc = RpcClient(chain_rpc_url(), http or HttpClient(timeout_seconds=20, retries=1))
+    try:
+        return find_launch(rpc, token, launchpad_address())
+    except LaunchLookupError as exc:
+        raise SettingsRouteError(str(exc), exc.code) from exc
+    except ValueError as exc:
+        raise SettingsRouteError(f"That is not a valid address: {exc}", "INVALID_INPUT") from exc
 
 
 def authorise(body: dict[str, Any], client_ip: str, *, now: float | None = None) -> None:
@@ -136,7 +168,7 @@ def settings_error_status(code: str) -> int:
         else 403
         if code == "ADMIN_DISABLED"
         else 400
-        if code == "INVALID_INPUT"
+        if code in {"INVALID_INPUT", "LAUNCH_NOT_FOUND"}
         else 503
     )
 

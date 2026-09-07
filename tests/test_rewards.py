@@ -54,9 +54,10 @@ class FakeChain:
             return {"jsonrpc": "2.0", "id": rid, "result": result}
 
         if method == "eth_blockNumber":
-            # A chain tip far above any bounded window, so a scan that does
-            # not know the token's start block cannot reach genesis.
-            return ok(hex(5_000_000 if self.deep_history else 1_000))
+            # A chain tip beyond anything the scan's call budget can cover,
+            # so a scan that does not know the token's start block cannot
+            # reach genesis however wide it opens its steps.
+            return ok(hex(300_000_000 if self.deep_history else 1_000))
         if method == "eth_getBalance":
             return ok(hex(self.vault_balance))
         if method == "eth_getLogs":
@@ -135,7 +136,7 @@ class ShareMathTests(unittest.TestCase):
 class HolderSnapshotTests(unittest.TestCase):
     def test_snapshot_reads_balances_at_one_block(self) -> None:
         chain = FakeChain()
-        snap = snapshot_holders(_rpc(chain), TOKEN, max_chunks=1)
+        snap = snapshot_holders(_rpc(chain), TOKEN, max_calls=1)
         self.assertEqual(snap.block_number, 1000)
         self.assertEqual(snap.holder_count, 3)
         self.assertEqual(snap.total_supply_held, 1000)
@@ -149,7 +150,7 @@ class HolderSnapshotTests(unittest.TestCase):
         curve = "0xDDDD000000000000000000000000000000000004"
         chain = FakeChain(balances={ALICE: 100, curve: 999_900})
         chain.contracts = {curve}
-        snap = snapshot_holders(_rpc(chain), TOKEN, max_chunks=1)
+        snap = snapshot_holders(_rpc(chain), TOKEN, max_calls=1)
         held = {a.lower() for a in snap.balances}
         self.assertIn(ALICE.lower(), held)
         self.assertNotIn(curve.lower(), held, "the curve must not be treated as a holder")
@@ -157,8 +158,105 @@ class HolderSnapshotTests(unittest.TestCase):
 
     def test_vault_is_excluded_from_its_own_distribution(self) -> None:
         chain = FakeChain(balances={ALICE: 500, VAULT: 500})
-        snap = snapshot_holders(_rpc(chain), TOKEN, exclude={VAULT}, max_chunks=1)
+        snap = snapshot_holders(_rpc(chain), TOKEN, exclude={VAULT}, max_calls=1)
         self.assertNotIn(VAULT, snap.balances)
+
+
+class AdaptiveScanTests(unittest.TestCase):
+    """
+    How wide the log scan reaches, and what it does when the node says no.
+
+    This chain makes ~857,000 blocks a day, so a fixed narrow step meant the
+    scan outgrew its own request within days of a launch. The span adapts
+    now, and these are the ways adapting can go wrong.
+    """
+
+    class RangeLimitedChain:
+        """A node that refuses any range wider than `limit` blocks."""
+
+        def __init__(self, *, limit: int, tip: int, start_block: int) -> None:
+            self.limit = limit
+            self.tip = tip
+            self.start_block = start_block
+            self.ranges: list[tuple[int, int]] = []
+
+        def post_json(self, url: str, payload: dict[str, Any], *, headers=None) -> Any:
+            method = payload["method"]
+            rid = payload["id"]
+
+            def ok(result: Any) -> dict[str, Any]:
+                return {"jsonrpc": "2.0", "id": rid, "result": result}
+
+            if method == "eth_blockNumber":
+                return ok(hex(self.tip))
+            if method == "eth_getLogs":
+                f = payload["params"][0]
+                lo, hi = int(f["fromBlock"], 16), int(f["toBlock"], 16)
+                if hi - lo + 1 > self.limit:
+                    return {
+                        "jsonrpc": "2.0",
+                        "id": rid,
+                        "error": {"code": -32005, "message": "query returned more than 10000 results"},
+                    }
+                self.ranges.append((lo, hi))
+                # One holder, credited in the token's very first block.
+                if lo <= self.start_block <= hi:
+                    return ok([{"topics": [TRANSFER_TOPIC, _topic(TOKEN), _topic(ALICE)], "data": "0x1"}])
+                return ok([])
+            if method == "eth_getCode":
+                return ok("0x")
+            if method == "eth_call":
+                return ok("0x" + hex(500)[2:].rjust(64, "0"))
+            raise AssertionError(f"unexpected method {method}")
+
+    def test_a_refused_range_is_retried_narrower_over_the_same_blocks(self) -> None:
+        """
+        Narrowing must re-cover the ground it just failed on. Skipping ahead
+        instead would drop every holder whose only transfer sat in the gap,
+        and nothing downstream could tell.
+        """
+        start = 1_000_000
+        chain = self.RangeLimitedChain(limit=20_000, tip=start + 200_000, start_block=start)
+        snap = snapshot_holders(_rpc(chain), TOKEN, start_block=start)
+
+        self.assertTrue(snap.complete)
+        self.assertIn(ALICE.lower(), {a.lower() for a in snap.balances})
+
+        covered = sorted(chain.ranges)
+        self.assertTrue(covered, "nothing was scanned")
+        # Walk the accepted ranges and assert they leave no hole.
+        merged_low = covered[0][0]
+        highest = covered[0][1]
+        for lo, hi in covered[1:]:
+            self.assertLessEqual(lo, highest + 1, f"gap before block {lo}")
+            highest = max(highest, hi)
+        self.assertLessEqual(merged_low, start, "the scan must reach the token's first block")
+
+    def test_a_wide_open_node_is_scanned_in_few_calls(self) -> None:
+        """
+        The point of adapting. At the old fixed 2,000-block step this span
+        alone was 250 calls; if a regression puts that back, payouts stop
+        fitting in the request that asks for them.
+        """
+        start = 1_000_000
+        chain = self.RangeLimitedChain(limit=1_000_000, tip=start + 500_000, start_block=start)
+        snapshot_holders(_rpc(chain), TOKEN, start_block=start)
+        self.assertLess(len(chain.ranges), 12, f"took {len(chain.ranges)} calls for 500k blocks")
+
+    def test_a_node_that_refuses_everything_reports_incomplete(self) -> None:
+        """Refused is not the same as "no holders", and must never read as it."""
+        start = 1_000_000
+        chain = self.RangeLimitedChain(limit=0, tip=start + 100_000, start_block=start)
+        snap = snapshot_holders(_rpc(chain), TOKEN, start_block=start)
+        self.assertFalse(snap.complete)
+        self.assertEqual(snap.holder_count, 0)
+
+    def test_the_call_budget_is_honoured(self) -> None:
+        start = 0
+        chain = self.RangeLimitedChain(limit=2_000, tip=10_000_000, start_block=start)
+        snap = snapshot_holders(_rpc(chain), TOKEN, start_block=start, max_calls=5)
+        self.assertLessEqual(len(chain.ranges), 5)
+        self.assertFalse(snap.complete, "an exhausted budget has not seen the whole history")
 
 
 class VaultConfigTests(unittest.TestCase):

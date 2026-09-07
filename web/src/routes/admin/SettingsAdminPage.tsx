@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { SiteFooter } from "../../components/layout/SiteFooter";
 import { Button } from "../../components/ui/Button";
-import { fetchAdminSettings, saveAdminSettings, type AdminSettings } from "../../services/api";
+import {
+  detectLaunchBlock,
+  fetchAdminSettings,
+  saveAdminSettings,
+  type AdminSettings,
+} from "../../services/api";
 
 /*
   The settings that used to be environment variables.
@@ -40,7 +45,7 @@ const FIELDS: FieldSpec[] = [
     label: "$FONS start block",
     placeholder: "56428635",
     help:
-      "The block the token was deployed in. Without it the holder scan covers only a few hours, so payouts refuse to run rather than quietly paying early buyers nothing.",
+      "The block $FONS was launched in. Without it the holder scan has no floor, so payouts refuse to run rather than quietly paying early buyers nothing. Read it from the chain instead of typing it.",
   },
   {
     key: "fons_token_address",
@@ -86,6 +91,20 @@ export function SettingsAdminPage() {
     setBusy(false);
     if (!result.ok) return setMessage({ tone: "error", text: result.error.message });
     load(result.data);
+  }
+
+  async function onDetect() {
+    setBusy(true);
+    setMessage(null);
+    const typed = (draft.fons_token_address ?? "").trim();
+    const result = await detectLaunchBlock(password, typed || undefined);
+    setBusy(false);
+    if (!result.ok) return setMessage({ tone: "error", text: result.error.message });
+    setDraft({ ...draft, fons_token_start_block: String(result.data.block_number) });
+    setMessage({
+      tone: "ok",
+      text: `Found the launch at block ${result.data.block_number}. Save to apply it.`,
+    });
   }
 
   async function onSave() {
@@ -137,6 +156,10 @@ export function SettingsAdminPage() {
           <p className="body-copy">
             Everything the payout cycle needs, in one place. A blank field is not a zero — it hands the question
             back to the environment variable of the same name.
+          </p>
+          <p className="metric-label">
+            $FONS launches through Pons, the same factory the site uses for everyone else, so the chain already
+            knows its start block — read it rather than typing it.
           </p>
 
           {!settings ? (
@@ -192,6 +215,13 @@ export function SettingsAdminPage() {
                     {isFromEnv(field) ? " — from the environment, not from here" : ""}
                   </p>
                   <p className="metric-label">{field.help}</p>
+                  {field.key === "fons_token_start_block" ? (
+                    <div className="btn-row">
+                      <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void onDetect()}>
+                        Read it from the chain
+                      </Button>
+                    </div>
+                  ) : null}
                 </label>
               ))}
 

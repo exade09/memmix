@@ -36,7 +36,11 @@ from axiom_scanner.rewards.config import (
     rewards_enabled,
     vault_address,
 )
-from axiom_scanner.rewards.holders import snapshot_holders
+from axiom_scanner.rewards.holders import (
+    INITIAL_LOG_SPAN_BLOCKS,
+    MIN_LOG_SPAN_BLOCKS,
+    snapshot_holders,
+)
 
 TRANSFER_TOPIC = "0x" + keccak(text="Transfer(address,address,uint256)").hex()
 DEFAULT_PAYOUT_BATCH = 25
@@ -180,10 +184,13 @@ def read_distributed_total(
     total = 0
     cursor = latest
     deadline = time.monotonic() + budget_seconds
+    # Same adaptive span as the holder scan, for the same reason: a fixed
+    # 2,000-block step covers about three minutes of this chain.
+    span = INITIAL_LOG_SPAN_BLOCKS
     for _ in range(max_chunks):
         if time.monotonic() >= deadline:
             break
-        start = max(0, cursor - 2000 + 1)
+        start = max(0, cursor - span + 1)
         try:
             logs = rpc.call(
                 "eth_getLogs",
@@ -196,6 +203,9 @@ def read_distributed_total(
                 ],
             )
         except RpcError:
+            if span > MIN_LOG_SPAN_BLOCKS:
+                span = max(MIN_LOG_SPAN_BLOCKS, span // 4)
+                continue
             break
         for log in logs or []:
             data = str(log.get("data") or "0x")

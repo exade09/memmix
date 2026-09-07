@@ -213,5 +213,105 @@ class SettingsEndpointTests(SettingsFileTestCase):
         self.assertEqual(json.loads(self._tmp.read_text(encoding="utf-8"))["creator_fee_bps"], 50)
 
 
+class LaunchLookupTests(SettingsFileTestCase):
+    """
+    Reading the launch block off the factory instead of asking for it.
+
+    A start block that is wrong by a little is the worst kind of wrong: it
+    raises nothing, and simply pays nothing to everyone who bought earlier.
+    So the lookup must refuse rather than fall back to a default.
+    """
+
+    FACTORY = "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e"
+    LAUNCH_BLOCK = 56_427_441
+    CURVE = "0x489f769190E14c9E34424D4fb5D81513467b5266"
+    DEPLOYER = "0x767bdF5E00F84B4868aB4342366C561FC049c0dB"
+
+    class FactoryChain:
+        def __init__(self, outer, *, found: bool = True) -> None:
+            self.outer = outer
+            self.found = found
+            self.filters: list[dict] = []
+
+        def post_json(self, url, payload, *, headers=None):
+            from axiom_scanner.chain.pons_abi import TOKEN_LAUNCHED_TOPIC
+
+            rid = payload["id"]
+            if payload["method"] != "eth_getLogs":
+                raise AssertionError(f"unexpected method {payload['method']}")
+            f = payload["params"][0]
+            self.filters.append(f)
+            if not self.found:
+                return {"jsonrpc": "2.0", "id": rid, "result": []}
+            topic = lambda a: "0x" + a[2:].lower().rjust(64, "0")  # noqa: E731
+            return {
+                "jsonrpc": "2.0",
+                "id": rid,
+                "result": [
+                    {
+                        "blockNumber": hex(self.outer.LAUNCH_BLOCK),
+                        "topics": [
+                            "0x" + TOKEN_LAUNCHED_TOPIC.hex(),
+                            topic(TOKEN),
+                            topic(self.outer.CURVE),
+                            topic(self.outer.DEPLOYER),
+                        ],
+                    }
+                ],
+            }
+
+    def test_the_launch_block_is_read_from_the_factory(self) -> None:
+        from axiom_scanner.rewards.launch_lookup import find_launch
+        from axiom_scanner.chain.rpc_client import RpcClient
+
+        chain = self.FactoryChain(self)
+        result = find_launch(RpcClient("https://example.invalid", chain), TOKEN, self.FACTORY)
+        self.assertEqual(result["block_number"], self.LAUNCH_BLOCK)
+        self.assertEqual(result["curve"], self.CURVE)
+
+    def test_the_filter_names_both_the_factory_and_the_token(self) -> None:
+        """
+        Without the token in the filter the node returns every launch ever
+        made, and the first one back would be some stranger's token.
+        """
+        from axiom_scanner.rewards.launch_lookup import find_launch
+        from axiom_scanner.chain.rpc_client import RpcClient
+
+        chain = self.FactoryChain(self)
+        find_launch(RpcClient("https://example.invalid", chain), TOKEN, self.FACTORY)
+        f = chain.filters[0]
+        self.assertEqual(f["address"].lower(), self.FACTORY.lower())
+        self.assertEqual(len(f["topics"]), 2)
+        self.assertIn(TOKEN[2:].lower(), f["topics"][1].lower())
+
+    def test_a_token_not_launched_through_pons_is_refused(self) -> None:
+        from axiom_scanner.rewards.launch_lookup import LaunchLookupError, find_launch
+        from axiom_scanner.chain.rpc_client import RpcClient
+
+        chain = self.FactoryChain(self, found=False)
+        with self.assertRaises(LaunchLookupError) as ctx:
+            find_launch(RpcClient("https://example.invalid", chain), TOKEN, self.FACTORY)
+        self.assertEqual(ctx.exception.code, "LAUNCH_NOT_FOUND")
+
+    def test_detect_needs_the_password(self) -> None:
+        status, payload = handle_api_post(
+            "/api/admin/settings",
+            read_json=lambda max_bytes=0: {"password": "wrong", "detect": True, "token": TOKEN},
+            client_ip="10.0.1.1",
+        )
+        self.assertEqual(status, 401)
+
+    def test_detect_does_not_write_anything(self) -> None:
+        """Looking up a block is a read; it must not touch stored settings."""
+        self.write({"creator_fee_bps": 50})
+        before = self._tmp.read_text(encoding="utf-8")
+        handle_api_post(
+            "/api/admin/settings",
+            read_json=lambda max_bytes=0: {"password": PASSWORD, "detect": True, "token": TOKEN},
+            client_ip="10.0.1.2",
+        )
+        self.assertEqual(self._tmp.read_text(encoding="utf-8"), before)
+
+
 if __name__ == "__main__":
     unittest.main()

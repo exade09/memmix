@@ -743,3 +743,29 @@ export async function saveAdminSettings(
 ): Promise<{ ok: true; data: AdminSettings } | { ok: false; error: ApiError }> {
   return postAdminJson<AdminSettings>("/api/admin/settings", { password, ...patch });
 }
+
+export type DetectedLaunch = {
+  token: string;
+  block_number: number;
+  curve: string;
+  deployer: string;
+};
+
+/**
+ * Ask the chain when $FONS was launched.
+ *
+ * It launches through the same Pons factory as every other token on the
+ * site, so the factory already recorded the block. Reading it beats asking
+ * someone to copy it: a start block that is slightly wrong raises no error,
+ * it just silently pays nothing to everyone who bought before it.
+ */
+export async function detectLaunchBlock(
+  password: string,
+  token?: string,
+): Promise<{ ok: true; data: DetectedLaunch } | { ok: false; error: ApiError }> {
+  return postAdminJson<DetectedLaunch>("/api/admin/settings", {
+    password,
+    detect: true,
+    ...(token ? { token } : {}),
+  });
+}

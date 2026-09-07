@@ -37,6 +37,7 @@ from vercel_api.routes.sponsor_launch import SponsorLaunchError, sponsor_launch_
 from vercel_api.routes.settings import (
     SettingsRouteError,
     authorise as authorise_settings,
+    detect_launch_route,
     admin_settings_route,
     public_settings_route,
     settings_error_status,
@@ -448,7 +449,9 @@ def _settings_update(reader, client_ip: str) -> tuple[int, dict]:
     # effect, and that is a map of where the money goes.
     read_only = bool(body.get("read_only"))
     try:
-        if read_only:
+        if body.get("detect"):
+            data = detect_launch_route(body, client_ip)
+        elif read_only:
             authorise_settings(body, client_ip)
             data = admin_settings_route()
         else:

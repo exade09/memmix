@@ -12,6 +12,7 @@ is leave an address out of the candidate set, which is visible and fixable,
 instead of paying someone the wrong amount.
 """
 
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -24,11 +25,32 @@ from axiom_scanner.chain.rpc_client import RpcClient, RpcError
 TRANSFER_TOPIC = "0x" + keccak(text="Transfer(address,address,uint256)").hex()
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
-# Chunk size for log scans. Public nodes reject wide ranges, and a serverless
-# function has a time budget, so the scan is bounded and says so rather than
-# pretending to have seen the whole chain.
-LOG_CHUNK_BLOCKS = 2000
-DEFAULT_MAX_CHUNKS = 24
+"""
+How wide a log scan reaches per call.
+
+This chain produces roughly 857,000 blocks a day. At the 2,000-block step
+this scan used to take, a single day of a token's history cost 428 sequential
+round trips -- so the scan outgrew the request that asked for it within days
+of a launch, and payouts would simply stop working.
+
+The node is far more capable than that: it answers a 500,000-block range for
+a token in under two seconds. So the span starts wide and adapts. A refused
+or oversized range halves it and retries; a range that comes back small grows
+it again. Busy tokens settle on a narrow span because their answers are big,
+quiet ones stay wide, and neither is guessed at up front.
+
+Two bounds still apply, because this runs inside one request: a call budget
+and a wall-clock budget. Hitting either ends the scan and the snapshot
+reports itself incomplete, which every caller that moves money refuses to act
+on. Stopping early and saying so is the safe failure; timing out is not.
+"""
+MAX_LOG_SPAN_BLOCKS = 500_000
+INITIAL_LOG_SPAN_BLOCKS = 100_000
+# The old fixed step, kept as the floor: if the node will not answer even
+# this, widening is not the problem.
+MIN_LOG_SPAN_BLOCKS = 2_000
+DEFAULT_MAX_CALLS = 400
+DEFAULT_SCAN_BUDGET_SECONDS = 20.0
 BALANCE_OF_SELECTOR = "0x" + keccak(text="balanceOf(address)")[:4].hex()
 
 
@@ -56,8 +78,9 @@ def collect_candidate_addresses(
     token: str,
     *,
     to_block: int,
-    max_chunks: int = DEFAULT_MAX_CHUNKS,
     start_block: int = 0,
+    max_calls: int = DEFAULT_MAX_CALLS,
+    budget_seconds: float = DEFAULT_SCAN_BUDGET_SECONDS,
 ) -> tuple[set[str], int, bool]:
     """
     Every address that has ever been sent the token, scanning backwards.
@@ -73,11 +96,14 @@ def collect_candidate_addresses(
     """
     candidates: set[str] = set()
     floor = max(0, start_block)
-    from_block = max(floor, to_block - LOG_CHUNK_BLOCKS * max_chunks + 1)
     cursor = to_block
-    chunks = 0
-    while cursor >= floor and chunks < max_chunks:
-        start = max(floor, cursor - LOG_CHUNK_BLOCKS + 1)
+    span = INITIAL_LOG_SPAN_BLOCKS
+    calls = 0
+    deadline = time.monotonic() + budget_seconds
+    lowest = to_block + 1
+
+    while cursor >= floor and calls < max_calls and time.monotonic() < deadline:
+        start = max(floor, cursor - span + 1)
         try:
             logs = rpc.call(
                 "eth_getLogs",
@@ -91,8 +117,19 @@ def collect_candidate_addresses(
                 ],
             )
         except RpcError:
-            # A refused range should not be reported as "no holders".
+            calls += 1
+            if span > MIN_LOG_SPAN_BLOCKS:
+                # Almost always "range too wide" or "too many results".
+                # Narrow and retry the same ground rather than skipping it:
+                # a skipped range is a holder paid nothing.
+                span = max(MIN_LOG_SPAN_BLOCKS, span // 4)
+                continue
+            # Refused even at the floor. A refused range must not be reported
+            # as "no holders", so stop and let `complete` carry the doubt.
             break
+
+        calls += 1
+        received = len(logs or [])
         for log in logs or []:
             topics = log.get("topics") or []
             if len(topics) < 3:
@@ -103,12 +140,20 @@ def collect_candidate_addresses(
                 continue
             if recipient != ZERO_ADDRESS:
                 candidates.add(recipient)
-        chunks += 1
+
+        lowest = start
         if start <= floor:
             # Reached the token's first block (or genesis): the set is whole.
             return candidates, floor, True
+
+        # A thin answer means there is room to reach further next time.
+        if received < 500:
+            span = min(MAX_LOG_SPAN_BLOCKS, span * 2)
+        elif received > 5000:
+            span = max(MIN_LOG_SPAN_BLOCKS, span // 2)
         cursor = start - 1
-    return candidates, from_block, from_block <= floor
+
+    return candidates, min(lowest, to_block), lowest <= floor
 
 
 def is_contract(rpc: RpcClient, address: str) -> bool:
@@ -172,7 +217,8 @@ def snapshot_holders(
     token: str,
     *,
     exclude: set[str] | None = None,
-    max_chunks: int = DEFAULT_MAX_CHUNKS,
+    max_calls: int = DEFAULT_MAX_CALLS,
+    budget_seconds: float = DEFAULT_SCAN_BUDGET_SECONDS,
     start_block: int | None = None,
     skip_contracts: bool = True,
 ) -> HolderSnapshot:
@@ -183,7 +229,12 @@ def snapshot_holders(
     block = rpc.call("eth_blockNumber", [])
     block_number = int(block, 16)
     candidates, from_block, complete = collect_candidate_addresses(
-        rpc, token, to_block=block_number, max_chunks=max_chunks, start_block=start_block
+        rpc,
+        token,
+        to_block=block_number,
+        start_block=start_block,
+        max_calls=max_calls,
+        budget_seconds=budget_seconds,
     )
     balances = read_balances(
         rpc, token, candidates, block=block_number, exclude=exclude, skip_contracts=skip_contracts
