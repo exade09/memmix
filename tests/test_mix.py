@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from axiom_scanner.analysis.logical_mixer import MixError, mix_concepts, validate_mix_payload
-from axiom_scanner.http_client import SourceTimeout
+from axiom_scanner.http_client import SourceQuotaExhausted, SourceRateLimited, SourceTimeout
 from axiom_scanner.security.fields import normalize_ticker
 from vercel_api.dispatch import handle_api_post
 from vercel_api.routes.mix import reset_mix_limits
@@ -153,6 +153,37 @@ class MixValidationTests(unittest.TestCase):
         self.assertIn("Basic mix mode", result["fallback_notice"])
         self.assertEqual(len(result["concepts"]), 3)
 
+    def test_an_empty_balance_falls_back_instead_of_asking_people_to_wait(self) -> None:
+        """
+        Providers report an exhausted balance and a real rate limit with the
+        same HTTP 429, but they are opposites: a rate limit clears in
+        seconds, an empty balance never clears on its own. Telling visitors
+        to try again in a moment would be an instruction that cannot work.
+        """
+        fake = FakePoster([SourceQuotaExhausted("POST failed for openai: out of quota")])
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test", "OPENAI_RESPONSES_MODEL": "test-model"}):
+            result = mix_concepts(PARENT_A, PARENT_B, http=fake)
+        self.assertTrue(result["fallback"])
+        self.assertIn("Basic mix mode", result["fallback_notice"])
+        self.assertEqual(len(result["concepts"]), 3, "the lab has to stay usable")
+
+    def test_a_real_rate_limit_still_asks_for_a_cooldown(self) -> None:
+        """The other half: waiting genuinely does fix this one."""
+        fake = FakePoster([SourceRateLimited("POST failed for openai: rate limited")])
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test", "OPENAI_RESPONSES_MODEL": "test-model"}):
+            with self.assertRaises(MixError) as ctx:
+                mix_concepts(PARENT_A, PARENT_B, http=fake)
+        self.assertEqual(ctx.exception.code, "RATE_LIMITED")
+
+    def test_an_empty_balance_during_a_repair_also_falls_back(self) -> None:
+        """The repair retry is a second chance to hit the same empty balance."""
+        bad = _valid_model_json()
+        bad["concepts"][0]["ticker"] = bad["concepts"][1]["ticker"]
+        fake = FakePoster([_wrap(bad), SourceQuotaExhausted("POST failed for openai: out of quota")])
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test", "OPENAI_RESPONSES_MODEL": "test-model"}):
+            result = mix_concepts(PARENT_A, PARENT_B, http=fake)
+        self.assertTrue(result["fallback"])
+
     def test_one_repair(self) -> None:
         bad = _valid_model_json()
         bad["concepts"][0]["ticker"] = bad["concepts"][1]["ticker"]
@@ -203,6 +234,66 @@ class MixValidationTests(unittest.TestCase):
         self.assertTrue(all(item["avatar_ready"] for item in result["concepts"]))
         names = " ".join(item["name"] for item in result["concepts"])
         self.assertNotIn("BONKWIF", names.replace(" ", "").upper())
+
+
+class QuotaClassificationTests(unittest.TestCase):
+    """
+    Telling an empty balance apart from going too fast.
+
+    Both arrive as HTTP 429 and only the response body separates them, so
+    this is decided by string matching -- which is exactly the kind of thing
+    that silently stops matching when a provider rewords an error.
+    """
+
+    def _raise_429(self, body: str):
+        from io import BytesIO
+        from urllib.error import HTTPError
+
+        def fake_urlopen(request, timeout=None):
+            raise HTTPError(
+                request.full_url if hasattr(request, "full_url") else "https://example.invalid",
+                429,
+                "Too Many Requests",
+                {},
+                BytesIO(body.encode("utf-8")),
+            )
+
+        return fake_urlopen
+
+    def _post(self, body: str):
+        from axiom_scanner.http_client import HttpClient
+
+        with patch("axiom_scanner.http_client.urlopen", side_effect=self._raise_429(body)):
+            # No retries: an exhausted balance must not be retried at all.
+            HttpClient(timeout_seconds=1, retries=0).post_json("https://example.invalid", {"a": 1})
+
+    def test_insufficient_quota_is_not_treated_as_a_rate_limit(self) -> None:
+        from axiom_scanner.http_client import SourceQuotaExhausted
+
+        with self.assertRaises(SourceQuotaExhausted):
+            self._post('{"error": {"type": "insufficient_quota", "message": "You exceeded your current quota"}}')
+
+    def test_a_plain_429_is_still_a_rate_limit(self) -> None:
+        from axiom_scanner.http_client import SourceRateLimited
+
+        with self.assertRaises(SourceRateLimited):
+            self._post('{"error": {"type": "rate_limit_exceeded", "message": "Rate limit reached"}}')
+
+    def test_quota_exhaustion_is_not_a_rate_limit_subclass(self) -> None:
+        """
+        The mixer catches SourceRateLimited first and turns it into "wait a
+        moment". If quota inherited from it, the fix would do nothing at all.
+        """
+        from axiom_scanner.http_client import SourceQuotaExhausted, SourceRateLimited
+
+        self.assertFalse(issubclass(SourceQuotaExhausted, SourceRateLimited))
+
+    def test_an_unreadable_body_falls_back_to_rate_limited(self) -> None:
+        """Guessing "out of credit" from nothing would hide a real rate limit."""
+        from axiom_scanner.http_client import SourceRateLimited
+
+        with self.assertRaises(SourceRateLimited):
+            self._post("")
 
 
 class MixRouteTests(unittest.TestCase):

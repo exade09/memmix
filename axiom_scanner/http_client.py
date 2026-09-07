@@ -24,8 +24,40 @@ class SourceRateLimited(SourceError):
     code = "RATE_LIMITED"
 
 
+class SourceQuotaExhausted(SourceError):
+    """
+    The account is out of credit, not going too fast.
+
+    Providers report both as HTTP 429, which makes them look identical to a
+    retry loop -- but they are opposites. A rate limit clears on its own in
+    seconds; an empty balance never clears, and telling a visitor to "try
+    again in a moment" is an instruction that can only ever waste their time.
+
+    Deliberately not a subclass of SourceRateLimited, so a caller that
+    handles rate limiting specially treats this as a plain outage and falls
+    back instead.
+    """
+
+    code = "SOURCE_UNAVAILABLE"
+
+
 class SourceMalformed(SourceError):
     code = "SOURCE_UNAVAILABLE"
+
+
+# Body markers providers use for "you are out of credit" on a 429.
+_QUOTA_MARKERS = ("insufficient_quota", "billing_hard_limit_reached", "exceeded_current_quota")
+
+
+def _classify_429(exc: HTTPError, what: str) -> SourceError:
+    """Tell an empty balance apart from going too fast."""
+    try:
+        body = exc.read().decode("utf-8", errors="replace").lower()
+    except (OSError, ValueError):
+        body = ""
+    if any(marker in body for marker in _QUOTA_MARKERS):
+        return SourceQuotaExhausted(f"{what}: the API account is out of quota")
+    return SourceRateLimited(f"{what}: rate limited")
 
 
 class HttpClient:
@@ -56,7 +88,11 @@ class HttpClient:
             except HTTPError as exc:
                 last_error = exc
                 if exc.code == 429:
-                    last_error = SourceRateLimited(f"GET failed for {url}: rate limited")
+                    last_error = _classify_429(exc, f"GET failed for {url}")
+                    if isinstance(last_error, SourceQuotaExhausted):
+                        # Retrying an empty balance only burns the request's
+                        # time budget; nothing about it will change.
+                        raise last_error from exc
                 if attempt < self.retries:
                     time.sleep(0.6 * (attempt + 1))
                     continue
@@ -96,7 +132,9 @@ class HttpClient:
             except HTTPError as exc:
                 last_error = exc
                 if exc.code == 429:
-                    last_error = SourceRateLimited(f"POST failed for {url}: rate limited")
+                    last_error = _classify_429(exc, f"POST failed for {url}")
+                    if isinstance(last_error, SourceQuotaExhausted):
+                        raise last_error from exc
                 elif exc.code and 400 <= exc.code < 500:
                     raise SourceError(f"POST failed for {url}: HTTP {exc.code}", "SOURCE_UNAVAILABLE") from exc
                 if attempt < self.retries:

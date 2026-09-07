@@ -15,7 +15,13 @@ from axiom_scanner.analysis.mix_schema import (
     SYSTEM_PROMPT,
     USER_PROMPT_TEMPLATE,
 )
-from axiom_scanner.http_client import HttpClient, SourceError, SourceRateLimited, SourceTimeout
+from axiom_scanner.http_client import (
+    HttpClient,
+    SourceError,
+    SourceQuotaExhausted,
+    SourceRateLimited,
+    SourceTimeout,
+)
 from axiom_scanner.security.fields import (
     DESCRIPTION_AI_MAX,
     DESCRIPTION_AI_MIN,
@@ -76,6 +82,8 @@ def mix_concepts(
         try:
             parsed = _complete(client, api_key, model, a, b, hint, repair_errors=exc.errors)
             return _public_payload(a, b, parsed, source="openai", fallback=False, repaired=True)
+        except SourceQuotaExhausted:
+            return _fallback_payload(a, b, hint, reason="unavailable")
         except (MixValidationError, SourceError, json.JSONDecodeError) as repair_exc:
             if isinstance(repair_exc, SourceRateLimited):
                 raise MixError("The lab needs a short cooldown. Try again in a moment.", "RATE_LIMITED") from repair_exc
@@ -83,6 +91,13 @@ def mix_concepts(
                 "The mutation came back unstable. We are rebuilding the text.",
                 "AI_OUTPUT_INVALID",
             ) from repair_exc
+    # Order matters: an exhausted balance also arrives as HTTP 429, and it is
+    # the opposite of a rate limit. A rate limit clears in seconds, so asking
+    # for a cooldown is honest; an empty balance never clears, so the same
+    # message would send every visitor to wait for something that cannot
+    # happen. Falling back keeps the lab usable until the key is topped up.
+    except SourceQuotaExhausted:
+        return _fallback_payload(a, b, hint, reason="unavailable")
     except SourceRateLimited as exc:
         raise MixError("The lab needs a short cooldown. Try again in a moment.", "RATE_LIMITED") from exc
     except (SourceTimeout, SourceError, json.JSONDecodeError):
