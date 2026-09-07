@@ -137,7 +137,9 @@ Python runtime is pinned for Vercel with `.python-version` and
 
 Optional environment variables:
 
-- `OPENAI_API_KEY`: enables narrative card image generation.
+- `OPENAI_API_KEY`: enables the logic mixer. On its own it is not enough — without `OPENAI_RESPONSES_MODEL` every mix falls back to the basic mixer, and `/api/health` reports `text_ai: no_model` to say so.
+- `OPENAI_RESPONSES_MODEL`: model id for the logic mixer, e.g. `gpt-5.6-terra`. Must support strict structured outputs.
+- `OPENAI_MIX_TIMEOUT_SECONDS`: total budget for one mix, defaults to `25`, clamped to `8..45`. It covers the first call and the repair retry together, so it has to stay under the serverless function's 60s limit.
 - `WAVESPEED_API_KEY` or `WAVESPEED_API_KEYS`: enables Mixer Studio hybrid images.
 - `WAVESPEED_TIMEOUT_SECONDS`: optional, defaults to `120`.
 - `PINATA_JWT`: server-only Pinata JWT for metadata pinning. Never expose it to the browser.
@@ -240,7 +242,7 @@ python main.py web --port 8080 --limit 100
 Optional settings:
 
 ```powershell
-$env:OPENAI_RESPONSES_MODEL="gpt-5.5"
+$env:OPENAI_RESPONSES_MODEL="gpt-5.6-terra"
 $env:OPENAI_IMAGE_SIZE="1024x1024"
 $env:OPENAI_IMAGE_QUALITY="medium"
 ```

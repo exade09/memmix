@@ -37,6 +37,25 @@ class HealthEndpointTests(unittest.TestCase):
         self.assertIn(payload["data"]["images"], {"ok", "unavailable"})
 
 
+    def test_a_key_without_a_model_is_not_reported_as_configured(self) -> None:
+        """
+        The mixer needs both halves, and a missing model name fails quietly:
+        every mix comes back from the basic mixer while the site looks healthy.
+        Health has to separate that from a working setup, or the only place the
+        problem shows up is in the names visitors read.
+        """
+        env = {"OPENAI_API_KEY": "sk-test-openai", "OPENAI_RESPONSES_MODEL": ""}
+        with patch.dict(os.environ, env):
+            with patch("vercel_api.routes.health._probe_rpc", return_value="ok"):
+                _, payload = handle_api_get("/api/health", "")
+        self.assertEqual(payload["data"]["text_ai"], "no_model")
+
+        with patch.dict(os.environ, {**env, "OPENAI_RESPONSES_MODEL": "gpt-5.6-terra"}):
+            with patch("vercel_api.routes.health._probe_rpc", return_value="ok"):
+                _, payload = handle_api_get("/api/health", "")
+        self.assertEqual(payload["data"]["text_ai"], "configured")
+
+
 class RpcProxyTests(unittest.TestCase):
     def setUp(self) -> None:
         reset_rpc_limits()

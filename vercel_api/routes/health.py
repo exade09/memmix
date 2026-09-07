@@ -21,7 +21,11 @@ def health_payload(*, probe_rpc=None) -> dict[str, Any]:
     payload = {
         "status": "ok" if rpc_status == "ok" else "degraded",
         "scanner": "ok",
-        "text_ai": "configured" if os.getenv("OPENAI_API_KEY", "").strip() else "disabled",
+        # A key alone is not enough: without a model name the mixer silently
+        # serves basic mode, which looks like working AI until you read the
+        # names it invents. Reported as its own state so the missing half is
+        # visible here instead of being discovered from the output.
+        "text_ai": _probe_text_ai(),
         "image_ai": (
             "configured"
             if os.getenv("WAVESPEED_API_KEY", "").strip() or os.getenv("WAVESPEED_API_KEYS", "").strip()
@@ -109,6 +113,20 @@ def _probe_sponsor_launch() -> str:
     if not sponsor_private_key():
         return "no_key"
     return "ready"
+
+
+def _probe_text_ai() -> str:
+    """
+    Whether the logic mixer can actually call the model. Reports the state
+    only, never the key. `no_model` is its own answer because it is the
+    failure that looks like success: the key is present, the endpoint is
+    reachable, and every mix quietly comes back from the basic mixer.
+    """
+    if not os.getenv("OPENAI_API_KEY", "").strip():
+        return "disabled"
+    if not os.getenv("OPENAI_RESPONSES_MODEL", "").strip():
+        return "no_model"
+    return "configured"
 
 
 def _probe_job_secret() -> str:

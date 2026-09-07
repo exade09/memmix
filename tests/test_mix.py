@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from axiom_scanner.analysis.logical_mixer import MixError, mix_concepts, validate_mix_payload
-from axiom_scanner.http_client import SourceQuotaExhausted, SourceRateLimited, SourceTimeout
+from axiom_scanner.http_client import SourceError, SourceQuotaExhausted, SourceRateLimited, SourceTimeout
 from axiom_scanner.security.fields import normalize_ticker
 from vercel_api.dispatch import handle_api_post
 from vercel_api.routes.mix import reset_mix_limits
@@ -183,6 +183,53 @@ class MixValidationTests(unittest.TestCase):
         with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test", "OPENAI_RESPONSES_MODEL": "test-model"}):
             result = mix_concepts(PARENT_A, PARENT_B, http=fake)
         self.assertTrue(result["fallback"])
+
+    def test_a_refused_call_surfaces_instead_of_serving_basic_mode(self) -> None:
+        """
+        A wrong key, an unknown model name and an upstream outage all arrive
+        here as SourceError. Basic mode would hide every one of them: the site
+        keeps answering, so a broken deploy reads as a working one and the only
+        symptom is that the names got worse. The paid key is configured to be
+        used, so a refusal is worth saying out loud.
+        """
+        fake = FakePoster([SourceError("POST failed for openai: HTTP 401")])
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test", "OPENAI_RESPONSES_MODEL": "test-model"}):
+            with self.assertRaises(MixError) as ctx:
+                mix_concepts(PARENT_A, PARENT_B, http=fake)
+        self.assertEqual(ctx.exception.code, "AI_UNAVAILABLE")
+
+    def test_the_repair_is_skipped_once_the_budget_is_spent(self) -> None:
+        """
+        The repair is a second call, and it used to get a fresh full timeout.
+        At the 45s the mixer now allows, two of those run to 90s while the
+        serverless function is killed at 60 -- the visitor would get a raw
+        gateway error instead of any message of ours. Both calls share one
+        budget, so a first attempt that ate it leaves no repair to start.
+        """
+        bad = _valid_model_json()
+        bad["concepts"][0]["ticker"] = bad["concepts"][1]["ticker"]
+        fake = FakePoster([_wrap(bad), _wrap(_valid_model_json())])
+        clock = iter([0.0, 44.0, 44.0])
+        env = {"OPENAI_API_KEY": "sk-test", "OPENAI_RESPONSES_MODEL": "test-model", "OPENAI_MIX_TIMEOUT_SECONDS": "45"}
+        with patch.dict(os.environ, env):
+            with patch("axiom_scanner.analysis.logical_mixer.time.monotonic", lambda: next(clock)):
+                with self.assertRaises(MixError) as ctx:
+                    mix_concepts(PARENT_A, PARENT_B, http=fake)
+        self.assertEqual(ctx.exception.code, "AI_OUTPUT_INVALID")
+        self.assertEqual(len(fake.calls), 1, "the repair must not be started with no time for it")
+
+    def test_the_repair_still_runs_while_time_is_left(self) -> None:
+        """The other half: the budget only blocks a repair it cannot finish."""
+        bad = _valid_model_json()
+        bad["concepts"][0]["ticker"] = bad["concepts"][1]["ticker"]
+        fake = FakePoster([_wrap(bad), _wrap(_valid_model_json())])
+        clock = iter([0.0, 3.0, 3.0])
+        env = {"OPENAI_API_KEY": "sk-test", "OPENAI_RESPONSES_MODEL": "test-model", "OPENAI_MIX_TIMEOUT_SECONDS": "45"}
+        with patch.dict(os.environ, env):
+            with patch("axiom_scanner.analysis.logical_mixer.time.monotonic", lambda: next(clock)):
+                result = mix_concepts(PARENT_A, PARENT_B, http=fake)
+        self.assertTrue(result["repaired"])
+        self.assertEqual(len(fake.calls), 2)
 
     def test_one_repair(self) -> None:
         bad = _valid_model_json()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from typing import Any, Protocol
 
 from axiom_scanner.analysis.mix_fallback import build_fallback_concepts
@@ -41,6 +42,10 @@ from axiom_scanner.security.query import BASE58_RE, QueryError, safe_image_url
 
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 
+# Below this there is no point starting the repair call: it would be cut off
+# mid-flight and cost the visitor the wait for nothing.
+_MIN_REPAIR_SECONDS = 8
+
 
 class MixError(QueryError):
     pass
@@ -74,19 +79,35 @@ def mix_concepts(
     if not api_key or not model:
         return _fallback_payload(a, b, hint, reason="unconfigured")
 
-    client = http or HttpClient(timeout_seconds=_timeout_seconds(), retries=0)
+    # One budget covers both calls below, because the serverless function is
+    # killed at 60s. Two full timeouts back to back would blow through that and
+    # hand the visitor a raw gateway error instead of anything we wrote.
+    budget = _timeout_seconds()
+    deadline = time.monotonic() + budget
+
+    def poster(seconds: int) -> JsonPoster:
+        return http or HttpClient(timeout_seconds=seconds, retries=0)
+
     try:
-        parsed = _complete(client, api_key, model, a, b, hint, repair_errors=None)
+        parsed = _complete(poster(budget), api_key, model, a, b, hint, repair_errors=None)
         return _public_payload(a, b, parsed, source="openai", fallback=False)
     except MixValidationError as exc:
+        left = int(deadline - time.monotonic())
+        if left < _MIN_REPAIR_SECONDS:
+            raise MixError(
+                "The mutation came back unstable. We are rebuilding the text.",
+                "AI_OUTPUT_INVALID",
+            ) from exc
         try:
-            parsed = _complete(client, api_key, model, a, b, hint, repair_errors=exc.errors)
+            parsed = _complete(poster(left), api_key, model, a, b, hint, repair_errors=exc.errors)
             return _public_payload(a, b, parsed, source="openai", fallback=False, repaired=True)
+        except SourceRateLimited as repair_exc:
+            raise MixError("The lab needs a short cooldown. Try again in a moment.", "RATE_LIMITED") from repair_exc
         except SourceQuotaExhausted:
             return _fallback_payload(a, b, hint, reason="unavailable")
+        except SourceTimeout:
+            return _fallback_payload(a, b, hint, reason="timeout")
         except (MixValidationError, SourceError, json.JSONDecodeError) as repair_exc:
-            if isinstance(repair_exc, SourceRateLimited):
-                raise MixError("The lab needs a short cooldown. Try again in a moment.", "RATE_LIMITED") from repair_exc
             raise MixError(
                 "The mutation came back unstable. We are rebuilding the text.",
                 "AI_OUTPUT_INVALID",
@@ -100,8 +121,18 @@ def mix_concepts(
         return _fallback_payload(a, b, hint, reason="unavailable")
     except SourceRateLimited as exc:
         raise MixError("The lab needs a short cooldown. Try again in a moment.", "RATE_LIMITED") from exc
-    except (SourceTimeout, SourceError, json.JSONDecodeError):
-        return _fallback_payload(a, b, hint, reason="unavailable")
+    # Running out of time is the one failure the basic mixer is for: the key
+    # works, the model is simply slower than the budget, and a plain result now
+    # beats an error. Every other transport failure means the call was refused
+    # -- a wrong key, an unknown model name, an outage -- and hiding those
+    # behind basic mode is how a broken deploy goes unnoticed for days.
+    except SourceTimeout:
+        return _fallback_payload(a, b, hint, reason="timeout")
+    except (SourceError, json.JSONDecodeError) as exc:
+        raise MixError(
+            "The logic mixer could not reach the model. Nothing was charged.",
+            "AI_UNAVAILABLE",
+        ) from exc
 
 
 def _complete(
