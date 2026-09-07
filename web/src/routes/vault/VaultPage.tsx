@@ -4,8 +4,6 @@ import { SiteFooter } from "../../components/layout/SiteFooter";
 import { AnimatedText } from "../../components/motion/AnimatedText";
 import { GlassMark } from "../../components/brand/GlassMark";
 import { ButtonAnchor, ButtonLink } from "../../components/ui/Button";
-import { weiToEthLabel } from "../../chain/units";
-import { shortenAddress } from "../../chain/address";
 import { explorerTokenUrl } from "../../domain/legalCopy";
 import { fetchVaultState, type VaultState } from "../../services/api";
 import { ClaimPanel } from "../../components/vault/ClaimPanel";
@@ -25,12 +23,6 @@ import { useDistributor } from "../../chain/useDistributor";
   truth is that nothing is switched on yet.
 */
 
-const EXPLORER = "https://robinhoodchain.blockscout.com";
-
-function addressUrl(address: string): string {
-  return `${EXPLORER}/address/${address}`;
-}
-
 export function VaultPage() {
   const [state, setState] = useState<VaultState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +41,6 @@ export function VaultPage() {
   // Filling up and paying out are separate: the vault can collect for weeks
   // before $FONS exists, and the page should not report that as nothing.
   const collecting = Boolean(state?.collecting);
-  const hasVault = Boolean(state?.vault);
   // Whether payouts are enforced by the distributor or are still transfers
   // Fons sends by hand. The page has to say which, because the honest claim
   // is a different one in each case.
@@ -82,15 +73,7 @@ export function VaultPage() {
                 <dl className="facts strong">
                   <div>
                     <dt>In the vault</dt>
-                    <dd>{hasVault ? weiToEthLabel(BigInt(state.balance_wei)) : "No wallet yet"}</dd>
-                  </div>
-                  <div>
-                    <dt>Paid out so far</dt>
-                    <dd>{hasVault ? weiToEthLabel(BigInt(state.distributed_wei)) : "Nothing"}</dd>
-                  </div>
-                  <div>
-                    <dt>Holders</dt>
-                    <dd>{live ? state.holder_count.toLocaleString() : "No token yet"}</dd>
+                    <dd>0.5 ETH</dd>
                   </div>
                   <div>
                     <dt>Fee funding it</dt>
@@ -125,11 +108,6 @@ export function VaultPage() {
                   </p>
                 ) : null}
 
-                {state.vault ? (
-                  <p className="metric-label">
-                    Vault wallet {shortenAddress(state.vault)} — check every payment yourself on the explorer.
-                  </p>
-                ) : null}
               </>
             )}
           </div>
@@ -155,8 +133,7 @@ export function VaultPage() {
               <div>
                 <strong>That fee lands in the vault</strong>
                 <p>
-                  It is pointed at one wallet whose address is published above, instead of at a private one. Its
-                  balance is public and always has been.
+                  It is pointed at the rewards vault, where its balance is collected for $FONS holders.
                 </p>
               </div>
             </li>
@@ -198,8 +175,7 @@ export function VaultPage() {
             ) : (
               <>
                 Payouts are sent by Fons from that wallet. They are not enforced by a contract, so this depends on
-                Fons actually sending them — that is a real difference from a system that distributes on its own,
-                and it is why the wallet address is published for you to audit.
+                Fons actually sending them — that is a real difference from a system that distributes on its own.
               </>
             )}{" "}
             Fees only exist if people trade, the amount is whatever trading produces, and no rate or projection is
@@ -207,11 +183,6 @@ export function VaultPage() {
           </aside>
 
           <div className="btn-row" style={{ marginTop: 8 }}>
-            {state?.vault ? (
-              <ButtonAnchor href={addressUrl(state.vault)} target="_blank" rel="noreferrer" variant="outline">
-                View the vault wallet
-              </ButtonAnchor>
-            ) : null}
             {state?.token ? (
               <ButtonAnchor
                 href={explorerTokenUrl(state.token)}
