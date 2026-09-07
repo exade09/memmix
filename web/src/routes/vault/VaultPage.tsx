@@ -9,6 +9,7 @@ import { shortenAddress } from "../../chain/address";
 import { explorerTokenUrl } from "../../domain/legalCopy";
 import { fetchVaultState, type VaultState } from "../../services/api";
 import { ClaimPanel } from "../../components/vault/ClaimPanel";
+import { rewardsDistributorAddress } from "../../chain/rewards";
 
 /*
   The rewards vault.
@@ -48,6 +49,10 @@ export function VaultPage() {
   // before $FONS exists, and the page should not report that as nothing.
   const collecting = Boolean(state?.collecting);
   const hasVault = Boolean(state?.vault);
+  // Whether payouts are enforced by the distributor or are still transfers
+  // Fons sends by hand. The page has to say which, because the honest claim
+  // is a different one in each case.
+  const onChain = Boolean(rewardsDistributorAddress());
   const feePercent = state ? (state.creator_fee_bps / 100).toFixed(2).replace(/\.?0+$/, "") : null;
 
   return (
@@ -158,17 +163,44 @@ export function VaultPage() {
                 <strong>It is split across ${appConfig.tokenSymbol} holders</strong>
                 <p>
                   Balances are read at a single block and each holder receives a share proportional to what they
-                  hold. Rounding is left in the vault rather than given to whoever sorts first.
+                  hold. Rounding is left over rather than given to whoever sorts first.
                 </p>
               </div>
             </li>
+            {onChain ? (
+              <li>
+                <span className="doc-step-index">04</span>
+                <div>
+                  <strong>You claim it yourself</strong>
+                  <p>
+                    The split is published as a round and funded in the same transaction, so the money is in the
+                    contract before the round exists. Your share is yours to take whenever you want it; nobody can
+                    claim it for themselves, and it cannot be taken back while the round is still claimable.
+                  </p>
+                </div>
+              </li>
+            ) : null}
           </ol>
 
           <aside className="doc-note">
-            Payouts are sent by Fons from that wallet. They are not enforced by a contract, so this depends on Fons
-            actually sending them — that is a real difference from a system that distributes on its own, and it is
-            why the wallet address is published for you to audit. Fees only exist if people trade, the amount is
-            whatever trading produces, and no rate or projection is promised anywhere on this site.
+            {onChain ? (
+              <>
+                Deciding the split still happens off chain, and Fons decides when a round runs and how much goes
+                into it — neither is forced by anything. What the contract does guarantee is the part that follows:
+                a round cannot promise more than was paid into it, nobody can claim twice or claim into someone
+                else's pocket, and Fons cannot take a round back once it is claimable. The snapshot block and the
+                root are published with each round, so the split itself can be recomputed and compared rather than
+                taken on trust.
+              </>
+            ) : (
+              <>
+                Payouts are sent by Fons from that wallet. They are not enforced by a contract, so this depends on
+                Fons actually sending them — that is a real difference from a system that distributes on its own,
+                and it is why the wallet address is published for you to audit.
+              </>
+            )}{" "}
+            Fees only exist if people trade, the amount is whatever trading produces, and no rate or projection is
+            promised anywhere on this site.
           </aside>
 
           <div className="btn-row" style={{ marginTop: 8 }}>

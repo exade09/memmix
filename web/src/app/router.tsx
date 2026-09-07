@@ -3,6 +3,7 @@ import { appConfig } from "./config";
 import { ComingSoonGate } from "../components/layout/ComingSoonGate";
 import { PageShell } from "../components/layout/PageShell";
 import { CaAdminPage } from "../routes/admin/CaAdminPage";
+import { VaultAdminPage } from "../routes/admin/VaultAdminPage";
 import { DocsPage } from "../routes/docs/DocsPage";
 import { ExplorePage } from "../routes/explore/ExplorePage";
 import { LandingPage } from "../routes/landing/LandingPage";
@@ -18,6 +19,7 @@ export function AppRouter() {
     return (
       <Routes>
         <Route path="/admin/ca" element={<CaAdminPage />} />
+        <Route path="/admin/vault" element={<VaultAdminPage />} />
         <Route path="*" element={<ComingSoonGate />} />
       </Routes>
     );
@@ -35,6 +37,7 @@ export function AppRouter() {
         <Route path="/docs" element={<DocsPage />} />
         <Route path="/vault" element={<VaultPage />} />
         <Route path="/admin/ca" element={<CaAdminPage />} />
+        <Route path="/admin/vault" element={<VaultAdminPage />} />
         <Route path="/legal" element={<LegalHubPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />

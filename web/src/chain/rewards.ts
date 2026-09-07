@@ -1,12 +1,16 @@
 import type { Address, PublicClient, WalletClient } from "viem";
 
 /*
-  Claiming from the rewards distributor.
+  Talking to the rewards distributor.
 
-  Only the three functions the site actually calls are declared. The proof
-  and amount come from the server, but nothing here has to trust them: the
+  Only the functions the site actually calls are declared. The proof and
+  amount come from the server, but nothing here has to trust them: the
   contract verifies the proof against the root it already holds, so a wrong
   amount or a forged proof simply reverts rather than paying anything out.
+
+  createRound is the one owner-only call, used by the admin page. It funds
+  the round in the same transaction it publishes it, so a round can never be
+  announced without the money behind it.
 */
 
 export const REWARDS_DISTRIBUTOR_ABI = [
@@ -40,7 +44,33 @@ export const REWARDS_DISTRIBUTOR_ABI = [
     inputs: [],
     outputs: [{ type: "uint256" }],
   },
+  {
+    type: "function",
+    name: "createRound",
+    stateMutability: "payable",
+    inputs: [
+      { name: "asset", type: "address" },
+      { name: "merkleRoot", type: "bytes32" },
+      { name: "total", type: "uint256" },
+      { name: "snapshotBlock", type: "uint256" },
+      { name: "expiresAt", type: "uint64" },
+    ],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "owner",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
 ] as const;
+
+export const NATIVE_ASSET = "0x0000000000000000000000000000000000000000" as Address;
+
+export function isNativeAsset(asset: string): boolean {
+  return !asset || asset.toLowerCase() === NATIVE_ASSET;
+}
 
 export function rewardsDistributorAddress(): Address | null {
   const raw = (import.meta.env.VITE_REWARDS_DISTRIBUTOR_ADDRESS ?? "").trim();
@@ -94,4 +124,69 @@ export async function submitClaim(
 
   await client.simulateContract(call);
   return await wallet.writeContract({ ...call, chain: null });
+}
+
+/** Who may create rounds. The admin page checks this before offering to. */
+export async function readDistributorOwner(
+  client: PublicClient,
+  distributor: Address,
+): Promise<Address> {
+  return (await client.readContract({
+    address: distributor,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: "owner",
+  })) as Address;
+}
+
+/** How many rounds exist. The next one created gets this id. */
+export async function readRoundCount(
+  client: PublicClient,
+  distributor: Address,
+): Promise<bigint> {
+  return (await client.readContract({
+    address: distributor,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: "roundCount",
+  })) as bigint;
+}
+
+export type CreateRoundInput = {
+  asset: Address;
+  merkleRoot: `0x${string}`;
+  total: bigint;
+  snapshotBlock: bigint;
+  expiresAt: bigint;
+};
+
+/**
+ * Publish and fund a round, and report the id it was given.
+ *
+ * The id is read back from the receipt rather than from roundCount before
+ * the send: two rounds created close together would otherwise both be filed
+ * under the same id, and the payout table would be attached to the wrong one.
+ *
+ * Simulated first, so a wrong asset, a short balance or a missing approval
+ * fails before the wallet opens instead of costing gas to discover.
+ */
+export async function submitCreateRound(
+  wallet: WalletClient,
+  client: PublicClient,
+  distributor: Address,
+  account: Address,
+  input: CreateRoundInput,
+): Promise<{ hash: `0x${string}`; roundId: number }> {
+  const call = {
+    address: distributor,
+    abi: REWARDS_DISTRIBUTOR_ABI,
+    functionName: "createRound",
+    args: [input.asset, input.merkleRoot, input.total, input.snapshotBlock, input.expiresAt],
+    account,
+    value: isNativeAsset(input.asset) ? input.total : 0n,
+  } as const;
+
+  const { result } = await client.simulateContract(call);
+  const hash = await wallet.writeContract({ ...call, chain: null });
+  const receipt = await client.waitForTransactionReceipt({ hash });
+  if (receipt.status !== "success") throw new Error("The round transaction reverted.");
+  return { hash, roundId: Number(result as bigint) };
 }

@@ -1,6 +1,9 @@
 __pycache__/
 *.py[cod]
 .env
+# Vite reads these too, and they are where a local key ends up.
+.env.local
+.env.*.local
 config.json
 logs/
 .venv/

@@ -614,3 +614,78 @@ export async function submitSponsoredLaunch(
     return { ok: false, error: { code: "NETWORK", message: "Could not reach the server." } };
   }
 }
+
+export type PreparedRound = {
+  asset: string;
+  asset_symbol: string;
+  asset_decimals: number;
+  root: string;
+  total_wei: string;
+  requested_wei: string;
+  snapshot_block: number;
+  recipient_count: number;
+  payouts: Record<string, string>;
+};
+
+/*
+  Working out a round, and filing it once it exists on chain.
+
+  Deliberately two calls with a wallet transaction between them. Preparing
+  moves no money and can be run as often as you like; publishing only records
+  a round the chain already has, which is why it takes the round id the
+  receipt reported rather than guessing at one.
+*/
+export async function prepareRewardRound(
+  password: string,
+  amountWei: string,
+  asset: string,
+): Promise<{ ok: true; data: PreparedRound } | { ok: false; error: ApiError }> {
+  return postAdminJson<PreparedRound>("/api/admin/vault/round/prepare", {
+    password,
+    amount_wei: amountWei,
+    asset,
+  });
+}
+
+export async function publishRewardRound(
+  password: string,
+  round: {
+    roundId: number;
+    asset: string;
+    root: string;
+    snapshotBlock: number;
+    payouts: Record<string, string>;
+  },
+): Promise<{ ok: true; data: { round_id: number } } | { ok: false; error: ApiError }> {
+  return postAdminJson<{ round_id: number }>("/api/admin/vault/round/publish", {
+    password,
+    round_id: round.roundId,
+    asset: round.asset,
+    root: round.root,
+    snapshot_block: round.snapshotBlock,
+    payouts: round.payouts,
+  });
+}
+
+async function postAdminJson<T>(
+  path: string,
+  body: Record<string, unknown>,
+): Promise<{ ok: true; data: T } | { ok: false; error: ApiError }> {
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const payload = await readEnvelope<T>(response);
+    if (!payload.success || !payload.data) {
+      return {
+        ok: false,
+        error: payload.error ?? ({ code: "UNKNOWN", message: "Something went wrong." } as ApiError),
+      };
+    }
+    return { ok: true, data: payload.data };
+  } catch {
+    return { ok: false, error: { code: "NETWORK", message: "Could not reach the server." } };
+  }
+}
