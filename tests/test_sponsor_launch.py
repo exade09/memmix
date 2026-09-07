@@ -56,6 +56,26 @@ def _addr_topic(address: str) -> str:
     return "0x" + address[2:].rjust(64, "0").lower()
 
 
+def _launch_params(fake: "FakePoster") -> tuple[str, int]:
+    """
+    The creator fee recipient and rate, read back out of the calldata the
+    route actually built. Word offsets follow launchToken(params, uint256,
+    address): three head words, then the TokenParams tuple whose fifth and
+    sixth members these are. Checked against a real mainnet launch.
+    """
+    selector = "0x" + LAUNCH_TOKEN_SELECTOR.hex()
+    for payload in fake.calls:
+        if payload["method"] != "eth_call":
+            continue
+        data = (payload.get("params") or [{}])[0].get("data", "")
+        if not data.startswith(selector):
+            continue
+        body = data[10:]
+        words = [body[i : i + 64] for i in range(0, len(body), 64)]
+        return "0x" + words[8][-40:], int(words[9], 16)
+    raise AssertionError("no launchToken call was simulated")
+
+
 class FakePoster:
     """Answers exactly the JSON-RPC calls a sponsored launch makes, in order."""
 
@@ -307,6 +327,30 @@ class SponsorLaunchRouteTests(unittest.TestCase):
         self.assertEqual(result["token"], "0x1111111111111111111111111111111111111111")
         self.assertEqual(result["curve"], "0x2222222222222222222222222222222222222222")
         self.assertTrue(result["tx_hash"].startswith("0x"))
+
+    def test_the_launcher_receives_the_fee_not_the_vault(self) -> None:
+        """
+        Fons pays for the launch and keeps nothing. The launcher's wallet goes
+        into the call as the creator fee recipient, which is also the only way
+        they are the creator at all: the factory takes the deployer from
+        msg.sender, and msg.sender is ours because we are the one paying. The
+        curve records this address instead, so it is what Pons shows and what
+        the fees can be collected against.
+
+        A vault address is configured here on purpose. It must not win.
+        """
+        vault = "0x000000000000000000000000000000000000BEEF"
+        env = {"REWARDS_VAULT_ADDRESS": vault, "SPONSORED_CREATOR_FEE_BPS": "50"}
+        fake = FakePoster()
+        with patch.dict(os.environ, env):
+            sponsor_launch_route(dict(VALID_BODY), "10.0.0.55", http=fake)
+
+        recipient, tax_bps = _launch_params(fake)
+        self.assertEqual(recipient.lower(), TEST_ADDRESS.lower(), "the launcher owns their token")
+        self.assertNotEqual(recipient.lower(), vault.lower(), "the vault must not take another launch's fee")
+        # The rate stays ours: it taxes everyone who later trades the token and
+        # can never be changed, so the request does not get to choose it.
+        self.assertEqual(tax_bps, 50)
 
     def test_reverted_send_surfaces_as_error(self) -> None:
         with self.assertRaises(SponsorLaunchError) as ctx:

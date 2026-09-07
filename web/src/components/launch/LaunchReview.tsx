@@ -5,7 +5,7 @@ import { appConfig, networkLabel } from "../../app/config";
 import { AnimatedText } from "../motion/AnimatedText";
 import { formatEth } from "../../domain/validation";
 import { readPendingLaunch, writePendingLaunch } from "../../domain/pendingLaunch";
-import { fetchLaunchHealth, type NameCheckResult } from "../../services/api";
+import { fetchLaunchHealth, fetchPublicSettings, type NameCheckResult } from "../../services/api";
 import {
   expectedContractNote,
   getTransactionBoundary,
@@ -148,6 +148,7 @@ export function LaunchReview(props: LaunchReviewProps) {
   const [contractOk, setContractOk] = useState<boolean | undefined>(undefined);
   const [simulationOk, setSimulationOk] = useState<boolean | undefined>(undefined);
   const [rebuildOffer, setRebuildOffer] = useState(false);
+  const [creatorFeeBps, setCreatorFeeBps] = useState<number | null>(null);
   const preparedRef = useRef<PreparedLaunch | null>(null);
 
   const chainMismatch = Boolean(healthChainId && healthChainId !== appConfig.chainId);
@@ -174,6 +175,7 @@ export function LaunchReview(props: LaunchReviewProps) {
     if (!boundary.launchpadConfigured || !appConfig.enableNativeLaunch) return;
     if (appConfig.mainnet && !appConfig.enableMainnetLaunch) return;
     if (!address || !onTargetChain || chainMismatch) return;
+    if (creatorFeeBps === null) return;
     setState("BUILDING_TRANSACTION");
     setError("");
     setRebuildOffer(false);
@@ -200,6 +202,7 @@ export function LaunchReview(props: LaunchReviewProps) {
           website: props.website,
         },
         pairToken: props.pair.kind === "stock" ? (props.pair.stock.address as Address) : undefined,
+        creatorTaxBps: creatorFeeBps,
       });
       preparedRef.current = prepared;
       setEstimate(prepared.estimate);
@@ -222,6 +225,7 @@ export function LaunchReview(props: LaunchReviewProps) {
     boundary.launchpadConfigured,
     chainMismatch,
     onTargetChain,
+    creatorFeeBps,
     persist,
     props.avatarSrc,
     props.description,
@@ -241,6 +245,20 @@ export function LaunchReview(props: LaunchReviewProps) {
     const controller = new AbortController();
     fetchLaunchHealth(controller.signal).then((health) => {
       if (health?.chain_id) setHealthChainId(Number(health.chain_id));
+    });
+    return () => controller.abort();
+  }, []);
+
+  /*
+    The same creator fee a sponsored launch carries, so paying for your own
+    launch does not quietly leave you with a token that earns nothing. Null
+    until it arrives, which holds the launch back rather than racing the
+    fetch: the rate is written into the token once and cannot be corrected.
+  */
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchPublicSettings(controller.signal).then((settings) => {
+      setCreatorFeeBps(settings ? settings.creator_fee_bps : 0);
     });
     return () => controller.abort();
   }, []);

@@ -695,6 +695,7 @@ async function postAdminJson<T>(
 export type PublicSettings = {
   distributor: string | null;
   token: string | null;
+  creator_fee_bps: number;
 };
 
 /**

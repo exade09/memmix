@@ -54,10 +54,19 @@ def reset_settings_rate_limit() -> None:
 
 
 def public_settings_route() -> dict[str, Any]:
-    """What the browser is allowed to know, which is only the addresses."""
+    """
+    What the browser is allowed to know: the addresses, and the creator fee
+    rate.
+
+    The rate is not a secret -- it is written into every launch and readable
+    off the curve by anyone. Serving it keeps one source of truth for both
+    launch paths, so a self-paid launch carries the same fee a sponsored one
+    does instead of the browser hardcoding a second answer.
+    """
     return {
         "distributor": distributor_address() or None,
         "token": platform_token_address() or None,
+        "creator_fee_bps": creator_fee_bps(),
     }
 
 

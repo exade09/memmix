@@ -173,10 +173,17 @@ def sponsor_launch_route(
         logo=fields["logo"],
         description=fields["description"],
         socials=Socials(**fields["socials"]),
-        # The fee goes to the vault, which is what holders are paid from. It
-        # falls back to the caller's wallet only when no vault is configured,
-        # which is the pre-rewards behaviour.
-        creator_fee_recipient=vault_address() or fields["creator_wallet"],
+        # The launcher's own wallet, always. Fons pays the launch and keeps
+        # nothing: the token is theirs the way it would be if they had paid
+        # for it on Pons directly, fees included.
+        #
+        # This is also the only thing that makes them the creator. The factory
+        # takes the deployer from msg.sender, which is our wallet because we
+        # are the ones paying -- but the curve records this address as its
+        # creator, so it is what Pons shows and what the fees can be collected
+        # against. Sending the vault here instead would leave the launcher
+        # with a token that is not theirs in any way the chain can see.
+        creator_fee_recipient=fields["creator_wallet"],
         creator_tax_bps=fields["creator_tax_bps"],
         buyback_enabled=fields["buyback_enabled"],
         expected_economics=economics,
@@ -283,12 +290,14 @@ def _validate_body(body: dict[str, Any]) -> dict[str, Any]:
         raise SponsorLaunchError(str(exc), "INVALID_INPUT") from exc
 
     """
-    The creator fee on a sponsored launch is set by us, not by the caller.
+    The creator fee *rate* on a sponsored launch is set by us, not by the
+    caller. The fee itself goes to the launcher.
 
-    Fons pays for these launches and is the on-chain deployer, so it is the
-    creator that the factory pays this fee to -- and that fee is what funds
-    the rewards vault. Letting the request choose it would let anyone set
-    their own trading tax on a token Fons is publishing and paying for.
+    The rate is a tax on everyone who later trades the token, and it can never
+    be changed once the launch lands. Letting the request choose it would let
+    anyone set an arbitrary trading tax on a token Fons is publishing and
+    paying for, and the people paying that tax are not the ones asking for it.
+    So the rate is ours and uniform; who receives it is theirs.
 
     It stays zero unless SPONSORED_CREATOR_FEE_BPS is set, so this changes
     nothing until someone deliberately turns it on.

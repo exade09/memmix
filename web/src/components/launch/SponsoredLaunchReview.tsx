@@ -19,10 +19,15 @@ import { track } from "../../services/analytics";
   contract needs still gets re-validated server-side exactly as if it were
   untrusted -- because from the server's point of view, it is.
 
-  The on-chain deployer for a sponsored launch is the sponsor wallet, not the
-  visitor. That is a real, visible difference from paying yourself, which is
-  why "pay it yourself instead" stays one click away rather than this being
-  the only option.
+  The token is still the visitor's. The factory reads the deployer from
+  msg.sender, and that is Fons's wallet because Fons is the one paying, so
+  `token.deployer()` names us and always will. But the curve -- the contract
+  that runs the trading and holds the fee -- records the creator fee recipient
+  as its creator, and that is the visitor's connected wallet. So they are the
+  creator where it counts, and the fees are theirs to collect.
+
+  That residue on `token.deployer()` is the one real difference from paying
+  yourself, which is why "pay it yourself instead" stays one click away.
 
   The opening buy is never part of what Fons sponsors, even if the visitor
   set an amount back on the edit step. Fons's wallet only ever pays to create
@@ -44,7 +49,6 @@ type SponsoredLaunchReviewProps = {
   website: string;
   initialBuy: string;
   pair: PairChoice;
-  sponsorAddress: string;
   onBack: () => void;
   onSwitchToSelfPay: () => void;
 };
@@ -71,6 +75,16 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
 
   async function onLaunch() {
     if (submitting) return;
+    /*
+      The connected wallet is the token's creator on the curve and the address
+      its fees are paid to, and none of that can be changed after the launch
+      lands. Launching without one would mint a token whose fees have nowhere
+      to go, permanently, so this refuses rather than guessing an address.
+    */
+    if (!address) {
+      setError("Connect the wallet that should own this token. It receives the trading fees, and that cannot be changed later.");
+      return;
+    }
     setSubmitting(true);
     setError("");
     track("sponsored_launch_started");
@@ -80,7 +94,7 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
       description: props.description,
       logo: props.imageUri || props.avatarSrc,
       socials: { twitter: props.twitter, telegram: props.telegram, website: props.website },
-      creator_wallet: props.sponsorAddress,
+      creator_wallet: address,
       creator_tax_bps: 0,
       buyback_enabled: false,
       pair_token: stock ? stock.address : undefined,
@@ -95,7 +109,7 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
     writePendingLaunch({
       token: result.data.token ?? null,
       curve: result.data.curve ?? null,
-      creator: props.sponsorAddress,
+      creator: address,
       metadata_uri: current?.metadata_uri ?? "",
       image_uri: props.imageUri,
       image_hash: current?.image_hash ?? "",
@@ -248,8 +262,9 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
             </div>
           </dl>
           <p className="metric-label">
-            No wallet connection needed for this launch. The transaction is still simulated against the chain
-            before anything is sent.
+            Connect the wallet that should own {props.ticker}. Fons pays and signs the launch, but this address is
+            the creator on the curve and the one the trading fees are paid to. It is written into the token and
+            cannot be changed afterwards. You are not asked to sign anything and you are not charged.
           </p>
           {wantsBuy ? (
             <p className="metric-label">
@@ -277,10 +292,10 @@ export function SponsoredLaunchReview(props: SponsoredLaunchReviewProps) {
           variant="primary"
           size="lg"
           aria-busy={submitting || undefined}
-          onClick={() => void onLaunch()}
+          onClick={() => void (address ? onLaunch() : connect())}
           disabled={submitting}
         >
-          {submitting ? "Launching…" : "Launch for free"}
+          {submitting ? "Launching…" : address ? "Launch for free" : "Connect wallet to launch"}
         </Button>
       </div>
     </section>

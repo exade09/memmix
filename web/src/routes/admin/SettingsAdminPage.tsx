@@ -57,13 +57,13 @@ const FIELDS: FieldSpec[] = [
     key: "rewards_vault_address",
     label: "Vault wallet",
     placeholder: "0x…",
-    help: "Where creator fees from sponsored launches are sent, and what payouts are funded from.",
+    help: "The wallet payouts are funded from and sent by. Launch $FONS with this wallet connected so its creator fee is paid here — other people's launches pay their own creators, not this.",
   },
   {
     key: "creator_fee_bps",
     label: "Creator fee (bps)",
     placeholder: "50",
-    help: "Charged on trades of tokens launched through Fons. 50 is 0.5%. Zero switches it off. Capped at 1000.",
+    help: "Charged on trades of every token launched through Fons and paid to whoever launched it. 50 is 0.5%. Zero switches it off. Capped at 1000. It is written into each token at launch and can never be changed afterwards.",
   },
 ];
 
