@@ -111,6 +111,24 @@ def send_sponsored_call(
 
     gas_limit = (gas_estimate * GAS_ESTIMATE_PADDING_BPS) // 10000
 
+    # The only balance check that can be right, because gas is the larger
+    # half of the cost and nothing before this point knows what it will be.
+    # A wallet funded with exactly the launch fee passes every earlier test
+    # and then fails here -- so this is where the readable message belongs,
+    # not a raw "insufficient funds" from the node after signing.
+    required = gas_limit * max_fee + value_wei
+    try:
+        balance = rpc.get_balance(account.address)
+    except RpcError as exc:
+        raise SponsorWalletError(f"Could not read the sponsor balance: {exc}", "RPC_UNAVAILABLE") from exc
+    if balance < required:
+        raise SponsorWalletError(
+            "The sponsor wallet cannot cover this launch: it needs about "
+            f"{required / 10**18:.6f} ETH including gas and holds "
+            f"{balance / 10**18:.6f} ETH.",
+            "SPONSOR_INSUFFICIENT_BALANCE",
+        )
+
     tx = {
         "chainId": chain_id,
         "nonce": nonce,

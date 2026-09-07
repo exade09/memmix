@@ -156,6 +156,10 @@ def sponsor_launch_route(
     payer = sponsor_address()
     if not payer:
         raise SponsorLaunchError("Sponsored launch is not configured.", "SPONSOR_UNCONFIGURED")
+    # A floor, not the real bar: gas costs more than the fee does, and it
+    # cannot be priced until the calldata exists. This only skips the work
+    # below when the wallet is obviously empty; send_sponsored_call does the
+    # check that actually decides, once gas is known.
     balance = rpc.get_balance(payer)
     if balance < fee_wei:
         raise SponsorLaunchError(

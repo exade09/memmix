@@ -1,22 +1,10 @@
 {
-  "note": "Official tokenized equities on Robinhood Chain. Every address and decimals value was read back off chain, not copied from a listing. Tickers that resolved to more than one contract were dropped rather than guessed at: this list gates what a sponsored launch will pay for, so an ambiguous entry is a way to lose real money. Entries whose symbol or name exceeded a sane length were rejected: at least one spam contract on this chain returns a 43,000-character symbol containing the words this list was discovered by.",
+  "note": "Official tokenized equities on Robinhood Chain. Every address and decimals value was read back off chain, not copied from a listing. Tickers that resolved to more than one contract were dropped rather than guessed at: this list gates what a sponsored launch will pay for, so an ambiguous entry is a way to lose real money. Entries whose symbol or name exceeded a sane length were rejected: at least one spam contract on this chain returns a 43,000-character symbol containing the words this list was discovered by. Finally, the list is narrowed to the pair tokens the Pons factory actually approves, read from approvedPairTokens(address) on the factory itself. The rest revert with PairTokenNotApproved() at launch, so offering them would walk a user through the whole flow only to fail at the last step; they are also, by Pons's own choice, the illiquid end of the list. Native ETH is not in that mapping and does not need to be -- the factory handles a zero pair token separately.",
   "stocks": [
     {
       "symbol": "AAPL",
       "name": "Apple",
       "address": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
-      "decimals": 18
-    },
-    {
-      "symbol": "ADBE",
-      "name": "Adobe",
-      "address": "0x232B8ed6377BE97813853B0Ac104c4Cda8378d1B",
-      "decimals": 18
-    },
-    {
-      "symbol": "AMAT",
-      "name": "Applied Materials",
-      "address": "0x36046893810a7E7fCE501229d57dc3FC8c8716d0",
       "decimals": 18
     },
     {
@@ -35,30 +23,6 @@
       "symbol": "AMZN",
       "name": "Amazon",
       "address": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
-      "decimals": 18
-    },
-    {
-      "symbol": "ANET",
-      "name": "Arista",
-      "address": "0x5F881715a7e607f42412cFfc5Ac7bbd50a624cfF",
-      "decimals": 18
-    },
-    {
-      "symbol": "ASML",
-      "name": "ASML Holding NV",
-      "address": "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA",
-      "decimals": 18
-    },
-    {
-      "symbol": "AVGO",
-      "name": "Broadcom",
-      "address": "0x156E175DD063a8cE274C50654eF40e0032b3fbcF",
-      "decimals": 18
-    },
-    {
-      "symbol": "BA",
-      "name": "Boeing",
-      "address": "0x4D21483a44Bf67a86b77E3dA301411880797D452",
       "decimals": 18
     },
     {
@@ -92,30 +56,6 @@
       "decimals": 18
     },
     {
-      "symbol": "CRM",
-      "name": "Salesforce",
-      "address": "0xd95B44124e475743a7589e68F3D74008A5536D44",
-      "decimals": 18
-    },
-    {
-      "symbol": "CRWD",
-      "name": "CrowdStrike Holdings",
-      "address": "0xea72Ecca2d0f6bFA1394DBBCff85b52CD4233931",
-      "decimals": 18
-    },
-    {
-      "symbol": "CSCO",
-      "name": "Cisco Systems",
-      "address": "0xF543967EEBB6f1917992eF0E68De63ab07a5a0dA",
-      "decimals": 18
-    },
-    {
-      "symbol": "DDOG",
-      "name": "Datadog",
-      "address": "0x27c99fBde9D0d2AA4f4Bfb4943f237843DdF6958",
-      "decimals": 18
-    },
-    {
       "symbol": "DELL",
       "name": "Dell",
       "address": "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd",
@@ -125,18 +65,6 @@
       "symbol": "DJT",
       "name": "Trump Media & Technology Group",
       "address": "0x1D11f0496982706C5e14A514D4E79F2e6BdE4516",
-      "decimals": 18
-    },
-    {
-      "symbol": "EWY",
-      "name": "iShares MSCI South Korea fund",
-      "address": "0x7f0aBeF0C07280F82c6a08ead09dEd6BAE2C13Fc",
-      "decimals": 18
-    },
-    {
-      "symbol": "GE",
-      "name": "General Electric",
-      "address": "0x63b814DDBd6BF339f25Fed8c36158a008D5B373e",
       "decimals": 18
     },
     {
@@ -170,45 +98,9 @@
       "decimals": 18
     },
     {
-      "symbol": "INTC",
-      "name": "Intel",
-      "address": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
-      "decimals": 18
-    },
-    {
-      "symbol": "IONQ",
-      "name": "IonQ",
-      "address": "0x558378E000D634A36593E338eBacdd6207640EfE",
-      "decimals": 18
-    },
-    {
-      "symbol": "JOBY",
-      "name": "Joby Aviation",
-      "address": "0xb334C5cE741B80B5B671F47F5C269Cb193fe8E24",
-      "decimals": 18
-    },
-    {
       "symbol": "LLY",
       "name": "Eli Lilly",
       "address": "0x8005d266423c7ea827372c9c864491e5786600ea",
-      "decimals": 18
-    },
-    {
-      "symbol": "LMT",
-      "name": "Lockheed",
-      "address": "0x329fcACEb9AD6F9580DD5F643fed0646900D043c",
-      "decimals": 18
-    },
-    {
-      "symbol": "LUNR",
-      "name": "Intuitive Machines",
-      "address": "0xa5D4968421bA94814Be3B136b15cf422101aC1a3",
-      "decimals": 18
-    },
-    {
-      "symbol": "MCD",
-      "name": "McDonald's",
-      "address": "0x08E91b659a545Bfb52F1a5e588Bf6Dc2FA85DE7A",
       "decimals": 18
     },
     {
@@ -248,21 +140,9 @@
       "decimals": 18
     },
     {
-      "symbol": "NET",
-      "name": "Cloudflare, Inc. Class A common stock",
-      "address": "0x116F00968269B7bfbaD4109cE591d6E74c0601d4",
-      "decimals": 18
-    },
-    {
       "symbol": "NFLX",
       "name": "Netflix",
       "address": "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8",
-      "decimals": 18
-    },
-    {
-      "symbol": "NOW",
-      "name": "ServiceNow",
-      "address": "0x0C3260aF4B8f13a69c4c2dFb84fD667890CDFa14",
       "decimals": 18
     },
     {
@@ -272,45 +152,9 @@
       "decimals": 18
     },
     {
-      "symbol": "ORCL",
-      "name": "Oracle",
-      "address": "0xb0992820E760d836549ba69BC7598b4af75dEE03",
-      "decimals": 18
-    },
-    {
-      "symbol": "PANW",
-      "name": "Palo Alto Networks",
-      "address": "0xB039597eD45CBa7B6E2fb9E8BE51802969CEe5Be",
-      "decimals": 18
-    },
-    {
-      "symbol": "PATH",
-      "name": "UiPath",
-      "address": "0xfb2664f07B6Aadd29ea7a59D8859b1AeB8645cDa",
-      "decimals": 18
-    },
-    {
-      "symbol": "PL",
-      "name": "Planet Labs",
-      "address": "0xAA4d64474c172010aB57719cb9951E6142a100d3",
-      "decimals": 18
-    },
-    {
       "symbol": "PLTR",
       "name": "Palantir Technologies",
       "address": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
-      "decimals": 18
-    },
-    {
-      "symbol": "QBTS",
-      "name": "D-Wave Quantum Inc. Common Stock",
-      "address": "0xC583c60aeF9Dc401Da72cEC1B404743a93cea1Cc",
-      "decimals": 18
-    },
-    {
-      "symbol": "QCOM",
-      "name": "Qualcomm",
-      "address": "0x0f17206447090e464C277571124dD2688E48AEA9",
       "decimals": 18
     },
     {
@@ -332,27 +176,9 @@
       "decimals": 18
     },
     {
-      "symbol": "RGTI",
-      "name": "Rigetti Computing",
-      "address": "0x284358abc07F9359f19f4b5b4aC91901Be2597Ba",
-      "decimals": 18
-    },
-    {
       "symbol": "RIVN",
       "name": "Rivian Automotive",
       "address": "0xB1BF26c1D20ff267A4f93550d1E0d06ac40a114B",
-      "decimals": 18
-    },
-    {
-      "symbol": "RKLB",
-      "name": "Rocket Lab Corporation",
-      "address": "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2",
-      "decimals": 18
-    },
-    {
-      "symbol": "RUN",
-      "name": "Sunrun",
-      "address": "0x756Bc80af765C82da966a788858d65aDF14f3793",
       "decimals": 18
     },
     {
@@ -374,12 +200,6 @@
       "decimals": 18
     },
     {
-      "symbol": "SMCI",
-      "name": "Super Micro Computer",
-      "address": "0xc01aA1fECeC0605b13bc84874ff7256C0f5F562a",
-      "decimals": 18
-    },
-    {
       "symbol": "SNAP",
       "name": "Snap",
       "address": "0xF6589F11Bc40b669e584073F428B05562F568733",
@@ -389,24 +209,6 @@
       "symbol": "SNDK",
       "name": "Sandisk Corporation",
       "address": "0xB90A19fF0Af67f7779afF50A882A9CfF42446400",
-      "decimals": 18
-    },
-    {
-      "symbol": "SNOW",
-      "name": "Snowflake",
-      "address": "0xBa0CAB75495255d0cB58E22B648bFED4ECD1F47E",
-      "decimals": 18
-    },
-    {
-      "symbol": "SOFI",
-      "name": "SoFi Technologies",
-      "address": "0x98E75885157C80992A8D41b696D8c9C6Fb30A926",
-      "decimals": 18
-    },
-    {
-      "symbol": "SOUN",
-      "name": "SoundHound AI",
-      "address": "0x6E3Dfd9f7e1649BaA14D25cac18C94d62dB10A54",
       "decimals": 18
     },
     {
@@ -434,18 +236,6 @@
       "decimals": 18
     },
     {
-      "symbol": "TTD",
-      "name": "Trade Desk",
-      "address": "0x0b5fb4031cae9163db10B169Ee72685F0EdC8545",
-      "decimals": 18
-    },
-    {
-      "symbol": "UNH",
-      "name": "UnitedHealth",
-      "address": "0xcF364ea52787e289De6F32077834056E3E70D6A8",
-      "decimals": 18
-    },
-    {
       "symbol": "UPS",
       "name": "UPS",
       "address": "0xf23250dac154D05Bb671CB0d0eBEf3c635c79CE2",
@@ -456,23 +246,50 @@
       "name": "United States Oil Fund",
       "address": "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344",
       "decimals": 18
-    },
-    {
-      "symbol": "XOM",
-      "name": "ExxonMobil Holdings Corporation",
-      "address": "0xf9B46d3D1B22199D4D1025a9cEDB540A33F1a2d5",
-      "decimals": 18
-    },
-    {
-      "symbol": "ZS",
-      "name": "Zscaler",
-      "address": "0x7dc013eB55e436f30d7ED1AFE4E36d6e45e3c3f7",
-      "decimals": 18
     }
   ],
   "dropped_ambiguous_tickers": [
     "ASTS",
     "LULU",
     "PFE"
+  ],
+  "dropped_not_approved_by_pons": [
+    "ADBE",
+    "AMAT",
+    "ANET",
+    "ASML",
+    "AVGO",
+    "BA",
+    "CRM",
+    "CRWD",
+    "CSCO",
+    "DDOG",
+    "EWY",
+    "GE",
+    "INTC",
+    "IONQ",
+    "JOBY",
+    "LMT",
+    "LUNR",
+    "MCD",
+    "NET",
+    "NOW",
+    "ORCL",
+    "PANW",
+    "PATH",
+    "PL",
+    "QBTS",
+    "QCOM",
+    "RGTI",
+    "RKLB",
+    "RUN",
+    "SMCI",
+    "SNOW",
+    "SOFI",
+    "SOUN",
+    "TTD",
+    "UNH",
+    "XOM",
+    "ZS"
   ]
 }

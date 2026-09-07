@@ -59,10 +59,19 @@ def _addr_topic(address: str) -> str:
 class FakePoster:
     """Answers exactly the JSON-RPC calls a sponsored launch makes, in order."""
 
-    def __init__(self, *, launch_enabled: bool = True, fee_wei: int = 500_000_000_000_000, revert_on_send: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        launch_enabled: bool = True,
+        fee_wei: int = 500_000_000_000_000,
+        revert_on_send: bool = False,
+        balance_wei: int | None = None,
+    ) -> None:
         self.launch_enabled = launch_enabled
         self.fee_wei = fee_wei
         self.revert_on_send = revert_on_send
+        # Default is comfortably funded; a test that cares sets it exactly.
+        self.balance_wei = fee_wei * 100 if balance_wei is None else balance_wei
         self.calls: list[dict[str, Any]] = []
 
     def post_json(self, url: str, payload: dict[str, Any], *, headers: dict[str, str] | None = None) -> Any:
@@ -88,7 +97,7 @@ class FakePoster:
                 return {"jsonrpc": "2.0", "id": payload["id"], "result": "0x" + encoded.hex()}
             raise AssertionError(f"unexpected eth_call selector {selector}")
         if method == "eth_getBalance":
-            return {"jsonrpc": "2.0", "id": payload["id"], "result": _hex(self.fee_wei * 100)}
+            return {"jsonrpc": "2.0", "id": payload["id"], "result": _hex(self.balance_wei)}
         if method == "eth_chainId":
             return {"jsonrpc": "2.0", "id": payload["id"], "result": "0x1237"}
         if method == "eth_getTransactionCount":
@@ -208,6 +217,41 @@ class SponsorWalletTests(unittest.TestCase):
         with self.assertRaises(SponsorWalletError) as ctx:
             send_sponsored_call(rpc, to=FACTORY, data=b"\x00", value_wei=10**20)
         self.assertEqual(ctx.exception.code, "SPONSOR_VALUE_REJECTED")
+
+    def test_a_wallet_holding_only_the_fee_is_refused_before_signing(self) -> None:
+        """
+        Gas costs more than the launch fee does, so "enough for the fee" is
+        not enough to launch. Funding the wallet with exactly the fee is the
+        obvious mistake, and it has to fail with a number the operator can
+        act on rather than a raw node error after the transaction is signed.
+        """
+        fee = 500_000_000_000_000
+        poster = FakePoster(balance_wei=fee)
+        rpc = RpcClient("https://example.invalid", poster)
+        with self.assertRaises(SponsorWalletError) as ctx:
+            send_sponsored_call(rpc, to=FACTORY, data=LAUNCH_TOKEN_SELECTOR, value_wei=fee)
+        self.assertEqual(ctx.exception.code, "SPONSOR_INSUFFICIENT_BALANCE")
+        self.assertNotIn(
+            "eth_sendRawTransaction",
+            [c["method"] for c in poster.calls],
+            "nothing may be broadcast once the wallet is known to be short",
+        )
+
+    def test_the_refusal_says_what_is_needed_and_what_is_held(self) -> None:
+        fee = 500_000_000_000_000
+        rpc = RpcClient("https://example.invalid", FakePoster(balance_wei=fee))
+        with self.assertRaises(SponsorWalletError) as ctx:
+            send_sponsored_call(rpc, to=FACTORY, data=LAUNCH_TOKEN_SELECTOR, value_wei=fee)
+        message = str(ctx.exception)
+        self.assertIn("0.000500", message, "the held balance belongs in the message")
+        self.assertIn("ETH", message)
+
+    def test_a_funded_wallet_still_broadcasts(self) -> None:
+        """The guard must not become a wall in front of the working path."""
+        fee = 500_000_000_000_000
+        rpc = RpcClient("https://example.invalid", FakePoster(balance_wei=10**18))
+        sent = send_sponsored_call(rpc, to=FACTORY, data=LAUNCH_TOKEN_SELECTOR, value_wei=fee)
+        self.assertTrue(sent.tx_hash.startswith("0x"))
 
     def test_send_sponsored_call_without_key_configured(self) -> None:
         os.environ.pop("SPONSOR_WALLET_PRIVATE_KEY", None)
@@ -343,6 +387,35 @@ class SponsorLaunchRouteTests(unittest.TestCase):
         for stock in load_stocks():
             self.assertLessEqual(len(stock["symbol"]), MAX_SYMBOL_LENGTH, stock["address"])
             self.assertLessEqual(len(stock["name"]), MAX_NAME_LENGTH, stock["address"])
+
+    def test_registry_offers_only_pairs_pons_will_actually_accept(self) -> None:
+        """
+        The factory keeps its own approvedPairTokens mapping, and launching
+        against anything outside it reverts with PairTokenNotApproved(). A
+        ticker we list but Pons will not take walks a user through naming,
+        art and confirmation only to fail on the last step, so the registry
+        must not contain one.
+
+        These specific tickers were read off the factory, not assumed.
+        """
+        from axiom_scanner.chain.stocks import load_stocks
+
+        symbols = {s["symbol"] for s in load_stocks()}
+        for rejected in ("ADBE", "ORCL", "XOM", "INTC", "QCOM"):
+            self.assertNotIn(rejected, symbols, f"{rejected} reverts with PairTokenNotApproved()")
+        for accepted in ("AAPL", "NVDA", "AMC"):
+            self.assertIn(accepted, symbols, f"{accepted} is approved and should still be offered")
+
+    def test_the_dropped_pairs_are_recorded_rather_than_silently_deleted(self) -> None:
+        """Someone will ask why their ticker vanished; the file should answer."""
+        import json
+        from pathlib import Path
+
+        doc = json.loads(Path("data/robinhood_stocks.json").read_text(encoding="utf-8"))
+        dropped = doc["dropped_not_approved_by_pons"]
+        self.assertTrue(dropped)
+        listed = {s["symbol"] for s in doc["stocks"]}
+        self.assertFalse(listed & set(dropped), "a ticker cannot be both offered and dropped")
 
     def test_registry_has_no_duplicate_tickers(self) -> None:
         """An ambiguous ticker is a way to pair against the wrong contract."""
