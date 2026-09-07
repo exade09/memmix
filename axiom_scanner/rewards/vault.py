@@ -144,19 +144,41 @@ def read_vault_state(rpc: RpcClient, *, include_holders: bool = True) -> dict[st
     }
 
 
-def read_distributed_total(rpc: RpcClient, vault: str, *, max_chunks: int = 12) -> int:
+def read_distributed_total(
+    rpc: RpcClient, vault: str, *, max_chunks: int = 12, budget_seconds: float = 4.0
+) -> int:
     """
     What the vault has actually paid out, summed from its own outgoing
     transfers. Bounded like every other scan here, so treat it as "at least
     this much" rather than an audited lifetime total.
+
+    Two bounds, not one, because each chunk below is a sequential round trip
+    and a dozen of them can outlast the request that asked for them.
+
+    First: a wallet that has never sent a transaction cannot have paid
+    anything out, so its nonce settles the question in one call. That is the
+    entire job while the vault is still filling up and $FONS does not exist,
+    which is exactly when this endpoint is polled most.
+
+    Second: the scan stops when it runs out of time. Stopping early
+    understates the total, which the paragraph above already allows for --
+    running out of time on the platform returns nothing at all.
     """
+    try:
+        if rpc.get_transaction_count(vault) == 0:
+            return 0
+    except RpcError:
+        pass
     try:
         latest = int(rpc.call("eth_blockNumber", []), 16)
     except RpcError:
         return 0
     total = 0
     cursor = latest
+    deadline = time.monotonic() + budget_seconds
     for _ in range(max_chunks):
+        if time.monotonic() >= deadline:
+            break
         start = max(0, cursor - 2000 + 1)
         try:
             logs = rpc.call(

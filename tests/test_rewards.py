@@ -39,11 +39,16 @@ class FakeChain:
         self.deep_history = False
         # Addresses that should answer eth_getCode with bytecode.
         self.contracts: set[str] = set()
+        # Outgoing transactions the vault has ever sent. Zero means the
+        # payout scan can be skipped entirely.
+        self.vault_nonce = 0
+        self.calls: list[str] = []
 
     def post_json(self, url: str, payload: dict[str, Any], *, headers: dict[str, str] | None = None) -> Any:
         method = payload["method"]
         params = payload.get("params") or []
         rid = payload["id"]
+        self.calls.append(method)
 
         def ok(result: Any) -> dict[str, Any]:
             return {"jsonrpc": "2.0", "id": rid, "result": result}
@@ -69,6 +74,8 @@ class FakeChain:
                     for a in self.balances
                 ]
             )
+        if method == "eth_getTransactionCount":
+            return ok(hex(self.vault_nonce))
         if method == "eth_getCode":
             who = str(params[0]).lower()
             return ok("0x60006000" if who in {c.lower() for c in self.contracts} else "0x")
@@ -183,6 +190,59 @@ class VaultConfigTests(unittest.TestCase):
         self.assertEqual(platform_token_address(), TOKEN)
         self.assertEqual(vault_address(), VAULT)
         self.assertTrue(rewards_enabled())
+
+
+class PayoutScanCostTests(unittest.TestCase):
+    """
+    Reading the vault has to fit inside one request.
+
+    The outgoing-payout scan walks the chain backwards a chunk at a time, and
+    every chunk is its own sequential round trip. Left unbounded that is slow
+    enough to kill the request on the platform, which is not a slow page --
+    it is a 500 where the balance used to be.
+    """
+
+    def setUp(self) -> None:
+        reset_rewards_limits()
+        os.environ["REWARDS_VAULT_ADDRESS"] = VAULT
+        os.environ.pop("FONS_TOKEN_ADDRESS", None)
+
+    def tearDown(self) -> None:
+        for key in ("REWARDS_VAULT_ADDRESS", "FONS_TOKEN_ADDRESS"):
+            os.environ.pop(key, None)
+
+    def test_a_vault_that_never_sent_anything_is_not_scanned(self) -> None:
+        chain = FakeChain()
+        chain.vault_nonce = 0
+        state = read_vault_state(_rpc(chain), include_holders=False)
+        self.assertEqual(state["distributed_wei"], "0")
+        self.assertEqual(
+            [m for m in chain.calls if m == "eth_getLogs"],
+            [],
+            "a wallet with no outgoing transactions has provably paid out "
+            "nothing, so scanning for its payments is pure latency",
+        )
+
+    def test_a_vault_that_has_sent_something_is_still_scanned(self) -> None:
+        """The short circuit must not become a permanent excuse to skip."""
+        chain = FakeChain()
+        chain.vault_nonce = 3
+        read_vault_state(_rpc(chain), include_holders=False)
+        self.assertTrue(any(m == "eth_getLogs" for m in chain.calls))
+
+    def test_the_scan_stops_when_it_runs_out_of_time(self) -> None:
+        chain = FakeChain()
+        chain.vault_nonce = 3
+        from axiom_scanner.rewards.vault import read_distributed_total
+
+        # A budget already spent: the first chunk boundary must end it.
+        total = read_distributed_total(_rpc(chain), VAULT, budget_seconds=-1.0)
+        self.assertEqual(total, 0)
+        self.assertEqual(
+            [m for m in chain.calls if m == "eth_getLogs"],
+            [],
+            "an exhausted budget must stop the scan rather than run it out",
+        )
 
 
 class VaultStateTests(unittest.TestCase):
