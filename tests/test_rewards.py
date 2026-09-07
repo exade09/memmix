@@ -8,11 +8,12 @@ from typing import Any
 from eth_utils import keccak
 
 from axiom_scanner.chain.rpc_client import RpcClient
+from axiom_scanner.http_client import SourceRateLimited
 from axiom_scanner.rewards.config import creator_fee_bps, platform_token_address, rewards_enabled, vault_address
 from axiom_scanner.rewards.holders import HolderSnapshot, compute_shares, snapshot_holders
 from axiom_scanner.rewards.vault import VaultError, plan_distribution, read_vault_state
 from vercel_api.dispatch import handle_api_get, handle_api_post
-from vercel_api.routes.rewards import reset_rewards_limits
+from vercel_api.routes.rewards import reset_rewards_limits, vault_state_route
 
 TOKEN = "0x1111111111111111111111111111111111111111"
 VAULT = "0x2222222222222222222222222222222222222222"
@@ -88,6 +89,11 @@ class FakeChain:
                     return ok("0x" + hex(bal)[2:].rjust(64, "0"))
             return ok("0x" + "0" * 64)
         raise AssertionError(f"unexpected method {method}")
+
+
+class RateLimitedHttp:
+    def post_json(self, url: str, payload: dict[str, Any], *, headers: dict[str, str] | None = None) -> Any:
+        raise SourceRateLimited("rate limited")
 
 
 def _rpc(chain: FakeChain) -> RpcClient:
@@ -435,6 +441,12 @@ class VaultStateTests(unittest.TestCase):
         status, payload = handle_api_get("/api/vault", "holders=0")
         self.assertEqual(status, 200)
         self.assertTrue(payload["success"])
+
+    def test_public_state_maps_transport_rate_limit_to_rpc_unavailable(self) -> None:
+        with self.assertRaises(VaultError) as context:
+            vault_state_route(http=RateLimitedHttp(), include_holders=False)
+        self.assertEqual(context.exception.code, "RPC_UNAVAILABLE")
+
 
     def test_distribution_requires_the_password(self) -> None:
         status, payload = handle_api_post(

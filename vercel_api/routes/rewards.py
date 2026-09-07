@@ -17,7 +17,7 @@ from collections import defaultdict
 from typing import Any
 
 from axiom_scanner.chain.rpc_client import RpcClient
-from axiom_scanner.http_client import HttpClient
+from axiom_scanner.http_client import HttpClient, SourceError
 from axiom_scanner.rewards.config import platform_token_address, vault_address
 from axiom_scanner.rewards.merkle import build_distribution
 from axiom_scanner.rewards.rounds import (
@@ -69,7 +69,10 @@ def _rpc(http: Any = None) -> RpcClient:
 
 
 def vault_state_route(*, http: Any = None, include_holders: bool = True) -> dict[str, Any]:
-    return read_vault_state(_rpc(http), include_holders=include_holders)
+    try:
+        return read_vault_state(_rpc(http), include_holders=include_holders)
+    except SourceError as exc:
+        raise VaultError("Could not read the vault right now.", "RPC_UNAVAILABLE") from exc
 
 
 def vault_plan_route(body: dict[str, Any], client_ip: str, *, http: Any = None) -> dict[str, Any]:

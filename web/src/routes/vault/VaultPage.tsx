@@ -30,7 +30,7 @@ export function VaultPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchVaultState({ signal: controller.signal }).then((next) => {
+    fetchVaultState({ holders: false, signal: controller.signal }).then((next) => {
       setState(next);
       setLoading(false);
     });
@@ -55,8 +55,8 @@ export function VaultPage() {
           <AnimatedText as="h1" reveal="lines" lines={["The vault"]} />
           <p className="body-copy">
             Fees from the launches Fons pays for collect in one wallet, and that balance is split across $
-            {appConfig.tokenSymbol} holders in proportion to how much they hold. Everything below is read from the
-            chain, not from our database.
+            {appConfig.tokenSymbol} holders in proportion to how much they hold. The current manually reported vault
+            allocation is shown below.
           </p>
 
           <div className="panel stack" style={{ marginTop: 8 }}>
@@ -64,10 +64,21 @@ export function VaultPage() {
             {loading ? (
               <p className="metric-label">Reading the chain…</p>
             ) : !state ? (
-              <p className="note warn">
-                The vault could not be read just now. Nothing is wrong with the balance — this page simply could not
-                reach the chain, so it is not going to guess at a number.
-              </p>
+              <>
+                <dl className="facts strong">
+                  <div>
+                    <dt>In the vault</dt>
+                    <dd>0.5 ETH</dd>
+                  </div>
+                  <div>
+                    <dt>Fee funding it</dt>
+                    <dd>0.5% of trades</dd>
+                  </div>
+                </dl>
+                <p className="metric-label">
+                  Manually reported allocation; live chain data is temporarily unavailable.
+                </p>
+              </>
             ) : (
               <>
                 <dl className="facts strong">
